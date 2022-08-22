@@ -41,12 +41,7 @@ class APP_RUNTIME_EXPORT WebViewDelegate {
   virtual bool AcceptsAudioCapture() = 0;
   virtual void LoadStarted() = 0;
   virtual void LoadFinished(const std::string& url) = 0;
-  // TODO(neva): Remove duplication once WAM on all webOS platforms will have
-  // the same signature of the method.
-  virtual void LoadFailed(const std::string& url,
-                          int error_code,
-                          const std::string& error_description) {}
-  virtual void LoadFailed(const std::string& url, int error_code) {}
+  virtual void LoadFailed(const std::string& url, int error_code) = 0;
   virtual void LoadAborted(const std::string& url) = 0;
   virtual void LoadStopped() = 0;
   virtual void RenderProcessCreated(int pid) = 0;

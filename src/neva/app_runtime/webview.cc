@@ -1321,9 +1321,6 @@ void WebView::DispatchNetError(const GURL& url, int error_code) {
   if (error_code == net::ERR_ABORTED) {
     webview_delegate_->LoadAborted(url_string);
   } else {
-    // TODO(neva): Remove duplication once WAM on all webOS platforms will have
-    // the same signature of the method.
-    webview_delegate_->LoadFailed(url_string, error_code, std::string());
     webview_delegate_->LoadFailed(url_string, error_code);
   }
 }
