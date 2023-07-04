@@ -375,7 +375,7 @@ void InputController::Record() {
 
 #if defined(USE_NEVA_SUSPEND_MEDIA_CAPTURE)
 void InputController::Pause() {
-  DCHECK_CALLED_ON_VALID_THREAD(owning_thread_);
+  DCHECK(task_runner_->BelongsToCurrentThread());
   SCOPED_UMA_HISTOGRAM_TIMER("Media.AudioInputController.RecordTime");
   event_handler_->OnLog("AIC::DoPause");
 
@@ -386,7 +386,7 @@ void InputController::Pause() {
 }
 
 void InputController::Resume() {
-  DCHECK_CALLED_ON_VALID_THREAD(owning_thread_);
+  DCHECK(task_runner_->BelongsToCurrentThread());
   SCOPED_UMA_HISTOGRAM_TIMER("Media.AudioInputController.RecordTime");
 
   event_handler_->OnLog("AIC::DoResume");
