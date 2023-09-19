@@ -20,7 +20,7 @@ config("ruy_shared_config") {
   # NOTE(neva): Workaround to fix webruntime compilation on Yocto 4.0 base.
   # We do not use assembly code for Thumb to avoid compilation failure.
   # See https://github.com/google/ruy/issues/284.
-  if (current_cpu == "arm" && arm_use_thumb) {
+  if (current_cpu == "arm" && arm_use_thumb && !is_clang) {
     defines = [ "RUY_OPT_SET=(~RUY_OPT_BIT_ASM)" ]
   }
 }
