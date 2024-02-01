@@ -75,6 +75,8 @@ class AppRuntimeContentBrowserClient : public content::ContentBrowserClient {
       bool strict_enforcement,
       base::OnceCallback<void(content::CertificateRequestResultType)> callback) override;
 
+  size_t GetMaxRendererProcessCountOverride() override;
+
   std::unique_ptr<content::WebContentsViewDelegate> GetWebContentsViewDelegate(
       content::WebContents* web_contents) override;
 

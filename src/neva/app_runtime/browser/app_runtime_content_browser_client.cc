@@ -16,6 +16,8 @@
 
 #include "neva/app_runtime/browser/app_runtime_content_browser_client.h"
 
+#include <limits>
+
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
@@ -1320,5 +1322,9 @@ AppRuntimeContentBrowserClient::CreateThrottlesForNavigation(
   return throttles;
 }
 ///@}
+
+size_t AppRuntimeContentBrowserClient::GetMaxRendererProcessCountOverride() {
+  return std::numeric_limits<size_t>::max();
+}
 
 }  // namespace neva_app_runtime
