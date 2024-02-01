@@ -37,6 +37,11 @@ AppRuntimeSharedMemoryManager::AppRuntimeSharedMemoryManager()
           discardable_memory::DiscardableSharedMemoryManager::Get()) {
   const int kMegabyte = 1024 * 1024;
 
+  VLOG(1) << "Memory detected: "
+          << base::SysInfo::AmountOfPhysicalMemory() / kMegabyte
+          << "MB Low end mode: "
+          << (base::SysInfo::IsLowEndDevice() ? "enabled" : "disabled");
+
   base::FilePath shmem_dir;
   int64_t shmem_dir_amount_of_total_space = 0;
   if (base::GetShmemTempDir(false, &shmem_dir)) {

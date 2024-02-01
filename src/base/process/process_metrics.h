@@ -385,6 +385,10 @@ struct BASE_EXPORT SystemMemoryInfoKB {
   int file_backed = 0;
   int purgeable = 0;
 #endif  // BUILDFLAG(IS_APPLE)
+
+#if defined(OS_WEBOS)
+  int cma_device_alloc = 0;
+#endif  // defined(OS_WEBOS)
 };
 
 // On Linux/Android/Chrome OS, system-wide memory consumption data is parsed

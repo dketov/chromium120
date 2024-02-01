@@ -30,7 +30,16 @@ uint64_t AmountOfMemory(int pages_name) {
   long page_size = sysconf(_SC_PAGESIZE);
   if (pages < 0 || page_size < 0)
     return 0;
-  return static_cast<uint64_t>(pages) * static_cast<uint64_t>(page_size);
+  uint64_t carveout_bytes = 0;
+#if defined(OS_WEBOS)
+  const uint64_t kKB = 1024;
+  base::SystemMemoryInfoKB info;
+  if (GetSystemMemoryInfo(&info)) {
+    carveout_bytes = info.cma_device_alloc * kKB;
+  }
+#endif
+  return static_cast<uint64_t>(pages) * static_cast<uint64_t>(page_size) -
+         carveout_bytes;
 }
 
 uint64_t AmountOfPhysicalMemory() {

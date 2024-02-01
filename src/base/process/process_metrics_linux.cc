@@ -412,6 +412,10 @@ bool ParseProcMeminfo(StringPiece meminfo_data, SystemMemoryInfoKB* meminfo) {
     else if (tokens[0] == "Slab:")
       target = &meminfo->slab;
 #endif
+#if defined(OS_WEBOS)
+    else if (tokens[0] == "CmaDeviceAlloc:")
+      target = &meminfo->cma_device_alloc;
+#endif  // defined(OS_WEBOS)
     if (target)
       StringToInt(tokens[1], target);
   }
