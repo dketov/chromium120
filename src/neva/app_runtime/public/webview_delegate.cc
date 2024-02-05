@@ -18,13 +18,6 @@
 
 namespace neva_app_runtime {
 
-bool WebViewDelegate::DecidePolicyForResponse(bool is_main_frame,
-                                              int status_code,
-                                              const std::string& url,
-                                              const std::string& status_text) {
-  return false;
-}
-
 bool WebViewDelegate::DecidePolicyForErrorPage(bool is_main_frame,
                                                int status_code,
                                                const std::string& url,

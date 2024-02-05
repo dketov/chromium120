@@ -33,16 +33,10 @@ class APP_RUNTIME_EXPORT WebViewDelegate {
   virtual void TitleChanged(const std::string& title) = 0;
   virtual void NavigationHistoryChanged() = 0;
   virtual void Close() = 0;
-  // TODO(neva): Remove duplication once WAM on all webOS platforms will have
-  // the same signature of the method.
-  virtual bool DecidePolicyForResponse(bool is_main_frame,
-                                       int status_code,
-                                       const std::string& url,
-                                       const std::string& status_text);
   virtual bool DecidePolicyForErrorPage(bool is_main_frame,
-                                        int status_code,
+                                        int error_code,
                                         const std::string& url,
-                                        const std::string& status_text);
+                                        const std::string& error_text) = 0;
   virtual bool AcceptsVideoCapture() = 0;
   virtual bool AcceptsAudioCapture() = 0;
   virtual void LoadStarted() = 0;
