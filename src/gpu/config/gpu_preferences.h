@@ -24,6 +24,11 @@ namespace gpu {
 // The size to set for the program cache for default and low-end device cases.
 #if !BUILDFLAG(IS_ANDROID)
 const size_t kDefaultMaxProgramCacheMemoryBytes = 6 * 1024 * 1024;
+#if defined(OS_WEBOS)
+// Low end limit in webOS is the same as in Android low end, but we keep
+// desktop limit for non low end
+const size_t kLowEndMaxProgramCacheMemoryBytes = 128 * 1024;
+#endif  // defined(OS_WEBOS)
 #else
 const size_t kDefaultMaxProgramCacheMemoryBytes = 2 * 1024 * 1024;
 const size_t kLowEndMaxProgramCacheMemoryBytes = 128 * 1024;

@@ -41,7 +41,7 @@ MIRACLE_PARAMETER_FOR_INT(GetGpuDefaultMaxProgramCacheMemoryBytes,
                           "GpuDefaultMaxProgramCacheMemoryBytes",
                           kDefaultMaxProgramCacheMemoryBytes)
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || defined(OS_WEBOS)
 MIRACLE_PARAMETER_FOR_INT(GetGpuLowEndMaxProgramCacheMemoryBytes,
                           kDefaultGpuDiskCacheSize,
                           "GpuLowEndMaxProgramCacheMemoryBytes",
@@ -51,7 +51,7 @@ MIRACLE_PARAMETER_FOR_INT(GetGpuLowEndMaxProgramCacheMemoryBytes,
 }  // namespace
 
 size_t GetDefaultGpuDiskCacheSize() {
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !defined(OS_WEBOS)
   size_t custom_cache_size =
       GetCustomGpuCacheSizeBytesIfExists(switches::kGpuDiskCacheSizeKB);
   if (custom_cache_size)
