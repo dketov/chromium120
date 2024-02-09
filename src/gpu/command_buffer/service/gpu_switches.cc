@@ -75,4 +75,8 @@ const char kVulkanImplementationNameSwiftshader[] = "swiftshader";
 // used for present render result on screen.
 const char kDisableVulkanSurface[] = "disable-vulkan-surface";
 
+// Sets a limit of cached SkSurface in SharedContextState. By default it is 16
+// but 4 on low end mode for Android and webOS.
+const char kMaxCachedSkSurfaces[] = "max-cached-sk-surfaces";
+
 }  // namespace switches

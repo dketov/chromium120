@@ -261,6 +261,7 @@ static const char* const kSwitchNames[] = {
     switches::kDisableSkiaGraphite,
     switches::kDisableLowEndDeviceMode,
     switches::kForceLowEndDeviceMode,
+    switches::kMaxCachedSkSurfaces,
     switches::kProfilingAtStart,
     switches::kProfilingFile,
     switches::kProfilingFlush,

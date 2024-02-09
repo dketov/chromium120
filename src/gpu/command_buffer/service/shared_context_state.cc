@@ -5,6 +5,7 @@
 #include "gpu/command_buffer/service/shared_context_state.h"
 
 #include "base/observer_list.h"
+#include "base/strings/string_number_conversions.h"
 #include "base/strings/stringprintf.h"
 #include "base/system/sys_info.h"
 #include "base/task/single_thread_task_runner.h"
@@ -14,6 +15,7 @@
 #include "gpu/command_buffer/common/shm_count.h"
 #include "gpu/command_buffer/service/context_state.h"
 #include "gpu/command_buffer/service/gl_context_virtual.h"
+#include "gpu/command_buffer/service/gpu_switches.h"
 #include "gpu/command_buffer/service/gr_cache_controller.h"
 #include "gpu/command_buffer/service/gr_shader_cache.h"
 #include "gpu/command_buffer/service/graphite_cache_controller.h"
@@ -70,7 +72,21 @@ static constexpr size_t kInitialScratchDeserializationBufferSize = 1024;
 
 size_t MaxNumSkSurface() {
   static constexpr size_t kNormalMaxNumSkSurface = 16;
-#if BUILDFLAG(IS_ANDROID)
+
+  const base::CommandLine* command_line =
+      base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch(switches::kMaxCachedSkSurfaces)) {
+    auto max_cached_sk_surfaces_str =
+        command_line->GetSwitchValueASCII(switches::kMaxCachedSkSurfaces);
+    int max_cached_sk_surfaces;
+    if (base::StringToInt(max_cached_sk_surfaces_str,
+                          &max_cached_sk_surfaces) &&
+        max_cached_sk_surfaces > 0) {
+      return max_cached_sk_surfaces;
+    }
+  }
+
+#if BUILDFLAG(IS_ANDROID) || defined(OS_WEBOS)
   static constexpr size_t kLowEndMaxNumSkSurface = 4;
   if (base::SysInfo::IsLowEndDevice()) {
     return kLowEndMaxNumSkSurface;
