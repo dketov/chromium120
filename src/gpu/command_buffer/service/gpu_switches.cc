@@ -79,4 +79,12 @@ const char kDisableVulkanSurface[] = "disable-vulkan-surface";
 // but 4 on low end mode for Android and webOS.
 const char kMaxCachedSkSurfaces[] = "max-cached-sk-surfaces";
 
+// Force enabling compressing the GPU program cache binaries
+const char kEnableCompressGpuProgramBinaries[] =
+    "enable-compress-gpu-program-binaries";
+
+// Force disabling compressing the GPU program cache binaries
+const char kDisableCompressGpuProgramBinaries[] =
+    "disable-compress-gpu-program-binaries";
+
 }  // namespace switches

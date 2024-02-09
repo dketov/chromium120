@@ -260,6 +260,8 @@ static const char* const kSwitchNames[] = {
     switches::kEnableLowEndDeviceMode,
     switches::kDisableSkiaGraphite,
     switches::kDisableLowEndDeviceMode,
+    switches::kEnableCompressGpuProgramBinaries,
+    switches::kDisableCompressGpuProgramBinaries,
     switches::kForceLowEndDeviceMode,
     switches::kMaxCachedSkSurfaces,
     switches::kProfilingAtStart,

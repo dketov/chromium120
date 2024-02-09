@@ -34,6 +34,8 @@ GPU_EXPORT extern const char kVulkanImplementationNameNative[];
 GPU_EXPORT extern const char kVulkanImplementationNameSwiftshader[];
 GPU_EXPORT extern const char kDisableVulkanSurface[];
 GPU_EXPORT extern const char kMaxCachedSkSurfaces[];
+GPU_EXPORT extern const char kEnableCompressGpuProgramBinaries[];
+GPU_EXPORT extern const char kDisableCompressGpuProgramBinaries[];
 
 }  // namespace switches
 

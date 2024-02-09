@@ -21,6 +21,7 @@
 #include "gpu/command_buffer/service/disk_cache_proto.pb.h"
 #include "gpu/command_buffer/service/gl_utils.h"
 #include "gpu/command_buffer/service/gles2_cmd_decoder.h"
+#include "gpu/command_buffer/service/gpu_switches.h"
 #include "gpu/command_buffer/service/shader_manager.h"
 #include "gpu/config/gpu_preferences.h"
 #include "third_party/zlib/zlib.h"
@@ -251,7 +252,14 @@ std::vector<uint8_t> DecompressData(const std::vector<uint8_t>& data,
 }
 
 bool CompressProgramBinaries() {
-#if !BUILDFLAG(IS_ANDROID)
+  const auto* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch(switches::kEnableCompressGpuProgramBinaries)) {
+    return true;
+  }
+  if (command_line->HasSwitch(switches::kDisableCompressGpuProgramBinaries)) {
+    return false;
+  }
+#if !BUILDFLAG(IS_ANDROID) && !defined(OS_WEBOS)
   return false;
 #else   // !BUILDFLAG(IS_ANDROID)
   return base::SysInfo::IsLowEndDevice();
@@ -272,7 +280,10 @@ MemoryProgramCache::MemoryProgramCache(
       compress_program_binaries_(CompressProgramBinaries()),
       curr_size_bytes_(0),
       store_(ProgramLRUCache::NO_AUTO_EVICT),
-      use_shader_cache_shm_count_(use_shader_cache_shm_count) {}
+      use_shader_cache_shm_count_(use_shader_cache_shm_count) {
+  VLOG(1) << "Compress GPU program binaries: "
+          << (compress_program_binaries_ ? "yes" : "no");
+}
 
 MemoryProgramCache::~MemoryProgramCache() = default;
 
