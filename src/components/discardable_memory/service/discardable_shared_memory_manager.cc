@@ -10,10 +10,12 @@
 
 #include "base/atomic_sequence_num.h"
 #include "base/command_line.h"
+#include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/memory/discardable_memory.h"
 #include "base/memory/shared_memory_tracker.h"
+#include "base/metrics/field_trial_params.h"
 #include "base/numerics/safe_math.h"
 #include "base/process/memory.h"
 #include "base/strings/string_number_conversions.h"
@@ -41,6 +43,9 @@
 
 namespace discardable_memory {
 namespace {
+
+const base::Feature kLowEndDiscardableMemoryLimit{
+    "LowEndDiscardableMemoryLimit", base::FEATURE_ENABLED_BY_DEFAULT};
 
 const int kInvalidUniqueClientID = -1;
 
@@ -156,6 +161,16 @@ class DiscardableMemoryImpl : public base::DiscardableMemory {
   bool is_locked_;
 };
 
+BASE_FEATURE(kDiscardableMemoryCustomLimit,
+             "DiscardableMemoryCustomLimit",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+// If no value is set, ignore
+constexpr int kDiscardableMemoryCustomLimitMbUnset = -1;
+constexpr base::FeatureParam<int> kDiscardableMemoryCustomLimitParam(
+    &kDiscardableMemoryCustomLimit,
+    "limit-mb",
+    kDiscardableMemoryCustomLimitMbUnset);
+
 // Returns the default memory limit to use for discardable memory, taking
 // the amount physical memory available and other platform specific constraints
 // into account.
@@ -170,15 +185,41 @@ uint64_t GetDefaultMemoryLimit() {
 #else
 #if BUILDFLAG(IS_ANDROID)
   // Limits the number of FDs used to 32, assuming a 4MB allocation size.
+  // In webOS, we also use this more conservative approach.
   uint64_t max_default_memory_limit = 128 * kMegabyte;
 #else
   uint64_t max_default_memory_limit = 512 * kMegabyte;
 #endif
 
   // Use 1/8th of discardable memory on low-end devices.
-  if (base::SysInfo::IsLowEndDevice())
+  auto maybe_override_low_end_limit =
+      base::FeatureList::GetStateIfOverridden(kLowEndDiscardableMemoryLimit);
+  if (base::FeatureList::IsEnabled(kLowEndDiscardableMemoryLimit) &&
+      (maybe_override_low_end_limit.has_value() ||
+       base::SysInfo::IsLowEndDevice())) {
+#if defined(OS_WEBOS)
+    max_default_memory_limit = 16 * kMegabyte;
+#else
     max_default_memory_limit /= 8;
 #endif
+  }
+#endif
+
+  if (base::FeatureList::IsEnabled(kDiscardableMemoryCustomLimit)) {
+    int new_limit = kDiscardableMemoryCustomLimitParam.Get();
+    if (new_limit == kDiscardableMemoryCustomLimitMbUnset) {
+      LOG(ERROR) << "DiscardableMemoryCustomLimit set without a parameter";
+    } else if (new_limit < 1) {
+      LOG(ERROR) << "Ignoring a custom memory limit below 1MB";
+    } else {
+      max_default_memory_limit = new_limit * kMegabyte;
+      if (new_limit < 8) {
+        LOG(WARNING) << "Setting custom disardable memory limit below 8MB";
+      }
+    }
+  }
+  VLOG(1) << "Discardable memory limit before checking environment: "
+          << max_default_memory_limit << " bytes";
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   base::FilePath shmem_dir;
@@ -243,6 +284,7 @@ DiscardableSharedMemoryManager::DiscardableSharedMemoryManager()
       << "A DiscardableSharedMemoryManager already exists in this process.";
   g_instance = this;
   DCHECK_NE(memory_limit_, 0u);
+  VLOG(1) << "Discardable memory limit: " << default_memory_limit_ << " bytes";
   enforce_memory_policy_callback_ =
       base::BindRepeating(&DiscardableSharedMemoryManager::EnforceMemoryPolicy,
                           weak_ptr_factory_.GetWeakPtr());
