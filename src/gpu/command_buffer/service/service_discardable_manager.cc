@@ -36,6 +36,13 @@ size_t DiscardableCacheSizeLimit() {
   const int kLargeCacheSizeMemoryThresholdMB = 4 * 1024;
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if defined(OS_WEBOS)
+  // Match low end image memory cache
+  if (base::SysInfo::IsLowEndDevice()) {
+    const size_t kLowEndCacheSizeBytes = 32 * 1024 * 1024;
+    return kLowEndCacheSizeBytes;
+  }
+#endif
 #if BUILDFLAG(IS_ANDROID)
   if (base::SysInfo::IsLowEndDevice()) {
     return kLowEndCacheSizeBytes;
