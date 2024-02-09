@@ -244,6 +244,15 @@ size_t BlinkPlatformImpl::MaxDecodedImageBytes() {
   return base::SysInfo::AmountOfPhysicalMemory() / 25;
 #else
   size_t max_decoded_image_byte_limit = kNoDecodedImageByteLimit;
+
+#if defined(OS_WEBOS)
+  // In webOS, specially for high resolution devices, even being low end, we
+  // still limit the decoded images. I.e. for 384MB of physical memory
+  // available, it allows 6M pixels.
+  if (base::SysInfo::IsLowEndDevice()) {
+    max_decoded_image_byte_limit = base::SysInfo::AmountOfPhysicalMemory() / 16;
+  }
+#endif
   base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
   if (command_line.HasSwitch(switches::kMaxDecodedImageSizeMb)) {
     if (base::StringToSizeT(
