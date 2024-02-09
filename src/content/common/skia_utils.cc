@@ -58,6 +58,12 @@ void InitializeSkia() {
       base::SysInfo::IsLowEndDeviceOrPartialLowEndModeEnabled() ? kMB : 8 * kMB;
   SkGraphics::SetFontCacheLimit(font_cache_limit);
 #else
+  // Preserve being able to change limits from command line, but set
+  // same defaults as for Android.
+#if defined(OS_WEBOS)
+  font_cache_limit = base::SysInfo::IsLowEndDevice() ? kMB : 8 * kMB;
+  SkGraphics::SetFontCacheLimit(font_cache_limit);
+#endif
   if (cmd.HasSwitch(switches::kSkiaFontCacheLimitMb)) {
     if (base::StringToSizeT(
             cmd.GetSwitchValueASCII(switches::kSkiaFontCacheLimitMb),
@@ -81,6 +87,11 @@ void InitializeSkia() {
     // being to reduce memory usage, only control cache memory usage.
     SkGraphics::SetFontCacheLimit(kMB);
   }
+
+#if defined(OS_WEBOS)
+  VLOG(1) << "Font cache limit: " << SkGraphics::GetFontCacheLimit()
+          << " bytes";
+#endif
 
   InitSkiaEventTracer();
   base::trace_event::MemoryDumpManager::GetInstance()->RegisterDumpProvider(
