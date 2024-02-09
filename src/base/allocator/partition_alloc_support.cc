@@ -64,7 +64,7 @@
 #include "base/allocator/partition_allocator/src/partition_alloc/starscan/stats_reporter.h"
 #endif  // BUILDFLAG(USE_STARSCAN)
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || defined(OS_WEBOS)
 #include "base/system/sys_info.h"
 #endif
 
@@ -1335,6 +1335,18 @@ void PartitionAllocSupport::ReconfigureAfterTaskRunnerInit(
               GetPartitionAllocLargeThreadCacheSizeValueForLowRAMAndroid());
     }
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if defined(OS_WEBOS)
+    // In webOS, criteria for limiting largest cached size is just
+    // low end mode. But only apply if large size has not been explicitely
+    // enabled.
+    auto maybe_override = base::FeatureList::GetStateIfOverridden(
+        base::features::kPartitionAllocLargeThreadCacheSize);
+    if (!maybe_override.has_value() && base::SysInfo::IsLowEndDevice()) {
+      largest_cached_size_ =
+          ::partition_alloc::ThreadCacheLimits::kDefaultSizeThreshold;
+    }
+#endif
 
     ::partition_alloc::ThreadCache::SetLargestCachedSize(largest_cached_size_);
   }
