@@ -3682,6 +3682,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
     switches::kWebRtcMaxCaptureFramerate,
     switches::kEnableLowEndDeviceMode,
     switches::kDisableLowEndDeviceMode,
+    switches::kForceLowEndDeviceMode,
     switches::kDisallowNonExactResourceReuse,
 #if BUILDFLAG(IS_ANDROID)
     switches::kDisableMediaSessionAPI,

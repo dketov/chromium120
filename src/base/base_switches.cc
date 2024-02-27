@@ -28,7 +28,7 @@ const char kEnableCrashReporter[]           = "enable-crash-reporter";
 // Comma-separated list of feature names to enable. See also kDisableFeatures.
 const char kEnableFeatures[] = "enable-features";
 
-// Force low-end device mode when set.
+// Force low-end device mode when set (faking 512MB physical memory).
 const char kEnableLowEndDeviceMode[]        = "enable-low-end-device-mode";
 
 // Enable the use of background thread priorities for background tasks in the
@@ -54,6 +54,10 @@ const char kFieldTrialHandle[] = "field-trial-handle";
 // non-browser process, using the same format. See
 // FieldTrialList::CreateTrialsFromString() in field_trial.h for details.
 const char kForceFieldTrials[]              = "force-fieldtrials";
+
+// Force low-end device mode, but without faking physical memory as
+// --enable-low-end-device mode, which is used for unit tests.
+const char kForceLowEndDeviceMode[] = "force-low-end-device-mode";
 
 // Generates full memory crash dump.
 const char kFullMemoryCrashReport[] = "full-memory-crash-report";
