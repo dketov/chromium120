@@ -228,6 +228,7 @@ class DWriteFontCollectionProxy;
 class DWriteFontProxyImpl;
 class EmergencyTraceFinalisationCoordinator;
 class InProcessUtilityThread;
+class NavigationRequest;
 class NestedMessagePumpAndroid;
 class NetworkServiceInstancePrivate;
 class PepperPrintSettingsManagerImpl;
@@ -645,7 +646,9 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBlocking {
   friend class base::win::OSInfo;
   friend class content::WebContentsImpl;  // http://crbug.com/1262162
 #endif
-
+#if defined(USE_NEVA_APPRUNTIME)
+  friend class content::NavigationRequest;
+#endif
   // Sorted by function name (with namespace), ignoring the return type.
   friend bool ::EnsureBrowserStateDirectoriesCreated(const base::FilePath&,
                                                      const base::FilePath&,
