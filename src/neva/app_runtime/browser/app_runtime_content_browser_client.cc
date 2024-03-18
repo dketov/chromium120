@@ -742,7 +742,7 @@ bool AppRuntimeContentBrowserClient::WillCreateURLLoaderFactory(
       extensions::BrowserContextKeyedAPIFactory<extensions::WebRequestAPI>::Get(
           browser_context);
   bool use_proxy = web_request_api->MaybeProxyURLLoaderFactory(
-      browser_context, frame, render_process_id, type, std::move(navigation_id),
+      browser_context, frame, render_process_id, type, navigation_id,
       ukm_source_id, factory_receiver, header_client,
       std::move(navigation_response_task_runner));
   if (bypass_redirect_checks)
