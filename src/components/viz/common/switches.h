@@ -46,6 +46,8 @@ VIZ_COMMON_EXPORT bool UseVizFMPWithTimeout();
 VIZ_COMMON_EXPORT uint32_t GetVizFMPTimeout();
 #endif
 
+VIZ_COMMON_EXPORT extern const char kMaxNumberOfSavedFrames[];
+
 }  // namespace switches
 
 #endif  // COMPONENTS_VIZ_COMMON_SWITCHES_H_

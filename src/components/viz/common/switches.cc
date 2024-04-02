@@ -67,6 +67,10 @@ const char kTintCompositedContentModulate[] =
 // The debug borders are offset from the layer rect by a few pixels for clarity.
 const char kShowDCLayerDebugBorders[] = "show-dc-layer-debug-borders";
 
+// Maximum number of saved frames in the FrameEvictionManager. If not set,
+// the number can go from 1 to 5. Anything bigger than 5 is ignored.
+const char kMaxNumberOfSavedFrames[] = "max-number-of-saved-frames";
+
 #if defined(USE_NEVA_APPRUNTIME)
 // Enables viz based First Meaninful Paint detection with milliseconds to wait
 // to activate display scheduling after FMP detection. Timeout is available

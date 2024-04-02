@@ -7,17 +7,20 @@
 #include <algorithm>
 
 #include "base/check_op.h"
+#include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/memory/memory_pressure_listener.h"
 #include "base/memory/memory_pressure_monitor.h"
+#include "base/strings/string_number_conversions.h"
 #include "base/system/sys_info.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/memory_dump_manager.h"
 #include "build/build_config.h"
 #include "components/viz/common/features.h"
+#include "components/viz/common/switches.h"
 
 namespace viz {
 namespace {
@@ -135,6 +138,15 @@ FrameEvictionManager::FrameEvictionManager()
 #else
       std::min(5, 2 + (base::SysInfo::AmountOfPhysicalMemoryMB() / 256));
 #endif
+  auto* command_line = base::CommandLine::ForCurrentProcess();
+  unsigned switch_value;
+  if (command_line->HasSwitch(switches::kMaxNumberOfSavedFrames) &&
+      base::StringToUint(
+          command_line->GetSwitchValueASCII(switches::kMaxNumberOfSavedFrames),
+          &switch_value)) {
+    max_number_of_saved_frames_ = std::clamp(switch_value, 1U, 5U);
+  }
+  VLOG(1) << "Max number of saved frames: " << max_number_of_saved_frames_;
 
   // For WebView, we may not have a default task runner.
   if (base::SingleThreadTaskRunner::HasCurrentDefault()) {
