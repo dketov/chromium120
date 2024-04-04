@@ -732,13 +732,13 @@ void RootCompositorFrameSinkImpl::DisplayDidReceiveCALayerParams(
 
 void RootCompositorFrameSinkImpl::DisplayDidCompleteSwapWithSize(
     const gfx::Size& pixel_size) {
-#if defined(USE_NEVA_APPRUNTIME)
-  if (display_client_)
-    display_client_->DidCompleteSwap();
-#endif
 #if BUILDFLAG(IS_ANDROID)
   if (display_client_ && enable_swap_competion_callback_)
     display_client_->DidCompleteSwapWithSize(pixel_size);
+#elif defined(USE_NEVA_APPRUNTIME)
+  if (display_client_) {
+    display_client_->DidCompleteSwap();
+  }
 #elif BUILDFLAG(IS_OZONE)
 #if BUILDFLAG(OZONE_PLATFORM_X11)
   if (display_client_ && pixel_size != last_swap_pixel_size_) {
@@ -746,7 +746,8 @@ void RootCompositorFrameSinkImpl::DisplayDidCompleteSwapWithSize(
     display_client_->DidCompleteSwapWithNewSize(last_swap_pixel_size_);
   }
 #endif  // BUILDFLAG(OZONE_PLATFORM_X11)
-#else   // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OZONE)
+#else   // !BUILDFLAG(IS_ANDROID) && !defined(USE_NEVA_APPRUNTIME) &&
+        // !BUILDFLAG(IS_OZONE)
   NOTREACHED();
 #endif
 }
