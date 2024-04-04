@@ -42,13 +42,10 @@ PlatformRegistration::PlatformRegistration(
   base::CommandLine* cmd = base::CommandLine::ForCurrentProcess();
   if (cmd->HasSwitch(switches::kShellAppId) &&
       cmd->HasSwitch(switches::kWebOSLunaServiceName)) {
-    const std::string& application_id =
-        cmd->GetSwitchValueASCII(switches::kShellAppId);
-    const std::string& application_name =
-        cmd->GetSwitchValueASCII(switches::kWebOSLunaServiceName);
     delegate_ =
         pal::PlatformFactory::Get()->CreateApplicationRegistratorDelegate(
-            application_id, application_name,
+            cmd->GetSwitchValueASCII(switches::kShellAppId),
+            cmd->GetSwitchValueASCII(switches::kWebOSLunaServiceName),
             base::BindRepeating(&PlatformRegistration::OnMessage,
                                 base::Unretained(this)));
     if (!delegate_) {
@@ -58,7 +55,8 @@ PlatformRegistration::PlatformRegistration(
 
     if (delegate_->GetStatus() !=
         pal::ApplicationRegistratorDelegate::Status::kSuccess) {
-      LOG(ERROR) << __func__ << "(): Application " << application_name
+      LOG(ERROR) << __func__ << "(): Application "
+                 << cmd->GetSwitchValueASCII(switches::kWebOSLunaServiceName)
                  << " was not registered.";
     }
   }
