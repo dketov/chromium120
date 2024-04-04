@@ -25,7 +25,7 @@
 namespace ozonewayland {
 namespace {
 
-char* StateToString(uint32_t state) {
+const char* StateToString(uint32_t state) {
   switch (state) {
     case WL_WEBOS_SHELL_SURFACE_STATE_MINIMIZED:
       return "MINIMIZED";
