@@ -42,7 +42,7 @@ class CallbackHelper<R(Args...)> {
 
   struct Callback {
     virtual ~Callback() = default;
-    virtual void operator()(Args...);
+    virtual void operator()(Args...) = 0;
   };
 
   CallbackHelper() = default;

@@ -23,9 +23,10 @@ class WrapOnceCallback<R(Args...)>
   WrapOnceCallback(CallbackType callback) : callback_(std::move(callback)) {}
   ~WrapOnceCallback() override {}
 
-  void operator()(Args... args) {
-    if (callback_)
+  void operator()(Args... args) override {
+    if (callback_) {
       std::move(callback_).Run(std::forward<Args>(args)...);
+    }
   }
 
  private:
