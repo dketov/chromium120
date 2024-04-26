@@ -286,6 +286,17 @@ void URLLoader::Context::Start(
     return;
   }
 
+#if 0 //  TODO(M120): Need to re-enable when defined(USE_NEVA_APPRUNTIME)
+  if (url_request_extra_data->allow_third_party_cookies().has_value()) {
+    bool allow = url_request_extra_data->allow_third_party_cookies().value();
+    if (allow) {
+      loader_options &= ~network::mojom::kURLLoadOptionBlockThirdPartyCookies;
+    } else {
+      loader_options |= network::mojom::kURLLoadOptionBlockThirdPartyCookies;
+    }
+  }
+#endif
+
   TRACE_EVENT_WITH_FLOW0("loading", "URLLoader::Context::Start", this,
                          TRACE_EVENT_FLAG_FLOW_OUT);
   net::NetworkTrafficAnnotationTag tag =

@@ -347,6 +347,10 @@ class CORE_EXPORT DocumentLoader : public GarbageCollected<DocumentLoader>,
     return devtools_navigation_token_;
   }
 
+#if defined(USE_NEVA_APPRUNTIME)
+    void CommitNonFirstMeaningfulPaintAfterLoad();
+#endif
+
   UseCounterImpl& GetUseCounter() { return use_counter_; }
 
   PrefetchedSignedExchangeManager* GetPrefetchedSignedExchangeManager() const;

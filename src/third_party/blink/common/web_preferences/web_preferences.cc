@@ -13,6 +13,11 @@
 #include "third_party/blink/public/mojom/webpreferences/web_preferences.mojom.h"
 #include "ui/base/ui_base_switches_util.h"
 
+#if defined(USE_NEVA_APPRUNTIME)
+#include "base/command_line.h"
+#include "third_party/blink/public/common/switches.h"
+#endif
+
 namespace {
 
 bool IsTouchDragDropEnabled() {
@@ -152,6 +157,7 @@ WebPreferences::WebPreferences()
       text_tracks_enabled(false),
       text_track_margin_percentage(0.0f),
       immersive_mode_enabled(false),
+      accessibility_explore_by_mouse_enabled(false),
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_APPLE)
       double_tap_to_zoom_enabled(true),
 #else
@@ -201,6 +207,12 @@ WebPreferences::WebPreferences()
       presentation_receiver(false),
       media_controls_enabled(true),
       do_not_update_selection_on_mutating_selection_range(false),
+#if defined(USE_NEVA_APPRUNTIME)
+      x_frame_options_cross_origin_allowed(false),
+#endif
+#if defined(USE_NEVA_MEDIA)
+      max_timeupdate_event_frequency(250),
+#endif
       autoplay_policy(
           blink::mojom::AutoplayPolicy::kDocumentUserActivationRequired),
       require_transient_activation_for_get_display_media(true),
@@ -231,6 +243,12 @@ WebPreferences::WebPreferences()
   // may be refined via resource files for the Chrome profile, in order to take
   // into account platform-specific availability of math fonts.
   math_font_family_map[web_pref::kCommonScript] = u"Latin Modern Math";
+
+#if defined(USE_NEVA_APPRUNTIME)
+  allow_scripts_to_close_windows =
+      base::CommandLine::ForCurrentProcess()->HasSwitch(
+          blink::switches::kAllowScriptsToCloseWindows);
+#endif
 }
 
 WebPreferences::WebPreferences(const WebPreferences& other) = default;

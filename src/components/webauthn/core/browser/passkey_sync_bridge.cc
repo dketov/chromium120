@@ -261,7 +261,6 @@ PasskeySyncBridge::GetPasskeysForRelyingPartyId(
 }
 
 bool PasskeySyncBridge::DeletePasskey(const std::string& credential_id) {
-  // Find the credential with the given |credential_id|.
   const auto passkey_it =
       base::ranges::find_if(data_, [&credential_id](const auto& passkey) {
         return passkey.second.credential_id() == credential_id;
@@ -312,7 +311,6 @@ bool PasskeySyncBridge::DeletePasskey(const std::string& credential_id) {
 
 bool PasskeySyncBridge::UpdatePasskey(const std::string& credential_id,
                                       PasskeyChange change) {
-  // Find the credential with the given |credential_id|.
   const auto passkey_it =
       base::ranges::find_if(data_, [&credential_id](const auto& passkey) {
         return passkey.second.credential_id() == credential_id;

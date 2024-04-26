@@ -1,0 +1,183 @@
+#!/usr/bin/python3
+
+import argparse
+import json
+import os, sys
+import subprocess
+
+prefix_map = {
+    "pro-main": "pro",
+    "main"    : "ose"
+}
+
+def select_from_options(options, title='Pick an option', prompt='Your choice: ', default=1):
+    user_input = ''
+
+    input_message = f'{title}\n'
+    for index, item in enumerate(options):
+        input_message += f'{index+1}) {item}\n'
+
+    input_message += prompt
+    input_message += f"(Default: {default}) "
+
+    while user_input not in options:
+        user_input = input(input_message)
+        if not len(user_input):
+            user_input = default
+        try:
+            number = int(user_input)-1
+            if number >= 0 and number < len(options):
+                user_input = options[number]
+        except Exception:
+            continue
+
+    return user_input
+
+def yn_question(prompt="Continue ? (Y/n)"):
+    answer = ''
+    input_message = f'{prompt}: '
+    while answer.lower() not in ['y', 'n']:
+        answer = input(input_message)
+    return answer
+
+def check_returncode(cmd):
+    return subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+
+# Find chromium version info from the chrome/VERSION file
+def find_version_info(head):
+    major=''
+    build=''
+    info = subprocess.check_output(['git', 'show', f'{head}:chrome/VERSION']).strip().decode(sys.stdout.encoding)
+    for l in info.split('\n'):
+        (name, value) = l.strip().split('=')
+        if name == 'MAJOR':
+            major = value
+        if name == 'BUILD':
+            build = value
+    return (major, build)
+
+# Find the latest tag for the major, build
+def find_latest_google_tag(major, build):
+    result = list(map(lambda x: x.split('\t'), subprocess.check_output(['git', 'ls-remote', '--tags', 'google', f'{major}.0.{build}.*']).decode(sys.stdout.encoding).strip().split("\n")))
+    sorted_tags = sorted(result, key=lambda t: int(t[1].split('.')[-1]))
+    tagnames = list(map(lambda x: x[1].split('/')[-1], sorted_tags))
+    print(f"Latest tagname is {tagnames[-1]}")
+    selected_tag = None
+    while selected_tag not in tagnames:
+        selected_tag = input("Tagname to merge: ")
+        if not len(selected_tag):
+            selected_tag = tagnames[-1]
+    return selected_tag
+
+def execute_shell_cmd(cmd):
+    if subprocess.run(['bash', '-c', cmd]).returncode:
+        print(f"Failed during '{cmd}'")
+
+def cmd_prepare(dry_run):
+    cmd_prefix = "" if not dry_run else "echo [dry-run] "
+    release_info = {}
+    # check local modification
+    if check_returncode(['git', 'diff', '--ignore-submodules', '--exit-code']) and not dry_run:
+        print("\nError:")
+        print("There are changed files. Please use git stash before prepare_release")
+        sys.exit(1)
+    branches = ['main', 'pro-main']
+    branch = select_from_options(branches)
+    release_info['branch'] = branch
+
+    print(f"\nUpdating {branch}...")
+    execute_shell_cmd(f'git fetch origin {branch};git log -10 --oneline --decorate --first-parent FETCH_HEAD')
+    history = subprocess.check_output(['git', 'log', '-10', '--oneline', '--decorate', '--first-parent', f'remotes/origin/{branch}']).decode(sys.stdout.encoding).strip().split('\n')
+
+    head = select_from_options(history, '\nPick a hash for create release branch').split()[0]
+    print(f"\nUsing {head}")
+    release_info[branch+'_HEAD'] = head
+
+    (CHROME_MAJOR, CHROME_BUILD) = find_version_info(head)
+    release_info['major'] = CHROME_MAJOR
+    release_info['build'] = CHROME_BUILD
+    print(f"\nNOTE: You are creating release branch for chromium{CHROME_MAJOR}/{CHROME_BUILD}")
+
+    # Create release branch
+    branch_prefix = prefix_map[branch]
+    branch_name = f'{branch_prefix}/chromium{CHROME_MAJOR}'
+    if check_returncode(['git', 'rev-parse', '--verify', branch_name]):
+        execute_shell_cmd(f'git branch {branch_name}')
+
+    execute_shell_cmd(f'{cmd_prefix}git checkout {branch_name}; {cmd_prefix}git reset --hard {head}')
+    # Tag branch point for the release branch.
+    rel_tagname = f'rel/chromium{CHROME_MAJOR}/{branch_prefix}'
+    release_info['rel_tagname'] = rel_tagname
+    execute_shell_cmd(f'{cmd_prefix}git tag {rel_tagname} {head}')
+
+    # add google remote if not exists to merge google chromium stable branch
+    if check_returncode(['git', 'remote', 'get-url', 'google']):
+        execute_shell_cmd('git remote add google https://chromium.googlesource.com/chromium/src')
+
+    # fetch without tags
+    print(f'\nFetching stable branch head of {CHROME_BUILD}')
+    execute_shell_cmd(f'git fetch -n google branch-heads/{CHROME_BUILD}:remotes/google/branch-heads/{CHROME_BUILD}')
+
+    # find latest tag for {CHROME_BUILD}
+    google_tag_info = find_latest_google_tag(CHROME_MAJOR, CHROME_BUILD)
+    version = google_tag_info
+    google_tag = f"google/{version}"
+    release_info['google_tag'] = google_tag
+    print(f'\nFetching google tag={google_tag}')
+    execute_shell_cmd(f'git fetch google "refs/tags/{version}:refs/tags/{google_tag}" --no-tags')
+
+    with open('release_info.json', 'w') as f:
+        json.dump(release_info, f, indent=2)
+    print(f"\nMerging {google_tag} to chromium{CHROME_MAJOR}")
+    print(f"\nPlease run git merge with the below command.")
+    print(f'git merge {google_tag}')
+
+def cmd_push(dry_run):
+    cmd_prefix = "" if not dry_run else "echo [dry-run] "
+
+    with open("release_info.json") as f:
+        release_info = json.load(f)
+    branch = release_info['branch']
+    head = release_info[f"{branch}_HEAD"]
+    major = release_info['major']
+    build = release_info['build']
+    google_tag = release_info['google_tag']
+    rel_tagname = release_info['rel_tagname']
+
+    # create branch head from pro-main
+    branch_prefix = prefix_map[branch]
+    print(f'\nPush branch:{branch_prefix}/chromium{major} to origin')
+    execute_shell_cmd(f'{cmd_prefix}git push origin {head}:refs/heads/{branch_prefix}/chromium{major}')
+    # create tag for the branch out point of the release
+    # rel_tagname is rel/chromium{MAJOR}/{branch_prefix} (e.g rel/chromium108/pro)
+    if subprocess.check_output(['git', 'tag', '-l', rel_tagname]).decode(sys.stdout.encoding) != rel_tagname:
+        print(f'\nInfo: tagname {rel_tagname} doesn\'t exist. Creating {rel_tagname}')
+        execute_shell_cmd(f'{cmd_prefix}git tag {rel_tagname} {head}')
+    print(f'\nPush tag:{rel_tagname} to origin')
+    execute_shell_cmd(f'{cmd_prefix}git push origin {rel_tagname}')
+
+    # push google stable branch head
+    print(f'\nPush branch:google/branch-heads/{build} to origin')
+    execute_shell_cmd(f"{cmd_prefix}git push origin {google_tag}:refs/heads/google/branch-heads/{build}")
+
+    # push google stable branch tag it
+    print(f'\nPush tag:{google_tag} to origin')
+    execute_shell_cmd(f"{cmd_prefix}git push origin {google_tag}")
+
+    print("\nNow it is ready to push your merge commit to gerrit")
+    print("\nTry the below command.")
+    print(f"git push origin HEAD:refs/for/{branch_prefix}/chromium{major}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument("--dry-run", action="store_true", default=False)
+    sub_parser = parser.add_subparsers(dest='cmd', description="command for the tool")
+    sub_parser.required = True
+    sub_parser.add_parser('prepare', help="fetch latest HEAD for the release and execute git merge stable branch tag")
+    sub_parser.add_parser('push', help="push release branch and stable branch and tag to gerrit")
+    args = parser.parse_args()
+
+    if args.cmd == "prepare":
+        cmd_prepare(args.dry_run)
+    elif args.cmd == "push":
+        cmd_push(args.dry_run)

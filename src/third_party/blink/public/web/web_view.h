@@ -476,6 +476,12 @@ class BLINK_EXPORT WebView {
   // Returns the number of live WebView instances in this process.
   static size_t GetWebViewCount();
 
+#if defined(USE_NEVA_APPRUNTIME)
+  // Set WebSettingsImpl::m_keepAliveWebApp to meet timing.
+  // The injection calls this function directly
+  virtual void SetKeepAliveWebApp(bool keep_alive) = 0;
+#endif
+
   // Sets whether web or OS-level Attribution Reporting is supported. See
   // https://github.com/WICG/attribution-reporting-api/blob/main/app_to_web.md
   virtual void SetPageAttributionSupport(

@@ -58,6 +58,13 @@ class FontVariantEastAsian {
     return fields_as_unsigned_ == other.fields_as_unsigned_;
   }
 
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+  bool operator!=(const FontVariantEastAsian& other) const {
+    return !(*this == other);
+  }
+#endif  // (__cplusplus < 202002L)
+
   String ToString() const;
 
  private:

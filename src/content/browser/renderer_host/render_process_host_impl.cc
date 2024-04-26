@@ -79,6 +79,7 @@
 #include "components/tracing/common/tracing_switches.h"
 #include "components/viz/common/switches.h"
 #include "components/viz/host/gpu_client.h"
+#include "components/watchdog/switches.h"
 #include "content/browser/bad_message.h"
 #include "content/browser/blob_storage/blob_registry_wrapper.h"
 #include "content/browser/blob_storage/file_backed_blob_factory_worker_impl.h"
@@ -267,6 +268,31 @@
 
 #if BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
 #include "content/browser/media/key_system_support_impl.h"
+#endif
+
+#if defined(USE_NEVA_APPRUNTIME)
+#include "base/neva/base_switches.h"
+#include "content/public/common/content_neva_switches.h"
+#include "neva/pal_service/pal_service.h"
+#include "neva/pal_service/public/mojom/memorymanager.mojom.h"
+#include "neva/pal_service/public/mojom/os_crypt.mojom.h"
+#include "neva/pal_service/public/mojom/sample.mojom.h"
+#include "neva/pal_service/public/mojom/system_servicebridge.mojom.h"
+
+#if defined(ENABLE_NETWORK_ERROR_PAGE_CONTROLLER_WEBAPI)
+#include "neva/pal_service/public/mojom/network_error_page_controller.mojom.h"
+#endif  // defined(ENABLE_NETWORK_ERROR_PAGE_CONTROLLER_WEBAPI)
+
+#if defined(ENABLE_BROWSER_SHELL)
+#include "neva/browser_shell/service/public/browser_shell_service.h"
+#include "neva/browser_shell/service/public/mojom/browser_shell_service.mojom.h"
+#endif  // defined(ENABLE_BROWSER_SHELL)
+#endif  // defined(USE_NEVA_APPRUNTIME)
+
+#if defined(USE_NEVA_MEDIA)
+#include "media/base/media_switches_neva.h"
+#include "neva/neva_media_service/neva_media_service.h"
+#include "neva/neva_media_service/public/mojom/media_player.mojom.h"
 #endif
 
 #if BUILDFLAG(ENABLE_PLUGINS)
@@ -1291,10 +1317,14 @@ size_t RenderProcessHost::GetMaxRendererProcessCount() {
   if (client_override)
     return client_override;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || defined(OS_WEBOS)
   // On Android we don't maintain a limit of renderer process hosts - we are
   // happy with keeping a lot of these, as long as the number of live renderer
   // processes remains reasonable, and on Android the OS takes care of that.
+  //
+  // On webOS memory manager takes care of limiting the number of running
+  // applications, and handling low and critical memory situations. Because
+  // of this, a lower limit is not really required.
   return std::numeric_limits<size_t>::max();
 #else
   // On other platforms, calculate the maximum number of renderer process hosts
@@ -1744,6 +1774,12 @@ bool RenderProcessHostImpl::Init() {
     shutdown_requested_ = false;
   }
 
+#if defined(USE_NEVA_APPRUNTIME)
+  memory_pressure_listener_ = std::make_unique<base::MemoryPressureListener>(
+      FROM_HERE, base::BindRepeating(&RenderProcessHostImpl::OnMemoryPressure,
+                                     instance_weak_factory_.GetWeakPtr()));
+#endif  // defined(USE_NEVA_APPRUNTIME)
+
   last_init_time_ = base::TimeTicks::Now();
   return true;
 }
@@ -2027,12 +2063,28 @@ void RenderProcessHostImpl::CreatePaymentManagerForOrigin(
 void RenderProcessHostImpl::CreateNotificationService(
     GlobalRenderFrameHostId rfh_id,
     const RenderProcessHost::NotificationServiceCreatorType creator_type,
-    const blink::StorageKey& storage_key,
+    const blink::StorageKey& const_storage_key,
     mojo::PendingReceiver<blink::mojom::NotificationService> receiver) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   RenderFrameHost* rfh = RenderFrameHost::FromID(rfh_id);
   WeakDocumentPtr weak_document_ptr =
       rfh ? rfh->GetWeakDocumentPtr() : WeakDocumentPtr();
+  blink::StorageKey storage_key = const_storage_key;
+  const url::Origin& const_origin = const_storage_key.origin();
+
+#if defined(USE_NEVA_APPRUNTIME)
+  // Origin may contain file security origin if it is created from service
+  // worker. we drop file security origin for notification service since we are
+  // using file security origin only for service worker blink::StorageKey
+  if (const_origin.scheme() == url::kFileScheme) {
+    url::Origin origin =
+        url::Origin::CreateFromNormalizedTuple(url::kFileScheme, "", 0);
+    if (const_origin.get_webapp_id())
+      origin.set_webapp_id(*const_origin.get_webapp_id());
+    storage_key = storage_key.WithOrigin(origin);
+  }
+#endif
+
   switch (creator_type) {
     case RenderProcessHost::NotificationServiceCreatorType::kServiceWorker:
     case RenderProcessHost::NotificationServiceCreatorType::kSharedWorker:
@@ -2044,7 +2096,6 @@ void RenderProcessHostImpl::CreateNotificationService(
     }
     case RenderProcessHost::NotificationServiceCreatorType::kDocument: {
       CHECK(rfh);
-
       storage_partition_impl_->GetPlatformNotificationContext()->CreateService(
           this, storage_key, rfh->GetLastCommittedURL(), weak_document_ptr,
           creator_type, std::move(receiver));
@@ -2292,6 +2343,66 @@ void RenderProcessHostImpl::WriteIntoTrace(
 
 void RenderProcessHostImpl::RegisterMojoInterfaces() {
   auto registry = std::make_unique<service_manager::BinderRegistry>();
+  VLOG(1) << __func__;
+
+#if defined(USE_NEVA_APPRUNTIME)
+  AddUIThreadInterface(
+      registry.get(),
+      base::BindRepeating(
+          [](mojo::PendingReceiver<pal::mojom::MemoryManager> receiver) {
+            pal::GetPalService(content::GetUIThreadTaskRunner({}))
+                .BindMemoryManager(std::move(receiver));
+          }));
+
+  AddUIThreadInterface(
+      registry.get(),
+      base::BindRepeating(
+          [](mojo::PendingReceiver<pal::mojom::Sample> receiver) {
+            pal::GetPalService(content::GetUIThreadTaskRunner({}))
+                .BindSample(std::move(receiver));
+          }));
+
+  AddUIThreadInterface(
+      registry.get(),
+      base::BindRepeating(
+          [](mojo::PendingReceiver<pal::mojom::SystemServiceBridgeProvider>
+                 receiver) {
+            pal::GetPalService(content::GetUIThreadTaskRunner({}))
+                .BindSystemServiceBridgeProvider(std::move(receiver));
+          }));
+
+#if defined(ENABLE_NETWORK_ERROR_PAGE_CONTROLLER_WEBAPI)
+  AddUIThreadInterface(
+      registry.get(),
+      base::BindRepeating(
+          [](mojo::PendingReceiver<pal::mojom::NetworkErrorPageController>
+                 receiver) {
+            pal::GetPalService(content::GetUIThreadTaskRunner({}))
+                .BindNetworkErrorPageController(std::move(receiver));
+          }));
+#endif  // defined(ENABLE_NETWORK_ERROR_PAGE_CONTROLLER_WEBAPI)
+
+#if defined(ENABLE_BROWSER_SHELL)
+  AddUIThreadInterface(
+      registry.get(),
+      base::BindRepeating(
+          [](mojo::PendingReceiver<browser_shell::mojom::ShellService>
+              receiver) {
+            browser_shell::BindShellServiceReceiver(std::move(receiver));
+          }));
+#endif  // defined(ENABLE_BROWSER_SHELL)
+#endif  // defined(USE_NEVA_APPRUNTIME)
+
+#if defined(USE_NEVA_MEDIA)
+  AddUIThreadInterface(
+      registry.get(),
+      base::BindRepeating(
+          [](mojo::PendingReceiver<neva_media::mojom::MediaServiceProvider>
+                 receiver) {
+            neva_media::GetNevaMediaService(content::GetUIThreadTaskRunner({}))
+                .BindMediaServiceProvider(std::move(receiver));
+          }));
+#endif
 
   AddUIThreadInterface(
       registry.get(),
@@ -2825,6 +2936,22 @@ bool RenderProcessHostImpl::AreRefCountsDisabled() {
 mojom::Renderer* RenderProcessHostImpl::GetRendererInterface() {
   return renderer_interface_.get();
 }
+
+#if defined(USE_NEVA_APPRUNTIME)
+void RenderProcessHostImpl::OnMemoryPressure(
+    base::MemoryPressureListener::MemoryPressureLevel level) {
+  base::MemoryPressureListener::MemoryPressureLevel adjusted_level = level;
+
+  // Reclaim memory aggressively in backgrounded process.
+  if (level == base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_MODERATE &&
+      IsProcessBackgrounded()) {
+    adjusted_level =
+        base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL;
+  }
+
+  GetRendererInterface()->OnSystemMemoryPressureLevelChanged(adjusted_level);
+}
+#endif  // defined(USE_NEVA_APPRUNTIME)
 
 ProcessLock RenderProcessHostImpl::GetProcessLock() const {
   return ChildProcessSecurityPolicyImpl::GetInstance()->GetProcessLock(GetID());
@@ -3450,6 +3577,9 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
     switches::kRendererStartupDialog,
     switches::kReportVp9AsAnUnsupportedMimeType,
     switches::kStatsCollectionController,
+#if defined(USE_NEVA_APPRUNTIME)
+    switches::kSkiaFontCacheCountLimit,
+#endif
     switches::kSkiaFontCacheLimitMb,
     switches::kSkiaResourceCacheLimitMb,
     switches::kTestType,
@@ -3517,6 +3647,11 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
     cc::switches::kBrowserControlsShowThreshold,
     switches::kRunAllCompositorStagesBeforeDraw,
 
+    // Watchdog switches.
+    watchdog::switches::kEnableWatchdog,
+    watchdog::switches::kWatchdogRendererPeriod,
+    watchdog::switches::kWatchdogRendererTimeout,
+
 #if BUILDFLAG(ENABLE_PPAPI)
     switches::kEnablePepperTesting,
 #endif
@@ -3541,6 +3676,27 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
 #endif
 #if BUILDFLAG(IS_OZONE)
     switches::kOzonePlatform,
+#endif
+#if defined(USE_NEVA_MEDIA)
+    switches::kDisableNevaMediaService,
+    switches::kDisableWebMediaPlayerNeva,
+    switches::kFakeUrlMediaDuration,
+#endif
+#if defined(USE_NEVA_APPRUNTIME)
+    switches::kEnableExternalProtocolsHandling,
+    switches::kEnableNotificationForUnsupportedFeatures,
+    switches::kEnableSampleInjection,
+    switches::kDecodedImageWorkingSetBudgetMB,
+    cc::switches::kMemPressureGPUCacheSizeReductionFactor,
+    cc::switches::kTileManagerLowMemPolicyBytesLimitReductionFactor,
+    blink::switches::kAllowScriptsToCloseWindows,
+    blink::switches::kMinTimeToPurgeAfterBackgroundedInSeconds,
+    blink::switches::kMaxTimeToPurgeAfterBackgroundedInSeconds,
+    cc::switches::kEnableAggressiveReleasePolicy,
+#endif
+#if defined(USE_NEVA_SUSPEND_MEDIA_CAPTURE)
+    switches::kDisableSuspendAudioCapture,
+    switches::kDisableSuspendVideoCapture,
 #endif
 #if defined(ENABLE_IPC_FUZZER)
     switches::kIpcDumpDirectory,
@@ -4360,10 +4516,26 @@ bool RenderProcessHostImpl::IsSuitableHost(
   if (host->GetBrowserContext() != browser_context)
     return false;
 
+#if defined(USE_NEVA_APPRUNTIME)
+  // TODO(neva): Remove the workaround after proper fix for NEVA-7205.
+  // After https://crrev.com/c/3631517, Enact based browser can't load
+  // a webpage on the 2nd tab. See http://clm.lge.com/issue/browse/NEVA-7205.
+  // As a workaround method to avoid this issue, use the old policy
+  // for Neva Appruntime.
+
+  // Do not allow sharing of guest hosts. This is to prevent bugs where guest
+  // and non-guest storage gets mixed. In the future, we might consider
+  // enabling the sharing of guests, in this case this check should be removed
+  // and InSameStoragePartition should handle the possible sharing. Also
+  // deny any attempt where a guest SiteInfo tries to use a |host| that is not
+  // explicitly created for guests.
+  if (host->IsForGuestsOnly() || site_info.is_guest())
+#else
   // Do not allow sharing of guest and non-guest hosts.  Note that we also
   // enforce that `host` and `site_info` must belong to the same
   // StoragePartition via the InSameStoragePartition() check below.
   if (host->IsForGuestsOnly() != site_info.is_guest())
+#endif
     return false;
 
   // If this process has a different JIT policy to the site then it can't be

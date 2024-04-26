@@ -4711,6 +4711,144 @@ hooks = [
                '--bucket', 'chromium-webrtc-resources',
                '-d', 'src/third_party/opus/tests/resources'],
   },
+  #@name USE_NEVA_APPRUNTIME
+  #@{
+  # Apply icu time zone fix
+  {
+    'name': 'Apply_icu_timezone_fix',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/third_party/icu', 'am',
+               '../../neva/patches/0001-webos-Change-the-default-timezone-link.patch']
+  },
+  # Apply use non-icu database fix
+  {
+    'name': 'Apply_use_non_icu_database_fix',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/v8', 'am',
+               '../neva/patches/0001-webos-Allow-to-use-v8-non-ICU-timezone-database.patch']
+  },
+  # Apply more accurate trace of heap growing factor
+  {
+    'name': 'Apply_more_accurate_trace_of_heap_growing_factor',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/v8', 'am',
+               '../neva/patches/0002-v8-Trace-heap-growing-factor-more-accurately.patch']
+  },
+  # Apply v8 snapshot report exceptions to console
+  {
+    'name': 'Apply_v8_snapshot_report_exceptions_to_console',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/v8', 'am',
+               '../neva/patches/0003-op-upsable-v8-snapshot-Report-exceptions-to-console-.patch']
+  },
+  # Apply Add LTTng tracepoints support
+  {
+    'name': 'Apply_add_lttng_tracepoints_support',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/v8', 'am',
+               '../neva/patches/0004-Add-LTTng-tracepoints-support.patch']
+  },
+  # Apply Make v8 heap constraints configurable
+  {
+    'name': 'Apply_make_v8_heap_constraints_configurable',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/v8', 'am',
+               '../neva/patches/0005-memory-Make-v8-heap-constraints-configurable.patch']
+  },
+  # Apply 'Prevent-crash-with-std-isprint-usage-in-serialization' patch.
+  {
+    'name': 'Prevent-crash-with-std-isprint-usage-in-serialization',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/v8', 'am',
+              '../neva/patches/0007-Prevent-crash-with-std-isprint-usage-in-serialization.patch']
+  },
+  # Apply '[maps] Derived map cache' patch.
+  {
+    'name': 'maps-Derived_map_cache',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/v8', 'am',
+              '../neva/patches/0008-maps-Derived-map-cache.patch']
+  },
+  # Apply 'Refactor neva content decryption module' patch
+  {
+    'name': 'Apply_refactor_neva_content_decryption_module',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/media/cdm/api', 'am',
+               '../../../neva/patches/0001-cdm-Refactor-neva-content-decryption-module.patch']
+  },
+  # Apply 'GCC-suppress-invalid-offsetof-warnings' patch
+  {
+    'name': 'Apply_GCC-suppress-invalid-offsetof-warnings',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/net/third_party/quiche/src', 'am',
+               '../../../../neva/patches/0001-GCC-suppress-invalid-offsetof-warnings.patch']
+  },
+  # Apply 'Disable MANGLE_JPEG_NAMES for libjpeg_turbo' patch
+  {
+    'name': 'Apply_Disable-MANGLE_JPEG_NAMES-for-libjpeg_turbo',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/third_party/libjpeg_turbo', 'am',
+              '../../neva/patches/0001-webos-Disable-MANGLE_JPEG_NAMES-for-libjpeg_turbo.patch']
+  },
+  # Apply 'Exclude usage of vld1q_u16_x4 when it is not available' patch
+  {
+    'name': 'Apply_Exclude-usage-of-vld1q_u16_x4-when-it-is-not-available',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/third_party/libaom/source/libaom', 'am',
+              '../../../../neva/patches/0001-Exclude-usage-of-vld1q_u16_x4-when-it-is-not-available.patch']
+  },
+  # Apply 'Disable MSAA in Skia to fix SVG rendering' patch
+  {
+    'name': 'Apply_Disable-MSAA-in-Skia-to-fix-SVG-rendering',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/third_party/skia', 'am',
+              '../../neva/patches/0001-Disable-MSAA-in-Skia-to-fix-SVG-rendering.patch']
+  },
+  # Apply 'Add work around code for invalidating glBufferData' patch
+  {
+    'name': 'Apply_Add-work-around-code-for-invalidating-glBufferData',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/third_party/skia', 'am',
+              '../../neva/patches/0001-Add-work-around-code-for-invalidating-glBufferData.patch']
+  },
+  # Apply 'Fix specialization compile error of 'std::hash<rx::vk::MemoryAllocInfoMapKey>' patch
+  {
+    'name': 'Apply_Fix-specialization-compile-error-of-std::hash<rx::vk::MemoryAllocInfoMapKey>',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/third_party/angle', 'am',
+              '../../neva/patches/0001-build-113.0.5643.0-2-Fix-specialization-compile-erro.patch']
+  },
+  # Apply 'GCC: Add missed cmath include' patch
+  {
+    'name': 'Apply_GCC-Add-missed-cmath-include',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/third_party/material_color_utilities/src', 'am',
+              '../../../neva/patches/0001-build-117.0.5895.0-1-GCC-Add-missed-cmath-include.patch']
+  },
+  # Apply 'GCC: Add Http2HeaderBlock::ValueProxy::operator!=()'
+  {
+    'name': 'Apply_GCC-Add-HttpHeaderBlock-ValueProxy-operator',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/net/third_party/quiche/src', 'am',
+              '../../../../neva/patches//0001-PATCH-GCC-Add-HttpHeaderBlock-ValueProxy-operator.patch']
+  },
+  #@}
+  #@name webOS Reference Platform
+  #@{
+  # Apply RP downstream v8 patches
+  {
+    'name': 'Appy_add_webos_submission_number_to_v8_vers',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/v8', 'am', '--reject', '--keep-non-patch',
+               '../neva/patches/rp/v8/0001-op-ds-version-Add-webOS-submission-number-to-v8-vers.patch']
+  },
+  {
+    'name': 'Appy_timezone_reset_dates_cache',
+    'pattern': '.',
+    'action': ['git', '-C', 'src/v8', 'am', '--reject', '--keep-non-patch',
+               '../neva/patches/rp/v8/0001-op-n_upsable-timezone-Reset-dates-cache.patch']
+  },
+  #@}
   {
     'name': 'apache_win32',
     'pattern': '\\.sha1',

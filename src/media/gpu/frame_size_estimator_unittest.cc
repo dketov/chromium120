@@ -5,6 +5,8 @@
 #include "media/gpu/frame_size_estimator.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include <cmath>
+
 namespace media {
 namespace {
 constexpr int kCommonFps = 30;
@@ -29,7 +31,12 @@ class FrameSizeEstimatorTest : public testing::Test {
   }
 
   static float Qp2QStepSize(uint32_t qp) {
+// TODO(neva): GCC doesn't support std::powf.
+#if defined(__GNUC__)
+    return 0.625f * std::pow(2.0f, static_cast<float>(qp) / 6.0f);
+#else   // defined(__GNUC__)
     return 0.625f * std::powf(2, qp / 6.0f);
+#endif  // !defined(__GNUC__)
   }
 
  protected:

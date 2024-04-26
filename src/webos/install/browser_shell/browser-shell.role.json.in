@@ -1,0 +1,57 @@
+{
+    "exeName":"@@EXENAME@@",
+    "trustLevel":"oem",
+    "type": "privileged",
+    "allowedNames": [
+        "com.webos.app.enactbrowser",
+        "com.webos.app.test.browsershell*",
+        "com.webos.settingsservice.client*",
+        "com.webos.chromium.audio-*",
+        "com.webos.chromium.camera-*",
+        "com.webos.rm.client.*"
+    ],
+    "permissions": [
+        {
+            "service":"com.webos.app.enactbrowser",
+            "inbound":["*"],
+            "outbound":["*"]
+        },
+        {
+            "service": "com.webos.app.test.browsershell*",
+            "inbound": ["*"],
+            "outbound": ["*"]
+        },
+        {
+            "service":"com.webos.settingsservice.client*",
+            "inbound":["com.webos.settingsservice"],
+            "outbound":["com.webos.settingsservice"]
+        },
+        {
+            "service":"com.webos.chromium.memory*",
+            "inbound":[
+                "com.palm.bus",
+                "com.webos.service.memorymanager"
+            ],
+            "outbound":[
+                "com.palm.bus",
+                "com.webos.service.memorymanager"
+            ]
+        },
+        {
+            "service":"com.webos.chromium.audio-*",
+            "outbound":[
+                "com.webos.service.audio"
+            ]
+        },
+        {
+            "service":"com.webos.chromium.camera-*",
+            "outbound":[
+                "com.webos.service.camera2"
+            ]
+        },
+        {
+            "service": "com.webos.rm.client.*",
+            "outbound": ["com.webos.media"]
+        }
+    ]
+}

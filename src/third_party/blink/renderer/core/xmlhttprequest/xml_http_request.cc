@@ -1703,6 +1703,14 @@ String XMLHttpRequest::statusText() const {
 void XMLHttpRequest::DidFail(uint64_t, const ResourceError& error) {
   DVLOG(1) << this << " didFail()";
 
+#if defined(USE_NEVA_APPRUNTIME)
+  // Don't throw an exception for loading of illegal local file. APPRUNTIME
+  // sets 'kIllegalDataURL' for local file request in case the file doesn't
+  // exist or the file loading is not allowed.
+  if (!async_ && error.FailingURL() == url::kIllegalDataURL)
+    return;
+#endif
+
   // If we are already in an error state, for instance we called abort(), bail
   // out early.
   if (error_)

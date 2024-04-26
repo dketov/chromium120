@@ -40,7 +40,8 @@ namespace blink {
 
 WebSettingsImpl::WebSettingsImpl(Settings* settings,
                                  DevToolsEmulator* dev_tools_emulator)
-    : settings_(settings),
+    : WebSettingsImplNeva(settings),
+      settings_(settings),
       dev_tools_emulator_(dev_tools_emulator),
       render_v_sync_notification_enabled_(false),
       auto_zoom_focused_editable_to_legible_scale_(false),
@@ -170,6 +171,10 @@ void WebSettingsImpl::SetAccessibilityTextSizeContrastFactor(
 
 void WebSettingsImpl::SetAccessibilityAlwaysShowFocus(bool always_show_focus) {
   settings_->SetAccessibilityAlwaysShowFocus(always_show_focus);
+}
+
+void WebSettingsImpl::SetAccessibilityExploreByMouseEnabled(bool enabled) {
+  settings_->SetAccessibilityExploreByMouseEnabled(enabled);
 }
 
 void WebSettingsImpl::SetAccessibilityPasswordValuesEnabled(bool enabled) {
@@ -583,6 +588,10 @@ bool WebSettingsImpl::ViewportEnabled() const {
   return settings_->GetViewportEnabled();
 }
 
+bool WebSettingsImpl::GetAccessibilityExploreByMouseEnabled() {
+  return settings_->GetAccessibilityExploreByMouseEnabled();
+}
+
 bool WebSettingsImpl::ViewportMetaEnabled() const {
   return settings_->GetViewportMetaEnabled();
 }
@@ -688,6 +697,22 @@ void WebSettingsImpl::SetDoNotUpdateSelectionOnMutatingSelectionRange(
     bool enabled) {
   settings_->SetDoNotUpdateSelectionOnMutatingSelectionRange(enabled);
 }
+
+#if defined(USE_NEVA_MEDIA)
+void WebSettingsImpl::SetMaxTimeupdateEventFrequency(int time) {
+  settings_->SetMaxTimeupdateEventFrequency(time);
+}
+#endif
+
+#if defined(USE_NEVA_APPRUNTIME)
+void WebSettingsImpl::SetDisallowScrollbarsInMainFrame(bool disallow) {
+  settings_->SetDisallowScrollbarsInMainFrame(disallow);
+}
+
+void WebSettingsImpl::SetWebOSNativeScrollEnabled(bool enabled) {
+  settings_->SetWebOSNativeScrollEnabled(enabled);
+}
+#endif
 
 void WebSettingsImpl::SetLowPriorityIframesThreshold(
     WebEffectiveConnectionType effective_connection_type) {

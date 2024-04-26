@@ -221,6 +221,11 @@ Compositor::Compositor(const viz::FrameSinkId& frame_sink_id,
   settings.wait_for_all_pipeline_stages_before_draw =
       command_line->HasSwitch(switches::kRunAllCompositorStagesBeforeDraw);
 
+#if defined(USE_NEVA_APPRUNTIME)
+  settings.use_aggressive_release_policy =
+      command_line->HasSwitch(cc::switches::kEnableAggressiveReleasePolicy);
+#endif
+
   if (features::IsPercentBasedScrollingEnabled()) {
     settings.percent_based_scrolling = true;
   }
@@ -277,6 +282,11 @@ Compositor::Compositor(const viz::FrameSinkId& frame_sink_id,
 
   settings.disable_frame_rate_limit =
       command_line->HasSwitch(switches::kDisableFrameRateLimit);
+
+#if defined(USE_NEVA_APPRUNTIME)
+  if (switches::UseVizFMPWithTimeout())
+    disable_drawing_ = false;
+#endif
 }
 
 Compositor::~Compositor() {
@@ -338,7 +348,15 @@ void Compositor::SetLayerTreeFrameSink(
   if (display_private_) {
     disabled_swap_until_resize_ = false;
     display_private_->Resize(size());
+#if defined(USE_NEVA_APPRUNTIME)
+    if (display_first_activate_timeout_.has_value())
+      display_private_->SetFirstActivateTimeout(
+          display_first_activate_timeout_.value());
+    if (display_visibility_enabled_)
+      display_private_->SetDisplayVisible(host_->IsVisible());
+#else
     display_private_->SetDisplayVisible(host_->IsVisible());
+#endif
     display_private_->SetDisplayColorSpaces(display_color_spaces_);
     display_private_->SetDisplayColorMatrix(
         gfx::SkM44ToTransform(display_color_matrix_));
@@ -375,6 +393,11 @@ void Compositor::OnChildResizing() {
 }
 
 void Compositor::ScheduleDraw() {
+#if defined(USE_NEVA_APPRUNTIME)
+  if (disable_drawing_)
+    return;
+#endif
+
   host_->SetNeedsCommit();
 }
 
@@ -412,6 +435,11 @@ void Compositor::SetDisplayColorMatrix(const SkM44& matrix) {
 }
 
 void Compositor::ScheduleFullRedraw() {
+#if defined(USE_NEVA_APPRUNTIME)
+  if (disable_drawing_)
+    return;
+#endif
+
   // TODO(enne): Some callers (mac) call this function expecting that it
   // will also commit.  This should probably just redraw the screen
   // from damage and not commit.  ScheduleDraw/ScheduleRedraw need
@@ -421,6 +449,11 @@ void Compositor::ScheduleFullRedraw() {
 }
 
 void Compositor::ScheduleRedrawRect(const gfx::Rect& damage_rect) {
+#if defined(USE_NEVA_APPRUNTIME)
+  if (disable_drawing_)
+    return;
+#endif
+
   // TODO(enne): Make this not commit.  See ScheduleFullRedraw.
   host_->SetNeedsRedrawRect(damage_rect);
   host_->SetNeedsCommit();
@@ -530,8 +563,13 @@ void Compositor::SetVisible(bool visible) {
   host_->SetVisible(visible);
   // Visibility is reset when the output surface is lost, so this must also be
   // updated then.
+#if defined(USE_NEVA_APPRUNTIME)
+  if (display_private_ && display_visibility_enabled_)
+    display_private_->SetDisplayVisible(visible);
+#else
   if (display_private_)
     display_private_->SetDisplayVisible(visible);
+#endif
 }
 
 bool Compositor::IsVisible() {
@@ -900,6 +938,13 @@ void Compositor::OnCompleteSwapWithNewSize(const gfx::Size& size) {
 #endif  // BUILDFLAG(OZONE_PLATFORM_X11)
 #endif  // BUILFFLAG(IS_OZONE)
 
+#if defined(USE_NEVA_APPRUNTIME)
+void Compositor::OnCompleteSwap() {
+  for (auto& observer : observer_list_)
+    observer.OnCompositingCompleteSwap(this);
+}
+#endif
+
 void Compositor::SetOutputIsSecure(bool output_is_secure) {
   output_is_secure_ = output_is_secure;
   if (display_private_)
@@ -924,6 +969,43 @@ void Compositor::RequestSuccessfulPresentationTimeForNextFrame(
     SuccessfulPresentationTimeCallback callback) {
   host_->RequestSuccessfulPresentationTimeForNextFrame(std::move(callback));
 }
+
+#if defined(USE_NEVA_APPRUNTIME)
+void Compositor::SuspendDrawing() {
+  if (disable_drawing_)
+    return;
+
+  if (display_private_)
+    display_private_->ForceImmediateDrawAndSwapIfPossible();
+
+  disable_drawing_ = true;
+  host_->SetVisible(false);
+}
+
+void Compositor::ResumeDrawing() {
+  if (!disable_drawing_)
+    return;
+
+  disable_drawing_ = false;
+  host_->SetVisible(true);
+}
+
+void Compositor::RenderProcessGone() {
+  if (display_private_)
+    display_private_->RenderProcessGone();
+}
+
+void Compositor::SetDisplayVisibilityEnabled(bool enabled) {
+  display_visibility_enabled_ = enabled;
+}
+
+void Compositor::SetDisplayFirstActivateTimeout(base::TimeDelta timeout) {
+  display_first_activate_timeout_ = timeout;
+  if (display_private_)
+    display_private_->SetFirstActivateTimeout(
+        display_first_activate_timeout_.value());
+}
+#endif
 
 void Compositor::ReportMetricsForTracker(
     int tracker_id,

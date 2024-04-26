@@ -85,6 +85,13 @@ class BASE_EXPORT TraceConfig {
                  rhs.heap_profiler_options.breakdown_threshold_bytes;
     }
 
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+    bool operator!=(const MemoryDumpConfig& other) const {
+      return !(*this == other);
+    }
+#endif  // (__cplusplus < 202002L)
+
     // Reset the values in the config.
     void Clear();
 
@@ -123,6 +130,13 @@ class BASE_EXPORT TraceConfig {
     bool operator==(const ProcessFilterConfig& other) const {
       return included_process_ids_ == other.included_process_ids_;
     }
+
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+    bool operator!=(const ProcessFilterConfig& other) const {
+      return !(*this == other);
+    }
+#endif  // (__cplusplus < 202002L)
 
    private:
     std::unordered_set<base::ProcessId> included_process_ids_;

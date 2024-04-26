@@ -109,6 +109,8 @@ class StyleDifference;
 class StyleImage;
 class StyleInheritedVariables;
 class StyleInitialData;
+class StyleNavigationData;
+class StyleNavigationIndex;
 class StyleRay;
 class StyleResolver;
 class StyleResolverState;
@@ -787,6 +789,14 @@ class ComputedStyle final : public ComputedStyleBase {
   TextEmphasisMark GetTextEmphasisMark() const;
   const AtomicString& TextEmphasisMarkString() const;
   LineLogicalSide GetTextEmphasisLineLogicalSide() const;
+
+  // caret-width
+  float CaretWidth() const {
+    return CaretWidthInternal();
+  }
+  bool HasAutoCaretWidth() const {
+    return CaretWidthIsAutoInternal();
+  }
 
   CORE_EXPORT FontSizeStyle GetFontSizeStyle() const {
     return FontSizeStyle(GetFont(), LineHeightInternal(), EffectiveZoom());
@@ -2322,6 +2332,10 @@ class ComputedStyle final : public ComputedStyleBase {
     return !IsLeftToRightDirection() && IsHorizontalWritingMode();
   }
 
+  // Navigation functions.
+  const scoped_refptr<StyleNavigationData> Navigation(CSSPropertyID property) const;
+  const scoped_refptr<StyleNavigationIndex> NavigationIndex() const;
+
   // Border utility functions.
   static bool BorderStyleIsVisible(EBorderStyle style) {
     return style != EBorderStyle::kNone && style != EBorderStyle::kHidden;
@@ -3499,6 +3513,21 @@ class ComputedStyleBuilder final : public ComputedStyleBuilderBase {
     SetContainIntrinsicHeight(height);
   }
 
+  // Navigation
+  scoped_refptr<StyleNavigationData> AccessNavigation(CSSPropertyID property);
+  scoped_refptr<StyleNavigationIndex> AccessNavigationIndex();
+  void InheritNavigation(CSSPropertyID property,
+                         const ComputedStyle* inherit_parent);
+
+  // caret-width
+  void SetCaretWidth(float f) {
+    SetCaretWidthIsAutoInternal(false);
+    SetCaretWidthInternal(f);
+  }
+  void SetHasAutoCaretWidth() {
+    SetCaretWidthIsAutoInternal(true);
+    SetCaretWidthInternal(1.f);
+  }
 };
 
 }  // namespace blink

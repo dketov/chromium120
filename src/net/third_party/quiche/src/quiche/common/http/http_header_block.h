@@ -228,6 +228,7 @@ class QUICHE_EXPORT HttpHeaderBlock {
 
     // Provides easy comparison against absl::string_view.
     bool operator==(absl::string_view value) const;
+    bool operator!=(absl::string_view value) const;
 
     std::string as_string() const;
 

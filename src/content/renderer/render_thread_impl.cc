@@ -223,6 +223,13 @@
 #include "base/test/clang_profiling.h"
 #endif
 
+///@name USE_NEVA_APPRUNTIME
+///@{
+#if defined(USE_NEVA_APPRUNTIME)
+#include "third_party/blink/renderer/core/frame/web_local_frame_impl.h"
+#endif
+///@}
+
 namespace content {
 
 namespace {
@@ -705,6 +712,10 @@ void RenderThreadImpl::Init() {
   }
   UpdateForegroundCrashKey(
       /*foreground=*/!blink::kLaunchingProcessIsBackgrounded);
+
+#if defined(USE_NEVA_MEDIA) || defined(USE_NEVA_SUSPEND_MEDIA_CAPTURE)
+  neva::RenderThreadImpl<RenderThreadImpl>::Init();
+#endif
 }
 
 RenderThreadImpl::~RenderThreadImpl() {
@@ -963,6 +974,10 @@ void RenderThreadImpl::RegisterSchemes() {
   // googlechrome:
   WebString google_chrome_scheme(WebString::FromASCII(kGoogleChromeScheme));
   WebSecurityPolicy::RegisterURLSchemeAsDisplayIsolated(google_chrome_scheme);
+
+#if defined(USE_NEVA_APPRUNTIME)
+  GetContentClient()->renderer()->RegisterSchemes();
+#endif
 }
 
 void RenderThreadImpl::RecordAction(const base::UserMetricsAction& action) {
@@ -1029,6 +1044,7 @@ media::GpuVideoAcceleratorFactories* RenderThreadImpl::GetGpuFactories() {
        gpu::kGpuFeatureStatusEnabled);
 
   const bool enable_video_encode_accelerator =
+
 #if BUILDFLAG(IS_LINUX)
       base::FeatureList::IsEnabled(media::kVaapiVideoEncodeLinux) &&
 #else
@@ -1393,6 +1409,33 @@ void RenderThreadImpl::SetProcessState(
   visible_state_ = visible_state;
 }
 
+///@name USE_NEVA_APPRUNTIME
+///@{
+void RenderThreadImpl::ProcessSuspend() {
+#if defined(USE_NEVA_APPRUNTIME)
+  blink::WebLocalFrameImpl* frame = static_cast<blink::WebLocalFrameImpl*>(
+      blink::WebLocalFrameImpl::FrameForCurrentContext());
+  page_pauser_ = std::make_unique<blink::WebScopedPagePauser>(*frame);
+  ++suspension_count_;
+#endif
+}
+
+void RenderThreadImpl::ProcessResume() {
+#if defined(USE_NEVA_APPRUNTIME)
+  if (suspension_count_ > 0) {
+    page_pauser_.reset();
+    --suspension_count_;
+  }
+#endif
+}
+
+void RenderThreadImpl::OnSystemMemoryPressureLevelChanged(
+    base::MemoryPressureListener::MemoryPressureLevel level) {
+  LOG(INFO) << __func__ << " level: " << level;
+  base::MemoryPressureListener::NotifyMemoryPressure(level);
+}
+///@}
+
 void RenderThreadImpl::SetIsLockedToSite() {
   DCHECK(blink_platform_impl_);
   blink_platform_impl_->SetIsLockedToSite();
@@ -1493,6 +1536,13 @@ void RenderThreadImpl::OnNetworkConnectionChanged(
       NetConnectionTypeToWebConnectionType(type), max_bandwidth_mbps);
   if (url_loader_throttle_provider_)
     url_loader_throttle_provider_->SetOnline(online_status);
+
+#if defined(USE_NEVA_APPRUNTIME)
+  // Reverted part of CL http://crrev.com/c/2692032
+  // since NEVA-3272 depends on it
+  for (auto& observer : observers_)
+    observer.NetworkStateChanged(online_status);
+#endif
 }
 
 void RenderThreadImpl::OnNetworkQualityChanged(
@@ -1743,6 +1793,10 @@ void RenderThreadImpl::OnRendererForegrounded() {
 }
 
 void RenderThreadImpl::ReleaseFreeMemory() {
+#if defined(USE_NEVA_APPRUNTIME)
+  VLOG(1) << __func__;
+#endif
+
   TRACE_EVENT0("blink", "RenderThreadImpl::ReleaseFreeMemory()");
   base::allocator::ReleaseFreeMemory();
   discardable_memory_allocator_->ReleaseFreeMemory();
@@ -1861,4 +1915,10 @@ void RenderThreadImpl::OnMemoryPressureFromBrowserReceived(
 
 #endif
 
+#if defined(USE_NEVA_MEDIA)
+void RenderThreadImpl::SetUseVideoDecodeAccelerator(bool use) {
+  DCHECK(IsMainThread());
+  use_video_decode_accelerator_ = use;
+}
+#endif
 }  // namespace content

@@ -11,6 +11,12 @@
 #include "build/build_config.h"
 #include "third_party/blink/public/platform/platform.h"
 
+#if defined(USE_NEVA_APPRUNTIME)
+#include "base/command_line.h"
+#include "base/strings/string_number_conversions.h"
+#include "third_party/blink/public/common/switches.h"
+#endif
+
 namespace blink {
 
 MemoryPurgeManager::MemoryPurgeManager(
@@ -133,10 +139,50 @@ bool MemoryPurgeManager::AreAllPagesFrozen() const {
   return total_page_count_ == frozen_page_count_;
 }
 
+#if defined(USE_NEVA_APPRUNTIME)
+namespace {
+
+base::TimeDelta MinTimeToPurgeAfterBackgrounded() {
+  int delay;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kMinTimeToPurgeAfterBackgroundedInSeconds) &&
+      base::StringToInt(
+          base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+              switches::kMinTimeToPurgeAfterBackgroundedInSeconds),
+          &delay)) {
+    return base::Seconds(delay);
+  }
+
+  return blink::MemoryPurgeManager::kMinTimeToPurgeAfterBackgrounded;
+}
+
+base::TimeDelta MaxTimeToPurgeAfterBackgrounded() {
+  int delay;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kMaxTimeToPurgeAfterBackgroundedInSeconds) &&
+      base::StringToInt(
+          base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+              switches::kMaxTimeToPurgeAfterBackgroundedInSeconds),
+          &delay)) {
+    return base::Seconds(delay);
+  }
+
+  return blink::MemoryPurgeManager::kMinTimeToPurgeAfterBackgrounded;
+}
+
+}  // namespace
+#endif
+
 base::TimeDelta MemoryPurgeManager::GetTimeToPurgeAfterBackgrounded() const {
+#if defined(USE_NEVA_APPRUNTIME)
+  return base::Seconds(base::RandInt(
+      static_cast<int>(MinTimeToPurgeAfterBackgrounded().InSeconds()),
+      static_cast<int>(MaxTimeToPurgeAfterBackgrounded().InSeconds())));
+#else
   return base::Seconds(
       base::RandInt(kMinTimeToPurgeAfterBackgrounded.InSeconds(),
                     kMaxTimeToPurgeAfterBackgrounded.InSeconds()));
+#endif
 }
 
 }  // namespace blink

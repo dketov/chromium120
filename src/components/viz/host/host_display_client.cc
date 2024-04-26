@@ -72,4 +72,10 @@ void HostDisplayClient::DidCompleteSwapWithNewSize(const gfx::Size& size) {
 #endif  // BUILDFLAG(OZONE_PLATFORM_X11)
 #endif  // BUILFFLAG(IS_OZONE)
 
+#if defined(USE_NEVA_APPRUNTIME)
+void HostDisplayClient::DidCompleteSwap() {
+  NOTIMPLEMENTED();
+}
+#endif
+
 }  // namespace viz

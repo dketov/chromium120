@@ -33,6 +33,10 @@ class CONTENT_EXPORT WebServiceWorkerProviderImpl
     : public blink::WebServiceWorkerProvider {
  public:
   explicit WebServiceWorkerProviderImpl(ServiceWorkerProviderContext* context);
+#if defined(USE_NEVA_APPRUNTIME)
+  explicit WebServiceWorkerProviderImpl(ServiceWorkerProviderContext* context,
+                                        const std::string& application_id);
+#endif
 
   WebServiceWorkerProviderImpl(const WebServiceWorkerProviderImpl&) = delete;
   WebServiceWorkerProviderImpl& operator=(const WebServiceWorkerProviderImpl&) =
@@ -104,6 +108,9 @@ class CONTENT_EXPORT WebServiceWorkerProviderImpl
   raw_ptr<blink::WebServiceWorkerProviderClient, DanglingUntriaged>
       provider_client_;
 
+#if defined(USE_NEVA_APPRUNTIME)
+  std::string application_id_;
+#endif
   base::WeakPtrFactory<WebServiceWorkerProviderImpl> weak_factory_{this};
 };
 

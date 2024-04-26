@@ -151,6 +151,7 @@ bool OSCryptImpl::DecryptString16(const std::string& ciphertext,
 
 bool OSCryptImpl::EncryptString(const std::string& plaintext,
                                 std::string* ciphertext) {
+  VLOG(1) << __func__;
   if (plaintext.empty()) {
     ciphertext->clear();
     return true;
@@ -186,6 +187,7 @@ bool OSCryptImpl::EncryptString(const std::string& plaintext,
 
 bool OSCryptImpl::DecryptString(const std::string& ciphertext,
                                 std::string* plaintext) {
+  VLOG(1) << __func__;
   if (ciphertext.empty()) {
     plaintext->clear();
     return true;
@@ -256,7 +258,6 @@ void OSCryptImpl::SetRawEncryptionKey(const std::string& raw_key) {
   DCHECK(!is_password_v11_cached_);
   // The config won't be used if this function is being called. Callers should
   // choose between setting a config and setting a raw encryption key.
-  DCHECK(!config_);
   if (!raw_key.empty()) {
     password_v11_cache_ =
         crypto::SymmetricKey::Import(crypto::SymmetricKey::AES, raw_key);
@@ -299,7 +300,6 @@ std::unique_ptr<KeyStorageLinux> OSCryptImpl::CreateKeyStorage() {
   CHECK(config_);
   std::unique_ptr<KeyStorageLinux> key_storage =
       KeyStorageLinux::CreateService(*config_);
-  config_.reset();
   return key_storage;
 }
 

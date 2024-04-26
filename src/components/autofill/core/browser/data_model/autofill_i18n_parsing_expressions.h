@@ -93,7 +93,13 @@ constexpr char kRegularExpression_68[] = "(?m)(?i:(?P<ADDRESS_HOME_STREET_ADDRES
 
 
 // Section for singular decomposition(s).
+// TODO(neva): Remove this when the toolchain of NEVA can build
+// the original upstream implementation.
+#if (__cplusplus < 202002L)
+Decomposition kDecompositionList[] = {
+#else
 constexpr Decomposition kDecompositionList[] = {
+#endif
     Decomposition(kRegularExpression_26, true, true),
     Decomposition(kRegularExpression_29, true, true),
     Decomposition(kRegularExpression_27, true, true),
@@ -114,7 +120,13 @@ constexpr Decomposition kDecompositionList[] = {
 };
 
 // Section for singular extract part(s).
+// TODO(neva): Remove this when the toolchain of NEVA can build
+// the original upstream implementation.
+#if (__cplusplus < 202002L)
+ExtractPart kExtractPartList[]{
+#else
 constexpr ExtractPart kExtractPartList[]{
+#endif
     ExtractPart("", kRegularExpression_38),
     ExtractPart("", kRegularExpression_39),
     ExtractPart("", kRegularExpression_40),
@@ -128,6 +140,34 @@ constexpr ExtractPart kExtractPartList[]{
 };
 
 // Section for decomposition cascades and their alternatives.
+// TODO(neva): Remove this when the toolchain of NEVA can build
+// the original upstream implementation.
+#if (__cplusplus < 202002L)
+AutofillParsingProcess const* kDecompositionCascade_0_Alternatives[]{ &kDecompositionList[0], &kDecompositionList[1], &kDecompositionList[2], &kDecompositionList[3]};
+DecompositionCascade kDecompositionCascade_0 = DecompositionCascade(kRegularExpression_14, kDecompositionCascade_0_Alternatives);
+AutofillParsingProcess const* kDecompositionCascade_1_Alternatives[]{ &kDecompositionList[4]};
+DecompositionCascade kDecompositionCascade_1 = DecompositionCascade(kRegularExpression_13, kDecompositionCascade_1_Alternatives);
+AutofillParsingProcess const* kDecompositionCascade_2_Alternatives[]{ &kDecompositionList[5], &kDecompositionList[6], &kDecompositionList[7]};
+DecompositionCascade kDecompositionCascade_2 = DecompositionCascade("", kDecompositionCascade_2_Alternatives);
+AutofillParsingProcess const* kDecompositionCascade_3_Alternatives[]{ &kDecompositionCascade_0, &kDecompositionCascade_1, &kDecompositionCascade_2};
+DecompositionCascade kDecompositionCascade_3 = DecompositionCascade("", kDecompositionCascade_3_Alternatives);
+AutofillParsingProcess const* kDecompositionCascade_4_Alternatives[]{ &kDecompositionList[0], &kDecompositionList[1], &kDecompositionList[2], &kDecompositionList[3]};
+DecompositionCascade kDecompositionCascade_4 = DecompositionCascade(kRegularExpression_14, kDecompositionCascade_4_Alternatives);
+AutofillParsingProcess const* kDecompositionCascade_5_Alternatives[]{ &kDecompositionList[10]};
+DecompositionCascade kDecompositionCascade_5 = DecompositionCascade(kRegularExpression_13, kDecompositionCascade_5_Alternatives);
+AutofillParsingProcess const* kDecompositionCascade_6_Alternatives[]{ &kDecompositionList[5], &kDecompositionList[11], &kDecompositionList[12]};
+DecompositionCascade kDecompositionCascade_6 = DecompositionCascade("", kDecompositionCascade_6_Alternatives);
+AutofillParsingProcess const* kDecompositionCascade_7_Alternatives[]{ &kDecompositionCascade_4, &kDecompositionCascade_5, &kDecompositionCascade_6};
+DecompositionCascade kDecompositionCascade_7 = DecompositionCascade("", kDecompositionCascade_7_Alternatives);
+AutofillParsingProcess const* kDecompositionCascade_8_Alternatives[]{ &kDecompositionList[0], &kDecompositionList[1], &kDecompositionList[2], &kDecompositionList[3]};
+DecompositionCascade kDecompositionCascade_8 = DecompositionCascade(kRegularExpression_14, kDecompositionCascade_8_Alternatives);
+AutofillParsingProcess const* kDecompositionCascade_9_Alternatives[]{ &kDecompositionList[10]};
+DecompositionCascade kDecompositionCascade_9 = DecompositionCascade(kRegularExpression_13, kDecompositionCascade_9_Alternatives);
+AutofillParsingProcess const* kDecompositionCascade_10_Alternatives[]{ &kDecompositionList[5], &kDecompositionList[6], &kDecompositionList[7]};
+DecompositionCascade kDecompositionCascade_10 = DecompositionCascade("", kDecompositionCascade_10_Alternatives);
+AutofillParsingProcess const* kDecompositionCascade_11_Alternatives[]{ &kDecompositionCascade_8, &kDecompositionCascade_9, &kDecompositionCascade_10};
+DecompositionCascade kDecompositionCascade_11 = DecompositionCascade("", kDecompositionCascade_11_Alternatives);
+#else // (__cplusplus < 202002L)
 constexpr AutofillParsingProcess const* kDecompositionCascade_0_Alternatives[]{ &kDecompositionList[0], &kDecompositionList[1], &kDecompositionList[2], &kDecompositionList[3]};
 constexpr DecompositionCascade kDecompositionCascade_0 = DecompositionCascade(kRegularExpression_14, kDecompositionCascade_0_Alternatives);
 constexpr AutofillParsingProcess const* kDecompositionCascade_1_Alternatives[]{ &kDecompositionList[4]};
@@ -152,8 +192,27 @@ constexpr AutofillParsingProcess const* kDecompositionCascade_10_Alternatives[]{
 constexpr DecompositionCascade kDecompositionCascade_10 = DecompositionCascade("", kDecompositionCascade_10_Alternatives);
 constexpr AutofillParsingProcess const* kDecompositionCascade_11_Alternatives[]{ &kDecompositionCascade_8, &kDecompositionCascade_9, &kDecompositionCascade_10};
 constexpr DecompositionCascade kDecompositionCascade_11 = DecompositionCascade("", kDecompositionCascade_11_Alternatives);
+#endif // !(__cplusplus < 202002L)
 
 // Section for extract parts and their pieces.
+#if (__cplusplus < 202002L)
+ExtractPart const* kExtractParts_0_Pieces[]{&kExtractPartList[0],&kExtractPartList[1],&kExtractPartList[2]};
+ExtractParts kExtractParts_0 = ExtractParts("", kExtractParts_0_Pieces);
+ExtractPart const* kExtractParts_1_Pieces[]{&kExtractPartList[0],&kExtractPartList[1],&kExtractPartList[2]};
+ExtractParts kExtractParts_1 = ExtractParts("", kExtractParts_1_Pieces);
+ExtractPart const* kExtractParts_2_Pieces[]{&kExtractPartList[0],&kExtractPartList[1],&kExtractPartList[2],&kExtractPartList[3]};
+ExtractParts kExtractParts_2 = ExtractParts("", kExtractParts_2_Pieces);
+ExtractPart const* kExtractParts_3_Pieces[]{&kExtractPartList[4],&kExtractPartList[0],&kExtractPartList[1],&kExtractPartList[2],&kExtractPartList[3]};
+ExtractParts kExtractParts_3 = ExtractParts("", kExtractParts_3_Pieces);
+ExtractPart const* kExtractParts_4_Pieces[]{&kExtractPartList[5],&kExtractPartList[6]};
+ExtractParts kExtractParts_4 = ExtractParts("", kExtractParts_4_Pieces);
+ExtractPart const* kExtractParts_5_Pieces[]{&kExtractPartList[7],&kExtractPartList[8]};
+ExtractParts kExtractParts_5 = ExtractParts("", kExtractParts_5_Pieces);
+ExtractPart const* kExtractParts_6_Pieces[]{&kExtractPartList[7],&kExtractPartList[8]};
+ExtractParts kExtractParts_6 = ExtractParts("", kExtractParts_6_Pieces);
+ExtractPart const* kExtractParts_7_Pieces[]{&kExtractPartList[9],&kExtractPartList[5],&kExtractPartList[6],&kExtractPartList[7],&kExtractPartList[8]};
+ExtractParts kExtractParts_7 = ExtractParts("", kExtractParts_7_Pieces);
+#else // (__cplusplus < 202002L)
 constexpr ExtractPart const* kExtractParts_0_Pieces[]{&kExtractPartList[0],&kExtractPartList[1],&kExtractPartList[2]};
 constexpr ExtractParts kExtractParts_0 = ExtractParts("", kExtractParts_0_Pieces);
 constexpr ExtractPart const* kExtractParts_1_Pieces[]{&kExtractPartList[0],&kExtractPartList[1],&kExtractPartList[2]};
@@ -170,10 +229,17 @@ constexpr ExtractPart const* kExtractParts_6_Pieces[]{&kExtractPartList[7],&kExt
 constexpr ExtractParts kExtractParts_6 = ExtractParts("", kExtractParts_6_Pieces);
 constexpr ExtractPart const* kExtractParts_7_Pieces[]{&kExtractPartList[9],&kExtractPartList[5],&kExtractPartList[6],&kExtractPartList[7],&kExtractPartList[8]};
 constexpr ExtractParts kExtractParts_7 = ExtractParts("", kExtractParts_7_Pieces);
+#endif // !(__cplusplus < 202002L)
 }  // namespace
 
 // A lookup map for parsing expressions for countries and field types.
+// TODO(neva): Remove this when the toolchain of NEVA can build
+// the original upstream implementation.
+#if (__cplusplus < 202002L)
+auto kAutofillParsingRulesMap =
+#else
 constexpr auto kAutofillParsingRulesMap =
+#endif
     base::MakeFixedFlatMap<CountryAndFieldType, const AutofillParsingProcess*>({
       {{"BR", NAME_FULL}, &kDecompositionCascade_3},
       {{"BR", ADDRESS_HOME_STREET_LOCATION}, &kDecompositionList[8]},

@@ -39,6 +39,8 @@ std::unique_ptr<VideoFrameMapper> VideoFrameMapperFactory::CreateMapper(
     VideoFrame::StorageType storage_type,
     bool force_linear_buffer_mapper,
     bool must_support_intel_media_compressed_buffers) {
+// webOS doesn't support GBM. So STORAGE_GPU_MEMORY_BUFFER cannot be built.
+#if !defined(USE_WEBOS_CODEC)
   if (!must_support_intel_media_compressed_buffers) {
     if (storage_type == VideoFrame::STORAGE_GPU_MEMORY_BUFFER) {
       return GpuMemoryBufferVideoFrameMapper::Create(format);
@@ -54,6 +56,7 @@ std::unique_ptr<VideoFrameMapper> VideoFrameMapperFactory::CreateMapper(
     // mapping Intel media compressed buffers without linearizing them.
     return nullptr;
   }
+#endif  // !defined(USE_WEBOS_CODEC)
 
 #if BUILDFLAG(USE_VAAPI)
   return VaapiDmaBufVideoFrameMapper::Create(format);

@@ -205,8 +205,15 @@ WaylandSurfaceFactory::GetAllowedGLImplementations() {
   if (egl_implementation_) {
     // Add only supported ANGLE implementations. Otherwise, angle-vulkan might
     // be requested, which is not supported with this backend yet.
+    // FIXME(neva): WARNING: In case of merge conflict please keep the code
+    // to do not miss ANGLE enabling later (it is landed/reverted several
+    // times in the upstream).
+    // FIXME(neva): M111: Disabled ANGLE GL implementation support for
+    // Google ozone/wayland because it is not compatible with webOS platform.
+#if !defined(OS_WEBOS)
     impls.emplace_back(gl::ANGLEImplementation::kOpenGL);
     impls.emplace_back(gl::ANGLEImplementation::kOpenGLES);
+#endif  // !defined(OS_WEBOS)
     impls.emplace_back(gl::ANGLEImplementation::kSwiftShader);
     impls.emplace_back(gl::kGLImplementationEGLGLES2);
   }

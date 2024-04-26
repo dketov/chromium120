@@ -208,6 +208,15 @@ std::string PatternParser::ToString(
       str += kPathWildcard;
       return str;
     }
+#if defined(USE_NEVA_APPRUNTIME)
+    if (parts.has_domain_wildcard) {
+      if (parts.host.empty())
+        str += kHostWildcard;
+      else
+        str += kDomainWildcard;
+    }
+    str += parts.host;
+#endif
     str += parts.path;
     return str;
   }

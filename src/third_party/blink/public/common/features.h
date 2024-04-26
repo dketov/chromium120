@@ -656,6 +656,10 @@ BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(
 BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(
     kLogUnexpectedIPCPostedToBackForwardCachedDocuments);
 
+#if defined(USE_FILESCHEME_CODECACHE)
+BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kLocalResourceCodeCache);
+#endif
+
 BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kLowLatencyCanvas2dImageChromium);
 
 // If enabled, async scripts will be run on a lower priority task queue.

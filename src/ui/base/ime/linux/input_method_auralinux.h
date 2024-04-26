@@ -23,7 +23,11 @@ class COMPONENT_EXPORT(UI_BASE_IME_LINUX) InputMethodAuraLinux
       public LinuxInputMethodContextDelegate {
  public:
   explicit InputMethodAuraLinux(
-      ImeKeyEventDispatcher* ime_key_event_dispatcher);
+      ImeKeyEventDispatcher* ime_key_event_dispatcher
+#if defined(OZONE_PLATFORM_WAYLAND_EXTERNAL)
+      , unsigned handle = 0
+#endif
+      );
   InputMethodAuraLinux(const InputMethodAuraLinux&) = delete;
   InputMethodAuraLinux& operator=(const InputMethodAuraLinux&) = delete;
   ~InputMethodAuraLinux() override;
@@ -38,10 +42,18 @@ class COMPONENT_EXPORT(UI_BASE_IME_LINUX) InputMethodAuraLinux
   bool IsCandidatePopupOpen() const override;
   VirtualKeyboardController* GetVirtualKeyboardController() override;
 
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  LinuxInputMethodContext* GetInputMethodContext() override;
+  ///@}
+
   // Overriden from ui::LinuxInputMethodContextDelegate
   void OnCommit(const std::u16string& text) override;
   void OnConfirmCompositionText(bool keep_selection) override;
   void OnDeleteSurroundingText(size_t before, size_t after) override;
+#if defined(USE_NEVA_APPRUNTIME)
+  void OnMarkToSendKeyPressEvent() override;
+#endif
   void OnPreeditChanged(const CompositionText& composition_text) override;
   void OnPreeditEnd() override;
   void OnPreeditStart() override {}
@@ -54,6 +66,17 @@ class COMPONENT_EXPORT(UI_BASE_IME_LINUX) InputMethodAuraLinux
       const gfx::Rect& screen_bounds) override;
   void OnInsertImage(const GURL& src) override;
 
+#if defined(OZONE_PLATFORM_WAYLAND_EXTERNAL)
+  unsigned GetAcceleratedWndHandle() { return handle_; }
+#endif
+
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  // Overriden from ui::NevaLinuxInputMethodContextDelegate through
+  // ui::LinuxInputMethodContextDelegate
+  bool SystemKeyboardDisabled() override;
+  ///@}
+
  protected:
   // Overridden from InputMethodBase.
   void OnWillChangeFocusedClient(TextInputClient* focused_before,
@@ -62,6 +85,11 @@ class COMPONENT_EXPORT(UI_BASE_IME_LINUX) InputMethodAuraLinux
                                 TextInputClient* focused) override;
 
  private:
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  friend class InputMethodAuraLinuxNeva;
+  ///@}
+
   // Continues to dispatch the ET_KEY_PRESSED event to the client.
   // This needs to be called "before" committing the result string or
   // the composition string.
@@ -106,6 +134,11 @@ class COMPONENT_EXPORT(UI_BASE_IME_LINUX) InputMethodAuraLinux
 
   ui::CompositionText composition_;
 
+#if defined(OZONE_PLATFORM_WAYLAND_EXTERNAL)
+  // Handle to accelerated window
+  unsigned handle_;
+#endif
+
   // The current text input type used to indicates if |context_| and
   // |context_simple_| are focused or not.
   TextInputType text_input_type_;
@@ -120,6 +153,10 @@ class COMPONENT_EXPORT(UI_BASE_IME_LINUX) InputMethodAuraLinux
   // Ignore commit/preedit-changed/preedit-end signals if this time is still in
   // the future.
   base::TimeTicks suppress_non_key_input_until_ = base::TimeTicks::UnixEpoch();
+
+#if defined(USE_NEVA_APPRUNTIME)
+  bool mark_send_key_press_event_ = false;
+#endif
 
   // Used for making callbacks.
   base::WeakPtrFactory<InputMethodAuraLinux> weak_ptr_factory_{this};

@@ -183,7 +183,17 @@ void AffiliationFetcherBase::OnSimpleLoaderComplete(
   }
 }
 
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if defined(USE_NEVA_APPRUNTIME) && (__cplusplus < 202002L)
+bool operator==(const AffiliationFetcherInterface::RequestInfo& lhs,
+                const AffiliationFetcherInterface::RequestInfo& rhs) {
+  return lhs.branding_info == rhs.branding_info &&
+         lhs.change_password_info == rhs.change_password_info &&
+         lhs.psl_extension_list == rhs.psl_extension_list;
+}
+#else   // defined(USE_NEVA_APPRUNTIME) && (__cplusplus < 202002L)
 bool operator==(const AffiliationFetcherInterface::RequestInfo& lhs,
                 const AffiliationFetcherInterface::RequestInfo& rhs) = default;
+#endif  // !(defined(USE_NEVA_APPRUNTIME) && (__cplusplus < 202002L))
 
 }  // namespace password_manager

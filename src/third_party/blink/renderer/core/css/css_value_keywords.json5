@@ -1293,6 +1293,10 @@
     "revert-layer",
     "unset",
 
+    // nav-*
+    "nav-current",
+    "nav-root",
+
     // background-image, etc.
     "linear-gradient",
     "radial-gradient",

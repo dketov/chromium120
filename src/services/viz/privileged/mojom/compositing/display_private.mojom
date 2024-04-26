@@ -69,6 +69,12 @@ interface DisplayPrivate {
   [EnableIf=is_android]
   SetSupportedRefreshRates(array<float> refresh_rates);
 
+  [EnableIf=use_neva_appruntime]
+  RenderProcessGone();
+
+  [EnableIf=use_neva_appruntime]
+  SetFirstActivateTimeout(mojo_base.mojom.TimeDelta timeout);
+
   // Notifies associated Display to not detach child surface controls during
   // destruction.
   [EnableIf=is_android]
@@ -116,6 +122,11 @@ interface DisplayClient {
   // window.
   [EnableIf=is_win]
   CreateLayeredWindowUpdater(pending_receiver<LayeredWindowUpdater> receiver);
+
+  // Notifies on any swap, so splash screen implementation can decide to show
+  // a web application window after swap has been completed.
+  [EnableIf=use_neva_appruntime]
+  DidCompleteSwap();
 
   // Sends the created child window to the browser process so that it can be
   // parented to the browser process window

@@ -606,6 +606,13 @@ StorageKey StorageKey::WithOrigin(const url::Origin& origin) const {
   return out;
 }
 
+#if defined(USE_NEVA_APPRUNTIME)
+StorageKey::StorageKey(const StorageKey& other, const std::string& app_id)
+    : StorageKey(other) {
+  origin_.set_webapp_id(app_id);
+}
+#endif
+
 StorageKey::StorageKey(const url::Origin& origin,
                        const net::SchemefulSite& top_level_site,
                        const base::UnguessableToken* nonce,

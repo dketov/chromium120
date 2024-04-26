@@ -56,6 +56,10 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
       FrameSinkManagerImpl* frame_sink_manager,
       OutputSurfaceProvider* output_surface_provider,
       uint32_t restart_id,
+#if defined(USE_NEVA_APPRUNTIME)
+      bool use_viz_fmp_with_timeout,
+      uint32_t viz_fmp_timeout,
+#endif
       bool run_all_compositor_stages_before_draw,
       const DebugRendererSettings* debug_settings,
       HintSessionFactory* hint_session_factory);
@@ -104,6 +108,11 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
       mojo::PendingRemote<mojom::BeginFrameObserver> observer) override;
   void SetMaxVrrInterval(
       absl::optional<base::TimeDelta> max_vrr_interval) override;
+
+#if defined(USE_NEVA_APPRUNTIME)
+  void RenderProcessGone() override;
+  void SetFirstActivateTimeout(base::TimeDelta timeout) override;
+#endif
 
   // mojom::CompositorFrameSink:
   void SetNeedsBeginFrame(bool needs_begin_frame) override;

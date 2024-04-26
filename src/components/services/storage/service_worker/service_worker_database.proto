@@ -276,6 +276,9 @@ message ServiceWorkerRegistrationData {
   optional bool has_hid_event_handlers = 25;
 
   optional bool has_usb_event_handlers = 26;
+
+  // webOS specific fields
+  optional string app_id = 101;
 }
 
 message ServiceWorkerResourceRecord {

@@ -13,6 +13,7 @@
 #include "base/containers/adapters.h"
 #include "base/functional/bind.h"
 #include "base/i18n/rtl.h"
+#include "base/logging.h"
 #include "base/notreached.h"
 #include "base/observer_list.h"
 #include "base/ranges/algorithm.h"
@@ -82,11 +83,15 @@ NativeWidget* CreateNativeWidget(const Widget::InitParams& params,
   if (params.native_widget)
     return params.native_widget;
 
-  const auto& factory = ViewsDelegate::GetInstance()->native_widget_factory();
-  if (!factory.is_null()) {
-    NativeWidget* native_widget = factory.Run(params, delegate);
-    if (native_widget)
-      return native_widget;
+  // ViewsDelegate interface is not implemented in appshell side
+  // and lead to crash issue when tooltips init.
+  if (ViewsDelegate::GetInstance()) {
+    const auto& factory = ViewsDelegate::GetInstance()->native_widget_factory();
+    if (!factory.is_null()) {
+      NativeWidget* native_widget = factory.Run(params, delegate);
+      if (native_widget)
+        return native_widget;
+    }
   }
   return internal::NativeWidgetPrivate::CreateNativeWidget(delegate);
 }
@@ -385,7 +390,11 @@ void Widget::Init(InitParams params) {
     widget_delegate_ = params.delegate ? params.delegate->AsWeakPtr()
                                        : owned_widget_delegate_->AsWeakPtr();
 
-    ViewsDelegate::GetInstance()->OnBeforeWidgetInit(&params, this);
+    // ViewsDelegate interface is not implemented in appshell side
+    // and lead to crash issue when tooltips init.
+    if (ViewsDelegate::GetInstance()) {
+      ViewsDelegate::GetInstance()->OnBeforeWidgetInit(&params, this);
+    }
 
     widget_delegate_ = params.delegate ? params.delegate->AsWeakPtr()
                                        : owned_widget_delegate_->AsWeakPtr();
@@ -904,18 +913,24 @@ bool Widget::IsVisibleOnAllWorkspaces() const {
 }
 
 void Widget::Maximize() {
-  if (native_widget_)
+  if (native_widget_) {
+    VLOG(1) << __PRETTY_FUNCTION__;
     native_widget_->Maximize();
+  }
 }
 
 void Widget::Minimize() {
-  if (native_widget_)
+  if (native_widget_) {
+    VLOG(1) << __PRETTY_FUNCTION__;
     native_widget_->Minimize();
+  }
 }
 
 void Widget::Restore() {
-  if (native_widget_)
+  if (native_widget_) {
+    VLOG(1) << __PRETTY_FUNCTION__;
     native_widget_->Restore();
+  }
 }
 
 bool Widget::IsMaximized() const {
@@ -934,11 +949,14 @@ void Widget::SetFullscreen(bool fullscreen, int64_t target_display_id) {
     DCHECK(target_display_id == display::kInvalidDisplayId);
   if (IsFullscreen() == fullscreen &&
       target_display_id == display::kInvalidDisplayId) {
+    LOG(INFO) << __PRETTY_FUNCTION__ << ": fullscreen=" << fullscreen
+              << ", skip";
     return;
   }
 
   auto weak_ptr = GetWeakPtr();
   native_widget_->SetFullscreen(fullscreen, target_display_id);
+  VLOG(1) << __PRETTY_FUNCTION__ << ": fullscreen=" << fullscreen;
   if (!weak_ptr)
     return;
 

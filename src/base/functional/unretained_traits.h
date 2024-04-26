@@ -33,6 +33,10 @@ struct wl_gpu;
 struct wl_shm;
 struct wl_surface;
 
+#if defined(OS_WEBOS)
+struct wl_webos_exported;
+#endif
+
 namespace base::internal {
 
 // True if `T` is completely defined or false otherwise. Note that this always
@@ -113,6 +117,12 @@ template <>
 inline constexpr bool IsIncompleteTypeSafeForUnretained<wl_shm> = true;
 template <>
 inline constexpr bool IsIncompleteTypeSafeForUnretained<wl_surface> = true;
+
+#if defined(OS_WEBOS)
+template <>
+inline constexpr bool IsIncompleteTypeSafeForUnretained<wl_webos_exported> =
+    true;
+#endif
 
 template <typename T, typename SFINAE = void>
 struct TypeSupportsUnretained {

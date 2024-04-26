@@ -47,6 +47,12 @@
 #include "media/base/media_drm_key_type.h"
 #endif  // BUILDFLAG(ENABLE_MEDIA_DRM_STORAGE)
 
+#if defined(USE_NEVA_MEDIA)
+#include "media/neva/media_constants.h"
+#include "media/neva/media_player_neva_types.h"
+#include "media/neva/media_track_info.h"
+#endif
+
 // Enum traits.
 
 IPC_ENUM_TRAITS_MAX_VALUE(blink::WebFullscreenVideoStatus,
@@ -191,5 +197,16 @@ IPC_STRUCT_TRAITS_BEGIN(media::OverlayInfo)
   IPC_STRUCT_TRAITS_MEMBER(is_fullscreen)
   IPC_STRUCT_TRAITS_MEMBER(is_persistent_video)
 IPC_STRUCT_TRAITS_END()
+
+#if defined(USE_NEVA_MEDIA)
+IPC_ENUM_TRAITS_MAX_VALUE(media::MediaTrackType,
+                          media::MediaTrackType::kMaxValue)
+IPC_ENUM_TRAITS_MAX_VALUE(media::MediaPlayerType,
+                          media::MediaPlayerType::kMaxValue)
+IPC_ENUM_TRAITS_MAX_VALUE(media::MediaEventType,
+                          media::MediaEventType::kMaxValue)
+IPC_ENUM_TRAITS_MAX_VALUE(media::SuspendReason, media::SuspendReason::kMaxValue)
+IPC_ENUM_TRAITS_MAX_VALUE(media::PlayerEvent, media::PlayerEvent::kMaxValue)
+#endif  // USE_NEVA_MEDIA
 
 #endif  // MEDIA_BASE_IPC_MEDIA_PARAM_TRAITS_MACROS_H_

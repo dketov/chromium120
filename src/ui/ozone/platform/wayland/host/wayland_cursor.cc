@@ -17,6 +17,14 @@
 #include "ui/ozone/platform/wayland/host/wayland_pointer.h"
 #include "ui/ozone/platform/wayland/host/wayland_serial_tracker.h"
 
+///@name USE_NEVA_APPRUNTIME
+///@{
+#include "ui/views/widget/desktop_aura/neva/ui_constants.h"
+#if defined(USE_NEVA_APPRUNTIME)
+#include "ui/gfx/neva/file_utils.h"
+#endif
+///@}
+
 namespace ui {
 
 WaylandCursor::WaylandCursor(WaylandPointer* pointer,
@@ -40,8 +48,14 @@ void WaylandCursor::UpdateBitmap(const std::vector<SkBitmap>& cursor_image,
   if (!pointer_)
     return;
 
-  if (!cursor_image.size())
+  if (!cursor_image.size()) {
+#if defined(OS_WEBOS)
+    if (hotspot_in_dips == lsm_cursor_hide_hotspot ||
+        hotspot_in_dips == lsm_cursor_restore_hotspot)
+      return SetLSMCursorAndCommit(hotspot_in_dips);
+#endif
     return HideCursor();
+  }
 
   const SkBitmap& image = cursor_image[0];
   if (image.dimensions().isEmpty())
@@ -158,6 +172,15 @@ void WaylandCursor::AttachAndCommit(wl_buffer* buffer,
 
   DCHECK(pointer_);
 
+// TODO(neva): Workaround to fix cursor enlarging on webOS when clicking
+// (touching) the screen.
+// Need to investigate why the webOS behaviour is different from the upstream.
+// Bug: http://clm.lge.com/issue/browse/NEVA-8311
+#if defined(USE_NEVA_APPRUNTIME) && defined(OS_WEBOS)
+  wl_pointer_set_cursor(pointer_->wl_object(), pointer_enter_serial->value,
+                        pointer_surface_.get(), hotspot_x_dip, hotspot_y_dip);
+#endif  // defined(USE_NEVA_APPRUNTIME) && defined(OS_WEBOS)
+
   wl_surface_damage(pointer_surface_.get(), 0, 0, buffer_width, buffer_height);
   // Note: should the offset be non-zero, use wl_surface_offset() to set it.
   wl_surface_attach(pointer_surface_.get(), buffer, 0, 0);
@@ -168,5 +191,21 @@ void WaylandCursor::AttachAndCommit(wl_buffer* buffer,
 
   connection_->Flush();
 }
+
+#if defined(OS_WEBOS)
+void WaylandCursor::SetLSMCursorAndCommit(const gfx::Point& hotspot_in_dips) {
+  uint32_t serial = 0;
+  auto pointer_enter_serial =
+      connection_->serial_tracker().GetSerial(wl::SerialType::kMouseEnter);
+  if (pointer_enter_serial.has_value())
+    serial = pointer_enter_serial->value;
+
+  wl_pointer_set_cursor(pointer_->wl_object(), serial, pointer_surface_.get(),
+                        hotspot_in_dips.x(), hotspot_in_dips.y());
+  wl_surface_commit(pointer_surface_.get());
+
+  connection_->Flush();
+}
+#endif
 
 }  // namespace ui

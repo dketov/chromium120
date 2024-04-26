@@ -46,6 +46,14 @@ struct PossibleUsernameFieldIdentifier {
            std::make_pair(rhs.driver_id, rhs.renderer_id);
   }
 
+// NOTE(neva): Remove the following lines wrapped by __cplusplus direcitve
+// after NEVA toolchain can build the orignal implementation.
+#if (__cplusplus < 202002L)
+  PossibleUsernameFieldIdentifier(int driver_id,
+                                  const autofill::FieldRendererId& renderer_id)
+      : driver_id(driver_id), renderer_id(renderer_id) {}
+#endif  // (__cplusplus < 202002L)
+
   friend bool operator==(const PossibleUsernameFieldIdentifier& lhs,
                          const PossibleUsernameFieldIdentifier& rhs) {
     return lhs.driver_id == rhs.driver_id && lhs.renderer_id == rhs.renderer_id;

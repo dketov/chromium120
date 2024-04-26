@@ -584,7 +584,12 @@ void TracingScenario::DisableNestedScenarios() {
 
 void TracingScenario::SetState(State new_state) {
   if (new_state == State::kEnabled || new_state == State::kDisabled) {
+// TODO(neva): Workaround for GCC v.9.3.0/9.4.0.
+#if !defined(__clang__)
+    CHECK_EQ(nullptr, tracing_session_.get());
+#else   // !defined(__clang__)
     CHECK_EQ(nullptr, tracing_session_);
+#endif  // defined(__clang__)
     CHECK_EQ(nullptr, active_scenario_);
     for (auto& scenario : nested_scenarios_) {
       CHECK_EQ(NestedTracingScenario::State::kDisabled,

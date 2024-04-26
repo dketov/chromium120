@@ -124,6 +124,15 @@
 #include "media/remoting/remoting_renderer_factory.h"  // nogncheck
 #endif  // BUILDFLAG(IS_CASTOS) || BUILDFLAG(IS_CAST_ANDROID)
 
+#if defined(USE_NEVA_MEDIA)
+#include "content/renderer/media/neva/mojo_media_player_factory.h"
+#include "media/audio/null_audio_sink.h"
+#include "media/base/media_switches_neva.h"
+#include "net/base/mime_util.h"
+#include "third_party/blink/public/platform/media/neva/create_video_window_callback.h"
+#include "third_party/blink/public/platform/web_media_player_client.h"
+#endif
+
 #if BUILDFLAG(IS_WIN)
 #include "content/renderer/media/win/dcomp_texture_wrapper_impl.h"
 #include "content/renderer/media/win/overlay_state_observer_impl.h"
@@ -134,6 +143,10 @@
 #include "media/mojo/clients/win/media_foundation_renderer_client_factory.h"
 #include "media/mojo/mojom/speech_recognition_service.mojom.h"
 #endif  // BUILDFLAG(IS_WIN)
+
+#if defined(USE_WEBOS_AUDIO)
+#include "media/audio/audio_device_description.h"
+#endif
 
 namespace {
 
@@ -298,6 +311,34 @@ std::unique_ptr<blink::WebVideoFrameSubmitter> CreateSubmitter(
       settings, /*use_sync_primitives=*/true);
 }
 
+#if defined(USE_NEVA_MEDIA)
+const char kUdpScheme[] = "udp";
+const char kRtpScheme[] = "rtp";
+const char kRtspScheme[] = "rtsp";
+const char kHLS[] = "m3u8";
+const char kWebOSCameraMimeType[] = "service/webos-camera";
+
+bool IsNevaCustomPlayback(const GURL& url, const std::string& mime_type) {
+  // Use Neva path for App which uses WebOS camera service
+  if (net::MatchesMimeType(kWebOSCameraMimeType, mime_type))
+    return true;
+
+  // Use Neva path for RTP/UDP/RTSP content
+  if (url.SchemeIs(kUdpScheme) || url.SchemeIs(kRtpScheme) ||
+      url.SchemeIs(kRtspScheme)) {
+    return true;
+  }
+
+  // Use Neva path for HLS content
+  if ((url.SchemeIsHTTPOrHTTPS() || url.SchemeIsFile()) &&
+      url.spec().find(kHLS) != std::string::npos) {
+    return true;
+  }
+
+  return false;
+}
+#endif
+
 }  // namespace
 
 namespace content {
@@ -357,12 +398,27 @@ blink::WebMediaPlayer* MediaFactory::CreateMediaPlayer(
     blink::MediaInspectorContext* inspector_context,
     blink::WebMediaPlayerEncryptedMediaClient* encrypted_client,
     blink::WebContentDecryptionModule* initial_cdm,
+#if defined(USE_WEBOS_AUDIO)
+    const blink::WebString& input_sink_id,
+#else
     const blink::WebString& sink_id,
+#endif
     viz::FrameSinkId parent_frame_sink_id,
     const cc::LayerTreeSettings& settings,
     scoped_refptr<base::SingleThreadTaskRunner>
         main_thread_compositor_task_runner,
     scoped_refptr<base::TaskRunner> compositor_worker_task_runner) {
+
+#if defined(USE_WEBOS_AUDIO)
+  blink::WebString sink_id = input_sink_id;
+  if (sink_id.IsNull() || sink_id.IsEmpty()) {
+    std::string device_id = media::AudioDeviceDescription::GetDefaultDeviceId(
+        render_frame_->GetRendererPreferences().display_id);
+    VLOG(1) << __func__ << " defult device_id=[" << device_id << "]";
+    sink_id = blink::WebString::FromUTF8(device_id);
+  }
+#endif
+
   blink::WebLocalFrame* web_frame = render_frame_->GetWebFrame();
   auto* delegate = GetWebMediaPlayerDelegate();
 
@@ -432,6 +488,23 @@ blink::WebMediaPlayer* MediaFactory::CreateMediaPlayer(
   EnsureDecoderFactory();
 
   base::WeakPtr<media::MediaObserver> media_observer;
+
+#if defined(USE_NEVA_MEDIA)
+  bool use_neva_media = !base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kDisableWebMediaPlayerNeva);
+
+  if (!use_neva_media) {
+    use_neva_media =
+        IsNevaCustomPlayback(url, client->ContentMIMEType().Latin1());
+  }
+
+  if (client->ContentTypeDecoder() == "sw")
+    use_neva_media = false;
+
+  if (content::RenderThreadImpl::current()->UseVideoDecodeAccelerator())
+    use_neva_media = false;
+#endif
+
   auto factory_selector = CreateRendererFactorySelector(
       player_id, media_log.get(), url,
       render_frame_->GetRenderFrameMediaPlaybackOptions(),
@@ -482,6 +555,17 @@ blink::WebMediaPlayer* MediaFactory::CreateMediaPlayer(
   std::unique_ptr<media::Demuxer> demuxer_override =
       GetContentClient()->renderer()->OverrideDemuxerForUrl(render_frame_, url,
                                                             media_task_runner);
+#if defined(USE_NEVA_MEDIA)
+  const blink::RendererPreferences& renderer_prefs =
+      render_frame_->GetRendererPreferences();
+
+  media::CreateMediaPlayerNevaCB create_media_player_neva_cb;
+  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kDisableNevaMediaService)) {
+    create_media_player_neva_cb =
+        base::BindRepeating(&media::CreateMojoMediaPlayer);
+  }
+#endif
 
 #if BUILDFLAG(ENABLE_CAST_RECEIVER)
   if (!demuxer_override && cast_streaming_resource_provider_) {
@@ -520,7 +604,18 @@ blink::WebMediaPlayer* MediaFactory::CreateMediaPlayer(
       render_frame_->GetRenderFrameMediaPlaybackOptions()
           .is_background_video_track_optimization_supported,
       std::move(demuxer_override),
+#if defined(USE_NEVA_MEDIA)
+      blink::Platform::Current()->GetBrowserInterfaceBroker(),
+      base::BindRepeating(
+          &content::mojom::FrameVideoWindowFactory::CreateVideoWindow,
+          base::Unretained(render_frame_->GetFrameVideoWindowFactory())),
+      blink::WebString::FromUTF8(renderer_prefs.application_id +
+                                 renderer_prefs.display_id),
+      renderer_prefs.use_unlimited_media_policy, use_neva_media,
+      std::move(create_media_player_neva_cb));
+#else
       blink::Platform::Current()->GetBrowserInterfaceBroker());
+#endif
 }
 
 blink::WebEncryptedMediaClient* MediaFactory::EncryptedMediaClient() {

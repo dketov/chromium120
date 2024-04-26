@@ -185,6 +185,25 @@ class SupportsWeakPtrBase {
   static WeakPtr<Derived> StaticAsWeakPtr(Derived* t) {
     static_assert(std::is_base_of_v<internal::SupportsWeakPtrBase, Derived>,
                   "AsWeakPtr argument must inherit from SupportsWeakPtr");
+// TODO(neva): GCC: Remove this workaround that partially reverts
+// https://crrev.com/c/4814291 to avoid compilation error based on the syntax
+// unsupported by g++ version 9.4.0 for amd64 and 9.3.0 for aarch64.
+// Comfirmed that g++ 12.1.0 for x86-64 was successful compile that.
+#if defined(COMPILER_GCC) && (__GNUC__ < 12)
+    return AsWeakPtrImpl<Derived>(t);
+  }
+
+ private:
+  // This template function uses type inference to find a Base of Derived
+  // which is an instance of SupportsWeakPtr<Base>. We can then safely
+  // static_cast the Base* to a Derived*.
+  template <typename Derived, typename Base>
+  static WeakPtr<Derived> AsWeakPtrImpl(SupportsWeakPtr<Base>* t) {
+    WeakPtr<Base> weak = t->AsWeakPtr();
+    return WeakPtr<Derived>(weak.CloneWeakReference(),
+                            static_cast<Derived*>(weak.ptr_));
+  }
+#else   // defined(COMPILER_GCC) && (__GNUC__ < 12)
     using Base = typename decltype(ExtractSinglyInheritedBase(t))::Base;
     // Ensure SupportsWeakPtr<Base>::AsWeakPtr() is called even if the subclass
     // hides or overloads it.
@@ -206,6 +225,7 @@ class SupportsWeakPtrBase {
   template <typename T>
   ExtractSinglyInheritedBase(SupportsWeakPtr<T>*)
       -> ExtractSinglyInheritedBase<SupportsWeakPtr<T>>;
+#endif  // !(defined(COMPILER_GCC) && (__GNUC__ < 12))
 };
 
 // Forward declaration from safe_ptr.h.

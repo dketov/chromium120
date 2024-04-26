@@ -2030,6 +2030,12 @@ void RTCPeerConnectionHandler::OnWebRtcEventLogWrite(
   }
 }
 
+#if defined(USE_NEVA_APPRUNTIME)
+bool RTCPeerConnectionHandler::IsOpened() const {
+  return !is_closed_;
+}
+#endif
+
 rtc::scoped_refptr<DataChannelInterface>
 RTCPeerConnectionHandler::CreateDataChannel(
     const String& label,

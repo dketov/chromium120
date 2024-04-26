@@ -19,10 +19,14 @@
 #if BUILDFLAG(IS_APPLE)
 #include "media/gpu/mac/vt_video_decode_accelerator_mac.h"
 #endif
+
 #if BUILDFLAG(USE_V4L2_CODEC) && \
     (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH))
 #include "media/gpu/v4l2/legacy/v4l2_video_decode_accelerator.h"
 #include "media/gpu/v4l2/v4l2_device.h"
+#include "ui/gl/gl_surface_egl.h"
+#elif defined(USE_WEBOS_CODEC)
+#include "media/gpu/webos/webos_video_decode_accelerator.h"
 #include "ui/gl/gl_surface_egl.h"
 #endif
 
@@ -51,6 +55,9 @@ gpu::VideoDecodeAcceleratorCapabilities GetDecoderCapabilitiesInternal(
       V4L2VideoDecodeAccelerator::GetSupportedProfiles(),
       &capabilities.supported_profiles);
 #endif
+#elif defined(USE_WEBOS_CODEC)
+  capabilities.supported_profiles =
+      WebOSVideoDecodeAccelerator::GetSupportedProfiles();
 #elif BUILDFLAG(IS_APPLE)
   capabilities.supported_profiles =
       VTVideoDecodeAccelerator::GetSupportedProfiles(workarounds);
@@ -82,8 +89,9 @@ GpuVideoDecodeAcceleratorFactory::GetDecoderCapabilities(
   static gpu::VideoDecodeAcceleratorCapabilities capabilities =
       GetDecoderCapabilitiesInternal(gpu_preferences, workarounds);
 
-#if BUILDFLAG(USE_V4L2_CODEC) && \
-    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH))
+#if BUILDFLAG(USE_V4L2_CODEC) &&                               \
+        (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)) || \
+    defined(USE_WEBOS_CODEC)
   // V4L2-only: the decoder devices may not be visible at the time the GPU
   // process is starting. If the capabilities vector is empty, try to query the
   // devices again in the hope that they will have appeared in the meantime.
@@ -122,6 +130,8 @@ GpuVideoDecodeAcceleratorFactory::CreateVDA(
 #if BUILDFLAG(USE_V4L2_CODEC) && \
     (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH))
     &GpuVideoDecodeAcceleratorFactory::CreateV4L2VDA,
+#elif defined(USE_WEBOS_CODEC)
+    &GpuVideoDecodeAcceleratorFactory::CreateWebOSVDA,
 #endif
 
 #if BUILDFLAG(IS_APPLE)
@@ -151,6 +161,18 @@ GpuVideoDecodeAcceleratorFactory::CreateV4L2VDA(
   decoder.reset(new V4L2VideoDecodeAccelerator(
       gl::GLSurfaceEGL::GetGLDisplayEGL()->GetDisplay(), gl_client_.get_context,
       gl_client_.make_context_current, new V4L2Device()));
+  return decoder;
+}
+#elif defined(USE_WEBOS_CODEC)
+std::unique_ptr<VideoDecodeAccelerator>
+GpuVideoDecodeAcceleratorFactory::CreateWebOSVDA(
+    const gpu::GpuDriverBugWorkarounds& workarounds,
+    const gpu::GpuPreferences& gpu_preferences,
+    MediaLog* media_log) const {
+  std::unique_ptr<VideoDecodeAccelerator> decoder;
+  decoder.reset(new WebOSVideoDecodeAccelerator(
+      gl::GLSurfaceEGL::GetGLDisplayEGL()->GetDisplay(), gl_client_.get_context,
+      gl_client_.make_context_current));
   return decoder;
 }
 #endif

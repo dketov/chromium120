@@ -117,12 +117,16 @@ OverlayProcessorInterface::CreateOverlayProcessor(
               ? 2
               : 1));
 #elif BUILDFLAG(IS_OZONE)
+#if !defined(USE_NEVA_MEDIA)
+  // Below '#if' block prevents making OverlayProcessorOzone.
+  // So the block is guarded within our directive.
 #if !BUILDFLAG(IS_CASTOS)
   // In tests and Ozone/X11, we do not expect surfaceless surface support.
   // For CastOS, we always need OverlayProcessorOzone.
   if (!capabilities.supports_surfaceless)
     return std::make_unique<OverlayProcessorStub>();
 #endif  // #if !BUILDFLAG(IS_CASTOS)
+#endif  // !defined(USE_NEVA_MEDIA)
 
   gpu::SharedImageInterface* sii = nullptr;
   auto* overlay_manager = ui::OzonePlatform::GetInstance()->GetOverlayManager();
@@ -144,6 +148,9 @@ OverlayProcessorInterface::CreateOverlayProcessor(
 #else
   return std::make_unique<OverlayProcessorOzone>(
       std::move(overlay_candidates),
+#if defined(USE_NEVA_MEDIA)
+      output_surface->GetSurfaceHandle(),
+#endif
       std::move(renderer_settings.overlay_strategies), sii);
 #endif  // BUILDFLAG(IS_CHROMEOS_LACROS)
 

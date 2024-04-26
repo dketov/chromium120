@@ -839,4 +839,16 @@ enum CSSSampleId {
     //    the existing items).
     // 2. Run the src/tools/metrics/histograms/update_use_counter_css.py script
     //    to update the UMA histogram names.
+
+    ///@name USE_NEVA_APPRUNTIME
+    ///@{
+    // These webOS-specific enumerators are intentionally placed here
+    // to avoid merge conflicts with the upstream.
+    kNavRight = 10000,
+    kNavLeft = 10001,
+    kNavUp = 10002,
+    kNavDown = 10003,
+    kNavIndex = 10004,
+    kCaretWidth = 10005,
+    ///@}
 };

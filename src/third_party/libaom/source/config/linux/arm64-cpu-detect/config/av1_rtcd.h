@@ -2002,36 +2002,56 @@ static void setup_rtcd_internal(void) {
   if (flags & HAS_NEON_DOTPROD) {
     av1_convolve_2d_sr = av1_convolve_2d_sr_neon_dotprod;
   }
-  if (flags & HAS_NEON_I8MM) {
+  // TODO(neva): Please remove this after webOS/OSE supports i8mm.
+  // For starfish(32 bit ARM) it is disabled. Currently there is
+  // no usage on webOS. But we need to consider enabling neon_i8mm
+  // for the future platforms such as 64bit starfish build.
+  if (flags & HAS_NEON_I8MM && !OS_WEBOS) {
     av1_convolve_2d_sr = av1_convolve_2d_sr_neon_i8mm;
   }
   av1_convolve_x_sr = av1_convolve_x_sr_neon;
   if (flags & HAS_NEON_DOTPROD) {
     av1_convolve_x_sr = av1_convolve_x_sr_neon_dotprod;
   }
-  if (flags & HAS_NEON_I8MM) {
+  // TODO(neva): Please remove this after webOS/OSE supports i8mm.
+  // For starfish(32 bit ARM) it is disabled. Currently there is
+  // no usage on webOS. But we need to consider enabling neon_i8mm
+  // for the future platforms such as 64bit starfish build.
+  if (flags & HAS_NEON_I8MM && !OS_WEBOS) {
     av1_convolve_x_sr = av1_convolve_x_sr_neon_i8mm;
   }
   av1_dist_wtd_convolve_2d = av1_dist_wtd_convolve_2d_neon;
   if (flags & HAS_NEON_DOTPROD) {
     av1_dist_wtd_convolve_2d = av1_dist_wtd_convolve_2d_neon_dotprod;
   }
-  if (flags & HAS_NEON_I8MM) {
+  // TODO(neva): Please remove this after webOS/OSE supports i8mm.
+  // For starfish(32 bit ARM) it is disabled. Currently there is
+  // no usage on webOS. But we need to consider enabling neon_i8mm
+  // for the future platforms such as 64bit starfish build.
+  if (flags & HAS_NEON_I8MM && !OS_WEBOS) {
     av1_dist_wtd_convolve_2d = av1_dist_wtd_convolve_2d_neon_i8mm;
   }
   av1_dist_wtd_convolve_x = av1_dist_wtd_convolve_x_neon;
   if (flags & HAS_NEON_DOTPROD) {
     av1_dist_wtd_convolve_x = av1_dist_wtd_convolve_x_neon_dotprod;
   }
-  if (flags & HAS_NEON_I8MM) {
+  // TODO(neva): Please remove this after webOS/OSE supports i8mm.
+  // For starfish(32 bit ARM) it is disabled. Currently there is
+  // no usage on webOS. But we need to consider enabling neon_i8mm
+  // for the future platforms such as 64bit starfish build.
+  if (flags & HAS_NEON_I8MM && !OS_WEBOS) {
     av1_dist_wtd_convolve_x = av1_dist_wtd_convolve_x_neon_i8mm;
   }
   av1_get_crc32c_value = av1_get_crc32c_value_c;
   if (flags & HAS_ARM_CRC32) {
     av1_get_crc32c_value = av1_get_crc32c_value_arm_crc32;
   }
+  // TODO(neva): Please remove this after webOS/OSE supports i8mm.
+  // For starfish(32 bit ARM) it is disabled. Currently there is
+  // no usage on webOS. But we need to consider enabling neon_i8mm
+  // for the future platforms such as 64bit starfish build.
   av1_warp_affine = av1_warp_affine_neon;
-  if (flags & HAS_NEON_I8MM) {
+  if (flags & HAS_NEON_I8MM && !OS_WEBOS) {
     av1_warp_affine = av1_warp_affine_neon_i8mm;
   }
 }

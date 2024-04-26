@@ -47,6 +47,9 @@ MIRACLE_PARAMETER_FOR_INT(GetNormalMaxItemsInCacheForSoftware,
                           kNormalMaxItemsInCacheForSoftwareFeature,
                           "NormalMaxItemsInCacheForSoftware",
                           1000)
+#if defined(USE_NEVA_APPRUNTIME)
+const size_t kSuspendedMaxItemsInCacheForSoftware = 0;
+#endif  // defined(USE_NEVA_APPRUNTIME)
 
 class AutoRemoveKeyFromTaskMap {
  public:
@@ -176,6 +179,12 @@ SoftwareImageDecodeCache::SoftwareImageDecodeCache(
         this, "cc::SoftwareImageDecodeCache",
         base::SingleThreadTaskRunner::GetCurrentDefault());
   }
+#if defined(USE_NEVA_APPRUNTIME)
+  memory_pressure_listener_.reset(new base::MemoryPressureListener(
+      FROM_HERE,
+      base::BindRepeating(&SoftwareImageDecodeCache::OnMemoryPressure,
+                          base::Unretained(this))));
+#endif  // defined(USE_NEVA_APPRUNTIME)
 }
 
 SoftwareImageDecodeCache::~SoftwareImageDecodeCache() {
@@ -646,6 +655,28 @@ void SoftwareImageDecodeCache::ReduceCacheUsageUntilWithinLimit(size_t limit) {
     it = decoded_images_.Erase(it);
   }
 }
+
+#if defined(USE_NEVA_APPRUNTIME)
+void SoftwareImageDecodeCache::OnMemoryPressure(
+    base::MemoryPressureListener::MemoryPressureLevel level) {
+  base::AutoLock lock(lock_);
+  switch (level) {
+    case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE:
+#if !defined(OS_WEBOS)
+    case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_MODERATE:
+      break;
+#else   // defined(OS_WEBOS)
+      max_items_in_cache_ = GetNormalMaxItemsInCacheForSoftware();
+      break;
+    case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_MODERATE:
+#endif  // !defined(OS_WEBOS)
+    case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL:
+      max_items_in_cache_ = kSuspendedMaxItemsInCacheForSoftware;
+      ReduceCacheUsageUntilWithinLimit(0);
+      break;
+  }
+}
+#endif  // defined(USE_NEVA_APPRUNTIME)
 
 void SoftwareImageDecodeCache::ReduceCacheUsage() {
   base::AutoLock lock(lock_);

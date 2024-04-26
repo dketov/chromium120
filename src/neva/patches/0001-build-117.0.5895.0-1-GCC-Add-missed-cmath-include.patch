@@ -1,0 +1,43 @@
+From e5ec02e4f50574e70e6179c33c532a2574ede207 Mon Sep 17 00:00:00 2001
+From: "donghwan.yu" <donghwan.yu@lge.com>
+Date: Mon, 14 Aug 2023 11:23:52 +0900
+Subject: [PATCH] [build] 117.0.5895.0~1: GCC: Add missed cmath include
+
+:Release Notes:
+Add missed cmath include in tones.cc file
+for a third party material_color_utilities
+after rolling to 117.0.5895.0~1
+
+:Detailed Notes:
+Upstream CL https://crrev.com/c/4684448 rolled
+src/third_party/material_color_utilities/src/
+bd6537fb1..234a000e5 (72 commits).
+
+Without this CL generates a compiler error:
+  third_party/material_color_utilities/src/cpp/palettes/tones.cc:70:9:
+  error: 'round' was not declared in this scope
+
+So this CL added missed include.
+
+:Issues Addressed:
+[NEVA-8318] Upgrade neva-main-rolling up to 5895 BUILD
+---
+ cpp/palettes/tones.cc | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/cpp/palettes/tones.cc b/cpp/palettes/tones.cc
+index 7b42646..bfd4a14 100644
+--- a/cpp/palettes/tones.cc
++++ b/cpp/palettes/tones.cc
+@@ -16,6 +16,8 @@
+ 
+ #include "cpp/palettes/tones.h"
+ 
++#include <cmath>
++
+ #include "cpp/cam/cam.h"
+ #include "cpp/cam/hct.h"
+ 
+-- 
+2.41.0
+

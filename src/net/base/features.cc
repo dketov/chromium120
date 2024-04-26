@@ -170,6 +170,9 @@ BASE_FEATURE(kSameSiteDefaultChecksMethodRigorously,
              "SameSiteDefaultChecksMethodRigorously",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+const base::Feature kAggressiveFlushing{"AggressiveFlushing",
+                                        base::FEATURE_DISABLED_BY_DEFAULT};
+
 #if BUILDFLAG(CHROME_ROOT_STORE_OPTIONAL)
 BASE_FEATURE(kChromeRootStoreUsed,
              "ChromeRootStoreUsed",
@@ -422,7 +425,13 @@ BASE_FEATURE(kDisableBlackholeOnNoNewNetwork,
 #if BUILDFLAG(IS_LINUX)
 BASE_FEATURE(kAddressTrackerLinuxIsProxied,
              "AddressTrackerLinuxIsProxied",
+// TODO(neva): Please remove this block after wam_demo crash issue
+// has been resolved on both PC and OSE.
+#if defined(USE_NEVA_APPRUNTIME)
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#else
              base::FEATURE_ENABLED_BY_DEFAULT);
+#endif  // defined(USE_NEVA_APPRUNTIME)
 #endif  // BUILDFLAG(IS_LINUX)
 
 // Enables binding of cookies to the port that originally set them by default.

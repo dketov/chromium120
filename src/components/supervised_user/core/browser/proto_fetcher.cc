@@ -707,7 +707,12 @@ ParallelFetchManager<Request, Response>::ParallelFetchManager(
 template <typename Request, typename Response>
 void ParallelFetchManager<Request, Response>::Fetch(
     const Request& request,
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+    typename Fetcher::Callback callback) {
+#else   // (__cplusplus < 202002L)
     Fetcher::Callback callback) {
+#endif  // !(__cplusplus < 202002L)
   CHECK(callback) << "Use base::DoNothing() instead of empty callback.";
   KeyType key = requests_in_flight_.Add(MakeFetcher(request));
   requests_in_flight_.Lookup(key)->Start(

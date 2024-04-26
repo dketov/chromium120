@@ -265,6 +265,24 @@ bool GrGLBuffer::onUpdateData(const void* src, size_t offset, size_t size, bool 
 
     // bindbuffer handles dirty context
     GrGLenum target = this->glGpu()->bindBuffer(fIntendedType, this);
+
+#if defined(ENABLE_SKIA_FORCE_INVALIDATE)
+    bool noInvalidation =
+            this->glGpu()->glCaps().invalidateBufferType() == GrGLCaps::InvalidateBufferType::kNone;
+    if (noInvalidation) {
+        // No need for a separate invalidation if we're overwriting everything. If we don't
+        // have a way to invalidate then we cheat a bit here. We use glBufferData but with the src
+        // data size. Currently, no methods allow a partial update that preserves contents of
+        // non-updated portions of the buffer (map() does a glBufferData(..size, nullptr..))
+        GrGLenum error =
+                GL_ALLOC_CALL(this->glGpu(), BufferData(target, (GrGLsizeiptr)size, src, fUsage));
+        if (error != GR_GL_NO_ERROR) {
+            return false;
+        }
+        return true;
+    }
+#endif
+
     if (!preserve) {
         GrGLenum error = invalidate_buffer(this->glGpu(), target, fUsage, fBufferID, this->size());
         if (error != GR_GL_NO_ERROR) {

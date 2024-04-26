@@ -367,8 +367,16 @@ AuthenticatorRequestDialogModel::Mechanism::CredentialInfo::CredentialInfo(
     const CredentialInfo&) = default;
 AuthenticatorRequestDialogModel::Mechanism::CredentialInfo::~CredentialInfo() =
     default;
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+bool AuthenticatorRequestDialogModel::Mechanism::CredentialInfo::operator==(
+    const CredentialInfo& other) const {
+  return source == other.source && user_id == other.user_id;
+}
+#else   // (__cplusplus < 202002L)
 bool AuthenticatorRequestDialogModel::Mechanism::CredentialInfo::operator==(
     const CredentialInfo&) const = default;
+#endif  // !(__cplusplus < 202002L)
 
 void AuthenticatorRequestDialogModel::ResetEphemeralState() {
   ephemeral_state_ = {};

@@ -31,6 +31,15 @@
 
 namespace url {
 
+#if defined(USE_NEVA_APPRUNTIME)
+bool Origin::file_origin_changed_ = false;
+
+// static
+void Origin::SetFileOriginChanged(bool changed) {
+  file_origin_changed_ = changed;
+}
+#endif
+
 Origin::Origin() : nonce_(Nonce()) {}
 
 Origin Origin::Create(const GURL& url) {
@@ -59,6 +68,15 @@ Origin Origin::Create(const GURL& url) {
 
   if (!tuple.IsValid())
     return Origin();
+
+#if defined(USE_NEVA_APPRUNTIME)
+  if (url.get_webapp_id()) {
+    auto origin = Origin(std::move(tuple));
+    origin.set_webapp_id(url.get_webapp_id().value());
+    return origin;
+  }
+#endif
+
   return Origin(std::move(tuple));
 }
 
@@ -137,7 +155,11 @@ std::string Origin::Serialize() const {
   if (opaque())
     return "null";
 
+#if defined(USE_NEVA_APPRUNTIME)
+  if (scheme() == kFileScheme && !file_origin_changed_)
+#else
   if (scheme() == kFileScheme)
+#endif
     return "file://";
 
   return tuple_.Serialize();
@@ -147,7 +169,17 @@ GURL Origin::GetURL() const {
   if (opaque())
     return GURL();
 
+#if defined(USE_NEVA_APPRUNTIME)
+  if (get_webapp_id().has_value()) {
+    GURL url = tuple_.GetURL();
+    url.set_webapp_id(get_webapp_id().value());
+    return url;
+  }
+
+  if (scheme() == kFileScheme && !file_origin_changed_)
+#else
   if (scheme() == kFileScheme)
+#endif
     return GURL("file:///");
 
   return tuple_.GetURL();
@@ -158,6 +190,18 @@ const base::UnguessableToken* Origin::GetNonceForSerialization() const {
 }
 
 bool Origin::IsSameOriginWith(const Origin& other) const {
+#if defined(USE_NEVA_APPRUNTIME)
+  // Avoid file-scheme tuples equality check fail below since app_id is appended
+  // to default file-scheme origin value to trigger separate local storage
+  // creation for each webapp.
+  if (scheme() == kFileScheme && other.scheme() == kFileScheme) {
+    // If both file url has file security origin, compare them.
+    if (!host().empty() && !other.host().empty()) {
+      return host() == other.host();
+    }
+    return true;
+  }
+#endif
   // scheme/host/port must match, even for opaque origins where |tuple_| holds
   // the precursor origin.
   return std::tie(tuple_, nonce_) == std::tie(other.tuple_, other.nonce_);

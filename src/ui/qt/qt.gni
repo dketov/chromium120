@@ -7,9 +7,10 @@ import("//build/config/sanitizers/sanitizers.gni")
 import("//build/config/sysroot.gni")
 
 declare_args() {
+  # TODO(neva): Set to false because Neva environment don't use Qt.
   # TODO(https://crbug.com/1424435): Allow QT in MSAN builds once QT is
   # added to the instrumented libraries.
-  use_qt = is_linux && !is_castos && !is_msan
+  use_qt = false && (is_linux && !is_castos && !is_msan)
 }
 
 declare_args() {

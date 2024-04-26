@@ -5,7 +5,6 @@
 #include "extensions/browser/guest_view/web_view/web_view_guest.h"
 
 #include <stddef.h>
-
 #include <map>
 #include <memory>
 #include <string>
@@ -81,6 +80,32 @@
 #include "ui/events/keycodes/keyboard_codes.h"
 #include "url/url_constants.h"
 
+///@name USE_NEVA_APPRUNTIME
+///@{
+#include "content/common/renderer.mojom.h"
+///@}
+
+#if defined(USE_NEVA_MEDIA)
+#include "content/public/browser/neva/media_state_manager.h"
+#endif
+
+#if defined(USE_NEVA_APPRUNTIME)
+#include "extensions/common/switches.h"
+#include "neva/app_runtime/app/app_runtime_main_delegate.h"
+#include "neva/user_agent/common/user_agent.h"
+#include "third_party/blink/public/mojom/loader/resource_load_info.mojom.h"
+#if defined(OS_WEBOS)
+#include "neva/app_runtime/browser/app_runtime_webview_controller_impl.h"
+#include "neva/app_runtime/public/mojom/app_runtime_webview.mojom.h"
+#include "neva/app_runtime/public/webview_controller_delegate.h"
+#include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
+#endif  // OS_WEBOS
+#endif  // USE_NEVA_APPRUNTIME
+
+#if defined(USE_NEVA_BROWSER_SERVICE)
+#include "components/permissions/permission_request_manager.h"
+#endif  // USE_NEVA_BROWSER_SERVICE
+
 using base::UserMetricsAction;
 using content::GlobalRequestID;
 using content::RenderFrameHost;
@@ -91,6 +116,56 @@ using guest_view::GuestViewBase;
 using guest_view::GuestViewEvent;
 using guest_view::GuestViewManager;
 using zoom::ZoomController;
+
+#if defined(USE_NEVA_APPRUNTIME) && defined(OS_WEBOS)
+namespace {
+
+const char kDevicePixelRatio[] = "devicePixelRatio";
+const char kIdentifier[] = "identifier";
+const char kInitialize[] = "initialize";
+
+class WebViewGuestWebViewControllerDelegate
+    : public neva_app_runtime::WebViewControllerDelegate {
+ public:
+  WebViewGuestWebViewControllerDelegate(
+      extensions::WebViewGuest* web_view_guest)
+      : web_view_guest_(web_view_guest) {}
+
+  void RunCommand(const std::string& name,
+                  const std::vector<std::string>& arguments) override {}
+
+  std::string RunFunction(const std::string& name,
+                          const std::vector<std::string>&) override {
+    if (name == kInitialize) {
+      base::Value(base::Value::Dict().Set(kIdentifier, GetIdentifier()))
+          .GetString();
+    } else if (name == kIdentifier) {
+      return GetIdentifier();
+    } else if (name == kDevicePixelRatio) {
+      return GetDevicePixelRatio();
+    }
+    return std::string();
+  }
+
+ private:
+  std::string GetIdentifier() {
+    base::CommandLine* cmd = base::CommandLine::ForCurrentProcess();
+    return cmd->GetSwitchValueASCII(extensions::switches::kWebOSAppId);
+  }
+
+  std::string GetDevicePixelRatio() {
+    float device_scale_factor = web_view_guest_->web_contents()
+                                    ->GetRenderWidgetHostView()
+                                    ->GetDeviceScaleFactor();
+    double page_zoom_factor = web_view_guest_->GetZoom();
+    return std::to_string(device_scale_factor * page_zoom_factor);
+  }
+
+  extensions::WebViewGuest* web_view_guest_ = nullptr;
+};
+
+}  // namespace
+#endif
 
 namespace extensions {
 
@@ -115,6 +190,29 @@ constexpr char kInternalCurrentEntryIndex[] = "currentEntryIndex";
 constexpr char kInternalEntryCount[] = "entryCount";
 constexpr char kInternalProcessId[] = "processId";
 constexpr char kInternalVisibleUrl[] = "visibleUrl";
+
+#if defined(USE_NEVA_APPRUNTIME)
+constexpr char kPdfJsViewerHtmlURL[] = "pdf.js/web/viewer.html?pdf_url=";
+
+GURL GetPdfUrlFromExtensionURL(const GURL& url) {
+  if (!url.SchemeIs(extensions::kExtensionScheme)) {
+    return GURL();
+  }
+
+  const std::string delimiter = "pdf_url=";
+  std::string lower_url = base::ToLowerASCII(url.spec());
+  int url_start = lower_url.find(delimiter) + delimiter.length();
+  GURL pdf_url =
+      GURL(lower_url.substr(url_start, lower_url.length() - url_start));
+  base::FilePath pdf_file_name(pdf_url.ExtractFileName());
+  if (pdf_url.SchemeIsHTTPOrHTTPS() &&
+      pdf_file_name.MatchesExtension(std::string(".pdf"))) {
+    return pdf_url;
+  }
+
+  return GURL();
+}
+#endif
 
 // Returns storage partition removal mask from web_view clearData mask. Note
 // that storage partition mask is a subset of webview's data removal mask.
@@ -370,6 +468,19 @@ void WebViewGuest::CreateWebContentsWithStoragePartition(
     return;
   }
 
+#if defined(USE_NEVA_APPRUNTIME)
+  scoped_refptr<content::SiteInstance> guest_site_instance;
+  base::CommandLine* cmd = base::CommandLine::ForCurrentProcess();
+  if (!cmd->HasSwitch(switches::kProcessPerGuestWebView)) {
+    // If we already have a webview tag in the same app using the same storage
+    // partition, we should use the same SiteInstance so the existing tag and
+    // the new tag can script each other.
+    auto* guest_view_manager =
+        GuestViewManager::FromBrowserContext(browser_context());
+    guest_site_instance =
+        guest_view_manager->GetGuestSiteInstance(*partition_config);
+  }
+#else
   // If we already have a webview tag in the same app using the same storage
   // partition, we should use the same SiteInstance so the existing tag and
   // the new tag can script each other.
@@ -377,6 +488,7 @@ void WebViewGuest::CreateWebContentsWithStoragePartition(
       GuestViewManager::FromBrowserContext(browser_context());
   scoped_refptr<content::SiteInstance> guest_site_instance =
       guest_view_manager->GetGuestSiteInstance(*partition_config);
+#endif  // USE_NEVA_APPRUNTIME
   if (!guest_site_instance) {
     // Create the SiteInstance in a new BrowsingInstance, which will ensure
     // that webview tags are also not allowed to send messages across
@@ -390,6 +502,11 @@ void WebViewGuest::CreateWebContentsWithStoragePartition(
   SetCreateParams(create_params, params);
   std::unique_ptr<WebContents> new_contents = WebContents::Create(params);
 
+#if defined(USE_NEVA_BROWSER_SERVICE)
+  permissions::PermissionRequestManager::CreateForWebContents(
+      new_contents.get());
+#endif
+
   // Grant access to the origin of the embedder to the guest process. This
   // allows blob: and filesystem: URLs with the embedder origin to be created
   // inside the guest. It is possible to do this by running embedder code
@@ -399,6 +516,11 @@ void WebViewGuest::CreateWebContentsWithStoragePartition(
   content::ChildProcessSecurityPolicy::GetInstance()->GrantCommitOrigin(
       new_contents->GetPrimaryMainFrame()->GetProcess()->GetID(),
       url::Origin::Create(GetOwnerSiteURL()));
+
+#if defined(USE_NEVA_APPRUNTIME) && defined(OS_WEBOS)
+  neva_app_runtime::AppRuntimeWebViewControllerImpl::CreateForWebContents(
+      new_contents.get());
+#endif
 
   std::move(callback).Run(std::move(owned_this), std::move(new_contents));
 }
@@ -642,6 +764,11 @@ bool WebViewGuest::HandleKeyboardEvent(
 
 bool WebViewGuest::PreHandleGestureEvent(WebContents* source,
                                          const blink::WebGestureEvent& event) {
+#if defined(ENABLE_PINCH_TO_ZOOM)
+  if (blink::WebInputEvent::IsPinchGestureEventType(event.GetType())) {
+    return false;
+  }
+#endif
   return !allow_scaling_ && GuestViewBase::PreHandleGestureEvent(source, event);
 }
 
@@ -747,13 +874,60 @@ void WebViewGuest::SetUserAgentOverride(
   if (is_overriding_user_agent_) {
     base::RecordAction(UserMetricsAction("WebView.Guest.OverrideUA"));
   }
+
+#if defined(USE_NEVA_APPRUNTIME)
+  if (neva_user_agent::IsUserAgentClientHintsEnabled()) {
+    blink::UserAgentOverride ua_override;
+    ua_override.ua_string_override = user_agent_override;
+    ua_override.ua_metadata_override =
+        neva_user_agent::GetDefaultUserAgentMetadata();
+    web_contents()->SetUserAgentOverride(ua_override, false);
+  } else {
+    web_contents()->SetUserAgentOverride(
+        blink::UserAgentOverride::UserAgentOnly(user_agent_override), false);
+  }
+#else
   web_contents()->SetUserAgentOverride(
       blink::UserAgentOverride::UserAgentOnly(user_agent_override), false);
+#endif  // defined(USE_NEVA_APPRUNTIME)
 }
 
 void WebViewGuest::Stop() {
   web_contents()->Stop();
 }
+
+///@name USE_NEVA_APPRUNTIME
+///@{
+void WebViewGuest::Suspend() {
+  if (is_suspended_)
+    return;
+  is_suspended_ = true;
+  base::RecordAction(UserMetricsAction("WebView.Guest.Suspend"));
+#if defined(USE_NEVA_MEDIA)
+  content::MediaStateManager::GetInstance()->SuspendAllMedia(web_contents());
+#endif
+
+  content::RenderProcessHost* host =
+      web_contents()->GetPrimaryMainFrame()->GetProcess();
+  if (host)
+    host->GetRendererInterface()->ProcessSuspend();
+}
+
+void WebViewGuest::Resume() {
+  if (!is_suspended_)
+    return;
+  is_suspended_ = false;
+  base::RecordAction(UserMetricsAction("WebView.Guest.Resume"));
+#if defined(USE_NEVA_MEDIA)
+  content::MediaStateManager::GetInstance()->ResumeAllMedia(web_contents());
+#endif
+
+  content::RenderProcessHost* host =
+      web_contents()->GetPrimaryMainFrame()->GetProcess();
+  if (host)
+    host->GetRendererInterface()->ProcessResume();
+}
+///@}
 
 void WebViewGuest::Terminate() {
   base::RecordAction(UserMetricsAction("WebView.Guest.Terminate"));
@@ -814,7 +988,7 @@ WebViewGuest::WebViewGuest(content::RenderFrameHost* owner_rfh)
           ExtensionsAPIClient::Get()->CreateWebViewGuestDelegate(this))),
       is_spatial_navigation_enabled_(
           base::CommandLine::ForCurrentProcess()->HasSwitch(
-              switches::kEnableSpatialNavigation)) {}
+              ::switches::kEnableSpatialNavigation)) {}
 
 WebViewGuest::~WebViewGuest() {
   if (!attached() && GetOpener())
@@ -827,6 +1001,13 @@ WebViewGuest::~WebViewGuest() {
   // WebContents in GuestViewBase's destructor, then only the base class' WCO
   // overrides will be called.
   ClearOwnedGuestContents();
+#if defined(USE_NEVA_APPRUNTIME)
+  if (!cors_exception_pdf_url_.is_empty()) {
+    // Remove exception for pdf URL, if not removed yet.
+    neva_app_runtime::GetAppRuntimeContentBrowserClient()
+        ->SetCorsCorbDisabledForURL(cors_exception_pdf_url_, false);
+  }
+#endif
 }
 
 void WebViewGuest::DidFinishNavigation(
@@ -859,7 +1040,28 @@ void WebViewGuest::DidFinishNavigation(
   }
 
   base::Value::Dict args;
+#if defined(USE_NEVA_APPRUNTIME)
+  if (navigation_handle->GetURL().SchemeIs(extensions::kExtensionScheme)) {
+    if (!cors_exception_pdf_url_.is_empty()) {
+      // We pass the PDF url to be stored in history instead of extension
+      args.Set(guest_view::kUrl, cors_exception_pdf_url_.spec());
+
+      // When we click a PDF link in Google search page then below URL getting
+      // added to history. Which leads to load the same PDF when we go back.
+      GURL prev_main_frame_url =
+          navigation_handle->GetPreviousPrimaryMainFrameURL();
+      if (!prev_main_frame_url.SchemeIs(extensions::kExtensionScheme))
+        args.Set(webview::kOldURL, prev_main_frame_url.spec());
+    } else {
+      // Do not allow "chrome-extension" schema URLs to be added to history
+      return;
+    }
+  } else {
+    args.Set(guest_view::kUrl, navigation_handle->GetURL().spec());
+  }
+#else
   args.Set(guest_view::kUrl, navigation_handle->GetURL().spec());
+#endif
   args.Set(kInternalVisibleUrl, web_contents()->GetVisibleURL().spec());
   args.Set(guest_view::kIsTopLevel, IsInWebViewMainFrame(navigation_handle));
   args.Set(
@@ -889,6 +1091,21 @@ void WebViewGuest::DocumentOnLoadCompletedInPrimaryMainFrame() {
       webview::kEventContentLoad, std::move(args)));
 }
 
+#if defined(USE_NEVA_APPRUNTIME)
+void WebViewGuest::ResourceLoadComplete(
+    content::RenderFrameHost* render_frame_host,
+    const content::GlobalRequestID& request_id,
+    const blink::mojom::ResourceLoadInfo& resource_load_info) {
+  if (!cors_exception_pdf_url_.is_empty() &&
+      cors_exception_pdf_url_ == resource_load_info.original_url) {
+    // PDF URL load completed. Remove PDF url from exception list
+    neva_app_runtime::GetAppRuntimeContentBrowserClient()
+        ->SetCorsCorbDisabledForURL(cors_exception_pdf_url_, false);
+    cors_exception_pdf_url_ = GURL::EmptyGURL();
+  }
+}
+#endif
+
 void WebViewGuest::DidStartNavigation(
     content::NavigationHandle* navigation_handle) {
   WebViewGuest* opener = GetOpener();
@@ -900,12 +1117,30 @@ void WebViewGuest::DidStartNavigation(
     }
   }
 
+#if defined(USE_NEVA_APPRUNTIME)
+  if (cors_exception_pdf_url_.is_empty()) {
+    cors_exception_pdf_url_ =
+        GetPdfUrlFromExtensionURL(navigation_handle->GetURL());
+    if (!cors_exception_pdf_url_.is_empty()) {
+      neva_app_runtime::GetAppRuntimeContentBrowserClient()
+          ->SetCorsCorbDisabledForURL(cors_exception_pdf_url_, true);
+    }
+  }
+#endif
+
   // loadStart shouldn't be sent for same document navigations.
   if (navigation_handle->IsSameDocument())
     return;
 
   base::Value::Dict args;
+#if defined(USE_NEVA_APPRUNTIME)
+  // Take care of PDF urls with extension schema for 'loadstart' event
+  args.Set(guest_view::kUrl, cors_exception_pdf_url_.is_empty()
+                                 ? navigation_handle->GetURL().spec()
+                                 : cors_exception_pdf_url_.spec());
+#else
   args.Set(guest_view::kUrl, navigation_handle->GetURL().spec());
+#endif
   args.Set(guest_view::kIsTopLevel, IsInWebViewMainFrame(navigation_handle));
   DispatchEventToView(std::make_unique<GuestViewEvent>(webview::kEventLoadStart,
                                                        std::move(args)));
@@ -1015,6 +1250,39 @@ void WebViewGuest::RenderFrameCreated(
         ->SetFrameName(name_);
     SetTransparency(render_frame_host);
   }
+
+#if defined(USE_NEVA_APPRUNTIME) && defined(OS_WEBOS)
+  content::WebContents* web_contents =
+      content::WebContents::FromRenderFrameHost(render_frame_host);
+
+  if (render_frame_host == web_contents->GetPrimaryMainFrame()) {
+    auto* webview_controller_impl =
+        neva_app_runtime::AppRuntimeWebViewControllerImpl::FromWebContents(
+            web_contents);
+
+    // The method is called to notify of the creation of all RenderFrameHost
+    // objects, including related to subframes with other WebContents, as in
+    // the case of an iframe, for which no webview_controller_impl has been
+    // created as content::WebContentsUserData. So webview_controller_impl
+    // can be nullptr.
+    if (!webview_controller_impl)
+      return;
+
+    webview_controller_delegate_ =
+        std::make_unique<WebViewGuestWebViewControllerDelegate>(this);
+    webview_controller_impl->SetDelegate(webview_controller_delegate_.get());
+
+    mojo::AssociatedRemote<neva_app_runtime::mojom::AppRuntimeWebViewClient>
+        client;
+    render_frame_host->GetMainFrame()
+        ->GetRemoteAssociatedInterfaces()
+        ->GetInterface(&client);
+    client->AddInjectionToLoad(std::string("v8/webosservicebridge"),
+                               std::string("{}"));
+    client->AddInjectionToLoad(std::string("v8/webossystem"),
+                               std::string("{}"));
+  }
+#endif
 }
 
 void WebViewGuest::RenderFrameDeleted(
@@ -1102,6 +1370,17 @@ bool WebViewGuest::CheckMediaAccessPermission(
 void WebViewGuest::CanDownload(const GURL& url,
                                const std::string& request_method,
                                base::OnceCallback<void(bool)> callback) {
+#if defined(USE_NEVA_APPRUNTIME)
+  base::FilePath pdf_file_name(url.ExtractFileName());
+  if (url.SchemeIsHTTPOrHTTPS() &&
+      pdf_file_name.MatchesExtension(std::string(".pdf"))) {
+    NavigateGuest(std::string(kPdfJsViewerHtmlURL) + url.spec(), true);
+
+    if (!callback.is_null())
+      std::move(callback).Run(true);
+    return;
+  }
+#endif  // USE_NEVA_APPRUNTIME
   web_view_permission_helper_->CanDownload(url, request_method,
                                            std::move(callback));
 }
@@ -1474,6 +1753,10 @@ void WebViewGuest::WebContentsCreated(WebContents* source_contents,
                                       const std::string& frame_name,
                                       const GURL& target_url,
                                       WebContents* new_contents) {
+#if defined(USE_NEVA_BROWSER_SERVICE)
+  permissions::PermissionRequestManager::CreateForWebContents(new_contents);
+#endif
+
   // The `new_contents` is the one we just created in CreateNewGuestWindow.
   auto* guest = WebViewGuest::FromWebContents(new_contents);
   CHECK(guest);
@@ -1573,6 +1856,10 @@ void WebViewGuest::LoadURLWithParams(const GURL& url,
     load_url_params.override_user_agent =
         content::NavigationController::UA_OVERRIDE_TRUE;
   }
+#if defined(USE_NEVA_APPRUNTIME)
+  if (!GetPdfUrlFromExtensionURL(validated_url).is_empty())
+    load_url_params.should_replace_current_entry = true;
+#endif
   GetController().LoadURLWithParams(load_url_params);
 }
 

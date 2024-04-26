@@ -38,9 +38,15 @@
 #include "media/gpu/v4l2/v4l2_video_encode_accelerator.h"
 #elif BUILDFLAG(USE_VAAPI)
 #include "media/gpu/vaapi/vaapi_video_encode_accelerator.h"
+#elif defined(USE_WEBOS_CODEC)
+#include "media/gpu/webos/webos_video_encode_accelerator.h"
 #endif
 #if BUILDFLAG(IS_FUCHSIA)
 #include "media/fuchsia/video/fuchsia_video_encode_accelerator.h"
+#endif
+
+#if defined(USE_WEBOS_CODEC)
+#include "media/gpu/webos/webos_video_encode_accelerator.h"
 #endif
 
 namespace media {
@@ -61,6 +67,11 @@ std::unique_ptr<VideoEncodeAccelerator> CreateV4L2VEA() {
 std::unique_ptr<VideoEncodeAccelerator> CreateVaapiVEA() {
   return base::WrapUnique<VideoEncodeAccelerator>(
       new VaapiVideoEncodeAccelerator());
+}
+#elif defined(USE_WEBOS_CODEC)
+std::unique_ptr<VideoEncodeAccelerator> CreateWebOSVEA() {
+  return base::WrapUnique<VideoEncodeAccelerator>(
+      new WebOSVideoEncodeAccelerator());
 }
 #endif
 
@@ -118,6 +129,10 @@ std::vector<VEAFactoryFunction> GetVEAFactoryFunctions(
   if (!vea_factory_functions.empty())
     return vea_factory_functions;
 
+#if defined(USE_WEBOS_CODEC)
+  vea_factory_functions.push_back(base::BindRepeating(&CreateWebOSVEA));
+#endif
+
 #if BUILDFLAG(USE_VAAPI)
 #if BUILDFLAG(IS_LINUX)
   if (base::FeatureList::IsEnabled(kVaapiVideoEncodeLinux))
@@ -127,8 +142,9 @@ std::vector<VEAFactoryFunction> GetVEAFactoryFunctions(
 #endif
 #elif BUILDFLAG(USE_V4L2_CODEC)
   vea_factory_functions.push_back(base::BindRepeating(&CreateV4L2VEA));
+#elif defined(USE_WEBOS_CODEC)
+  vea_factory_functions.push_back(base::BindRepeating(&CreateWebOSVEA));
 #endif
-
 #if BUILDFLAG(IS_ANDROID)
   vea_factory_functions.push_back(base::BindRepeating(&CreateAndroidVEA));
 #endif
@@ -209,7 +225,7 @@ GpuVideoEncodeAcceleratorFactory::GetSupportedProfiles(
   static auto profiles = GetSupportedProfilesInternal(
       gpu_preferences, gpu_workarounds, gpu_device);
 
-#if BUILDFLAG(USE_V4L2_CODEC)
+#if BUILDFLAG(USE_V4L2_CODEC) || defined(USE_WEBOS_CODEC)
   // V4L2-only: the encoder devices may not be visible at the time the GPU
   // process is starting. If the capabilities vector is empty, try to query the
   // devices again in the hope that they will have appeared in the meantime.

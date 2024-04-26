@@ -183,6 +183,12 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
   void OnTrustStoreChanged() override;
   void OnClientCertStoreChanged() override;
   void SetEncryptionKey(const std::string& encryption_key) override;
+#if defined(OS_WEBOS)
+  void AddCorsCorbExceptionForProcess(uint32_t process_id) override;
+  void RemoveCorsCorbExceptionForProcess(uint32_t process_id) override;
+  void AddCorsCorbExceptionForURL(const GURL& url) override;
+  void RemoveCorsCorbExceptionForURL(const GURL& url) override;
+#endif
   void OnMemoryPressure(base::MemoryPressureListener::MemoryPressureLevel
                             memory_pressure_level) override;
   void OnPeerToPeerConnectionsCountChange(uint32_t count) override;

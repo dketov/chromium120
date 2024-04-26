@@ -613,6 +613,8 @@ class CORE_EXPORT Page final : public GarbageCollected<Page>,
 
   WebScopedVirtualTimePauser history_navigation_virtual_time_pauser_;
 
+  bool is_destroying_ = false;
+
   Member<v8_compile_hints::V8CrowdsourcedCompileHintsProducer>
       v8_compile_hints_producer_;
 

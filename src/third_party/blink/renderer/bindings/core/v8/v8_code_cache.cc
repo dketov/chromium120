@@ -26,6 +26,10 @@
 #include "third_party/blink/renderer/platform/loader/fetch/code_cache_host.h"
 #include "third_party/blink/renderer/platform/wtf/text/text_encoding.h"
 
+#if defined(USE_FILESCHEME_CODECACHE)
+#include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -75,6 +79,12 @@ bool IsResourceHotForCaching(const CachedMetadataHandler* cache_handler) {
       base::TimeTicks() + base::Milliseconds(time_stamp_ms);
   return (base::TimeTicks::Now() - time_stamp) < kHotHours;
 }
+
+#if defined(USE_FILESCHEME_CODECACHE)
+bool IsProducedCodeCacheForLocalResource(bool is_local) {
+  return is_local && RuntimeEnabledFeatures::LocalResourceCodeCacheEnabled();
+}
+#endif
 
 // Flags that can be set in the CacheMetadata header, describing how the code
 // cache data was produced so that the consumer can generate better trace
@@ -128,11 +138,30 @@ V8CodeCache::GetCompileOptions(mojom::blink::V8CacheOptions cache_options,
                                const ClassicScript& classic_script,
                                bool might_generate_compile_hints,
                                bool can_use_compile_hints) {
-  return GetCompileOptions(cache_options, classic_script.CacheHandler(),
-                           classic_script.SourceText().length(),
-                           classic_script.SourceLocationType(),
-                           classic_script.SourceUrl(),
-                           might_generate_compile_hints, can_use_compile_hints);
+#if defined(USE_FILESCHEME_CODECACHE)
+  return GetCompileOptions(
+      cache_options, classic_script.CacheHandler(),
+      classic_script.SourceText().length(), classic_script.SourceLocationType(),
+      classic_script.SourceUrl(), classic_script.SourceUrl().IsLocalFile(),
+      might_generate_compile_hints, can_use_compile_hints);
+}
+
+std::tuple<v8::ScriptCompiler::CompileOptions,
+           V8CodeCache::ProduceCacheOptions,
+           v8::ScriptCompiler::NoCacheReason>
+V8CodeCache::GetCompileOptions(mojom::blink::V8CacheOptions cache_options,
+                               const CachedMetadataHandler* cache_handler,
+                               size_t source_text_length,
+                               ScriptSourceLocationType source_location_type,
+                               const KURL& url,
+                               bool is_local,
+                               bool might_generate_compile_hints,
+                               bool can_use_compile_hints) {
+#else   // defined(USE_FILESCHEME_CODECACHE)
+  return GetCompileOptions(
+      cache_options, classic_script.CacheHandler(),
+      classic_script.SourceText().length(), classic_script.SourceLocationType(),
+      classic_script.SourceUrl(), might_generate_compile_hints, can_use_compile_hints);
 }
 
 std::tuple<v8::ScriptCompiler::CompileOptions,
@@ -145,6 +174,7 @@ V8CodeCache::GetCompileOptions(mojom::blink::V8CacheOptions cache_options,
                                const KURL& url,
                                bool might_generate_compile_hints,
                                bool can_use_compile_hints) {
+#endif  // !defined(USE_FILESCHEME_CODECACHE)
   static const int kMinimalCodeLength = 1024;
   v8::ScriptCompiler::NoCacheReason no_cache_reason;
 
@@ -229,7 +259,16 @@ V8CodeCache::GetCompileOptions(mojom::blink::V8CacheOptions cache_options,
   switch (cache_options) {
     case mojom::blink::V8CacheOptions::kDefault:
     case mojom::blink::V8CacheOptions::kCode:
+#if defined(USE_FILESCHEME_CODECACHE)
+      // We don't check timestamp(CacheTagTimeStamp) because it is always good
+      // to produce cache for local resource. But, this policy may be changed
+      // in the future while implementing CacheTagTimeStamp handling for local
+      // resources.
+      if (!IsProducedCodeCacheForLocalResource(is_local) &&
+          !IsResourceHotForCaching(cache_handler)) {
+#else   // defined(USE_FILESCHEME_CODECACHE)
       if (!IsResourceHotForCaching(cache_handler)) {
+#endif  //  !defined(USE_FILESCHEME_CODECACHE)
         return std::make_tuple(no_code_cache_compile_options,
                                ProduceCacheOptions::kSetTimeStamp,
                                v8::ScriptCompiler::kNoCacheBecauseCacheTooCold);
@@ -306,6 +345,11 @@ static void ProduceCacheInternal(
             code_cache_host, V8CodeCache::TagForCodeCache(cache_handler), data,
             length);
         base::UmaHistogramTimes("V8.ProduceCodeCache", timer.Elapsed());
+#if defined(USE_FILESCHEME_CODECACHE)
+        LOG(INFO) << "V8CodeCache Produce "
+                  << source_url.GetString().Utf8().data() << "(" << length
+                  << ")";
+#endif
       }
 
       TRACE_EVENT_END1(kTraceEventCategoryGroup, trace_name, "data",

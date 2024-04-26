@@ -62,6 +62,12 @@ class WindowButtonOrderObserver;
 class WindowFrameProvider;
 
 struct DisplayGeometry {
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+  DisplayGeometry() = default;
+  DisplayGeometry(const gfx::Rect& bounds_px, float scale)
+      : bounds_px(bounds_px), scale(scale) {}
+#endif  // (__cplusplus < 202002L)
   bool operator==(const DisplayGeometry& other) const {
     return bounds_px == other.bounds_px && scale == other.scale;
   }
@@ -84,6 +90,12 @@ struct DisplayConfig {
     return display_geometries == other.display_geometries &&
            primary_scale == other.primary_scale;
   }
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+  bool operator!=(const DisplayConfig& other) const {
+    return !(*this == other);
+  }
+#endif  // (__cplusplus < 202002L)
 };
 inline DisplayConfig::DisplayConfig(float primary_scale)
     : primary_scale(primary_scale) {}

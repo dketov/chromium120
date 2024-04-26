@@ -38,6 +38,12 @@
 #include "third_party/blink/renderer/platform/windows_keyboard_codes.h"
 #include "ui/events/keycodes/dom/keycode_converter.h"
 
+#if defined(USE_NEVA_APPRUNTIME)
+#include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
+#include "third_party/blink/public/mojom/neva/app_runtime_blink_delegate.mojom-blink.h"
+#include "third_party/blink/renderer/core/frame/local_frame_client.h"
+#endif
+
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>
 #elif BUILDFLAG(IS_MAC)
@@ -315,6 +321,33 @@ WebInputEventResult KeyboardEventManager::KeyEvent(
       KeyboardEvent* event = KeyboardEvent::Create(
           web_event, frame_->GetDocument()->domWindow(), event_cancellable);
       event->SetTarget(node);
+
+#if defined(USE_NEVA_APPRUNTIME)
+      if (event->key() == "GoBack") {
+        DCHECK_EQ(event->type(), event_type_names::kKeydown);
+        AssociatedInterfaceProvider* provider =
+            frame_->Client()->GetRemoteNavigationAssociatedInterfaces();
+        bool is_back_history_key_disabled = false;
+        if (provider) {
+          mojo::AssociatedRemote<mojom::blink::AppRuntimeBlinkDelegate>
+              app_runtime_blink_delegate;
+          provider->GetInterface(&app_runtime_blink_delegate);
+          if (app_runtime_blink_delegate.is_bound()) {
+            app_runtime_blink_delegate->IsBackHistoryKeyDisabled(
+                &is_back_history_key_disabled);
+          }
+        }
+
+        if (!is_back_history_key_disabled) {
+          frame_->Client()->NavigateBackForward(
+              event->shiftKey() ? 1 : -1,
+              /*soft_navigation_heuristics_task_id=*/absl::nullopt);
+          event->SetDefaultHandled();
+          return WebInputEventResult::kHandledSystem;
+        }
+      }
+#endif
+
       event->SetStopPropagation(!send_key_event);
 
       // In IE, access keys are special, they are handled after default keydown
@@ -507,7 +540,8 @@ void KeyboardEventManager::DefaultArrowEventHandler(
     return;
   }
 
-  if (IsSpatialNavigationEnabled(frame_) &&
+  if ((RuntimeEnabledFeatures::CSSNavigationEnabled() ||
+       IsSpatialNavigationEnabled(frame_)) &&
       !frame_->GetDocument()->InDesignMode() &&
       !IsPageUpOrDownKeyEvent(event->keyCode(), event->GetModifiers())) {
     if (page->GetSpatialNavigationController().HandleArrowKeyboardEvent(
@@ -517,16 +551,18 @@ void KeyboardEventManager::DefaultArrowEventHandler(
     }
   }
 
-  if (event->KeyEvent() && event->KeyEvent()->is_system_key)
+  if (event->KeyEvent() && event->KeyEvent()->is_system_key) {
     return;
+  }
 
   mojom::blink::ScrollDirection scroll_direction;
   ui::ScrollGranularity scroll_granularity;
   WebFeature scroll_use_uma;
   if (!MapKeyCodeForScroll(event->keyCode(), event->GetModifiers(),
                            &scroll_direction, &scroll_granularity,
-                           &scroll_use_uma))
+                           &scroll_use_uma)) {
     return;
+  }
 
   // See KeyboardEventManager::DefaultSpaceEventHandler for the reason for
   // this Clear.

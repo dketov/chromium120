@@ -673,6 +673,10 @@ bool ConsumeIfDelimiter(T& range_or_stream, UChar c) {
   return true;
 }
 
+CSSValue* ConsumeNavigationDirection(CSSParserTokenRange&);
+CSSValue* ConsumeNavigationIndex(CSSParserTokenRange&, const CSSParserContext&);
+CSSValue* ConsumeCaretWidth(CSSParserTokenRange&, const CSSParserContext&);
+
 }  // namespace css_parsing_utils
 }  // namespace blink
 

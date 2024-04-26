@@ -50,10 +50,20 @@
 #include "media/device_monitors/device_monitor_mac.h"
 #endif
 
+#if defined(USE_WEBOS_AUDIO)
+#include "content/public/browser/web_contents.h"
+#include "third_party/blink/public/common/renderer_preferences/renderer_preferences.h"
+#endif
+
 namespace content {
 
 namespace {
 using media::mojom::DeviceEnumerationResult;
+
+#if defined(OS_WEBOS)
+const char kWebOSDefaultAudioDeviceId[] = "sysdefault:CARD=";
+const char kWebOSBlacklistedAudioDeviceId[] = "sysdefault:CARD=LGSIC";
+#endif
 
 // Resolutions used if the source doesn't support capability enumeration.
 struct {
@@ -685,6 +695,30 @@ void MediaDevicesManager::CheckPermissionsForEnumerateDevices(
     EnumerateDevicesCallback callback,
     const MediaDeviceSaltAndOrigin& salt_and_origin) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+
+#if defined(USE_WEBOS_AUDIO)
+  std::string requesting_display_id;
+  content::RenderFrameHost* rfh =
+      content::RenderFrameHost::FromID(render_process_id, render_frame_id);
+  if (rfh) {
+    content::WebContents* contents =
+        content::WebContents::FromRenderFrameHost(rfh);
+    if (contents)
+      requesting_display_id = contents->GetMutableRendererPrefs()->display_id;
+  }
+
+  if (!requesting_display_id.empty()) {
+    permission_checker_->CheckPermissions(
+        requested_types, render_process_id, render_frame_id,
+        base::BindOnce(&MediaDevicesManager::OnPermissionsCheckDoneForDisplay,
+                       weak_factory_.GetWeakPtr(), requesting_display_id,
+                       requested_types, request_video_input_capabilities,
+                       request_audio_input_capabilities, std::move(callback),
+                       std::move(salt_and_origin)));
+    return;
+  }
+#endif
+
   permission_checker_->CheckPermissions(
       requested_types, render_process_id, render_frame_id,
       base::BindOnce(&MediaDevicesManager::OnPermissionsCheckDone,
@@ -981,6 +1015,20 @@ void MediaDevicesManager::AudioDevicesEnumerated(
 
   blink::WebMediaDeviceInfoArray snapshot;
   for (const media::AudioDeviceDescription& description : device_descriptions) {
+#if defined(OS_WEBOS) && !defined(USE_PULSEAUDIO)
+    if (type == MediaDeviceType::kMediaAudioInput &&
+        description.unique_id.compare(0,
+                                      std::size(kWebOSDefaultAudioDeviceId) - 1,
+                                      kWebOSDefaultAudioDeviceId) != 0) {
+      continue;
+    }
+    if (type == MediaDeviceType::kMediaAudioInput &&
+        description.unique_id.compare(
+            0, std::size(kWebOSBlacklistedAudioDeviceId) - 1,
+            kWebOSBlacklistedAudioDeviceId) == 0) {
+      continue;
+    }
+#endif
     snapshot.emplace_back(
         description.unique_id, description.device_name, description.group_id,
         media::VideoCaptureControlSupport(), blink::mojom::FacingMode::kNone);
@@ -1254,6 +1302,132 @@ void MediaDevicesManager::NotifyDeviceChange(
       type, TranslateMediaDeviceInfoArray(has_permission, salt_and_origin,
                                           device_infos));
 }
+
+#if defined(USE_WEBOS_AUDIO)
+void MediaDevicesManager::EnumerateDevices(
+    const std::string& requesting_display_id,
+    const BoolDeviceTypes& requested_types,
+    EnumerationCallback callback) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  StartMonitoring();
+
+  requests_.emplace_back(requested_types, std::move(callback));
+  bool all_results_cached = true;
+  for (size_t i = 0;
+       i < static_cast<size_t>(MediaDeviceType::kNumMediaDeviceTypes); ++i) {
+    if (requested_types[i] && cache_policies_[i] == CachePolicy::NO_CACHE) {
+      all_results_cached = false;
+      DoEnumerateDevices(requesting_display_id,
+                         static_cast<MediaDeviceType>(i));
+    }
+  }
+
+  if (all_results_cached)
+    ProcessRequests();
+}
+
+void MediaDevicesManager::DoEnumerateDevices(
+    const std::string& requesting_display_id,
+    MediaDeviceType type) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  DCHECK(blink::IsValidMediaDeviceType(type));
+  CacheInfo& cache_info = cache_infos_[static_cast<size_t>(type)];
+  if (cache_info.is_update_ongoing())
+    return;
+  SendLogMessage(base::StringPrintf("DoEnumerateDevices({type=%s})",
+                                    DeviceTypeToString(type)));
+
+  cache_info.UpdateStarted();
+  switch (type) {
+    case MediaDeviceType::kMediaAudioInput:
+      EnumerateAudioDevices(true /* is_input */);
+      break;
+    case MediaDeviceType::kMediaVideoInput:
+      video_capture_manager_->EnumerateDevices(
+          base::BindOnce(&MediaDevicesManager::VideoInputDevicesEnumerated,
+                         weak_factory_.GetWeakPtr()));
+      break;
+    case MediaDeviceType::kMediaAudioOuput:
+      EnumerateAudioDevices(requesting_display_id, false /* is_input */);
+      break;
+    default:
+      NOTREACHED();
+  }
+}
+
+void MediaDevicesManager::EnumerateAudioDevices(
+    const std::string& requesting_display_id,
+    bool is_input) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  MediaDeviceType type = is_input ? MediaDeviceType::kMediaAudioInput
+                                  : MediaDeviceType::kMediaAudioOuput;
+  if (use_fake_devices_) {
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
+        FROM_HERE, base::BindOnce(&MediaDevicesManager::DevicesEnumerated,
+                                  weak_factory_.GetWeakPtr(), type,
+                                  GetFakeAudioDevices(is_input)));
+    return;
+  }
+
+  audio_system_->GetDeviceDescriptions(
+      is_input,
+      base::BindOnce(&MediaDevicesManager::AudioDevicesEnumeratedForDisplay,
+                     weak_factory_.GetWeakPtr(), requesting_display_id, type));
+}
+
+void MediaDevicesManager::AudioDevicesEnumeratedForDisplay(
+    const std::string& requesting_display_id,
+    MediaDeviceType type,
+    media::AudioDeviceDescriptions device_descriptions) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+
+  blink::WebMediaDeviceInfoArray snapshot;
+  for (const media::AudioDeviceDescription& description : device_descriptions) {
+    // TODO: Remove the kMediaAudioOuput check when AudioD service fix
+    // display specific input device.
+    if (type == MediaDeviceType::kMediaAudioOuput &&
+        !description.display_id.empty() &&
+        requesting_display_id != description.display_id) {
+      continue;
+    }
+
+    snapshot.emplace_back(
+        description.unique_id, description.device_name, description.group_id,
+        media::VideoCaptureControlSupport(), blink::mojom::FacingMode::kNone);
+  }
+  DevicesEnumerated(type, snapshot);
+}
+
+void MediaDevicesManager::OnPermissionsCheckDoneForDisplay(
+    const std::string& requesting_display_id,
+    const MediaDevicesManager::BoolDeviceTypes& requested_types,
+    bool request_video_input_capabilities,
+    bool request_audio_input_capabilities,
+    EnumerateDevicesCallback callback,
+    MediaDeviceSaltAndOrigin salt_and_origin,
+    const MediaDevicesManager::BoolDeviceTypes& has_permissions) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  BoolDeviceTypes internal_requested_types;
+  internal_requested_types[static_cast<size_t>(
+      MediaDeviceType::kMediaAudioInput)] =
+      requested_types[static_cast<size_t>(MediaDeviceType::kMediaAudioInput)] ||
+      requested_types[static_cast<size_t>(MediaDeviceType::kMediaVideoInput)];
+  internal_requested_types[static_cast<size_t>(
+      MediaDeviceType::kMediaVideoInput)] =
+      requested_types[static_cast<size_t>(MediaDeviceType::kMediaVideoInput)];
+  internal_requested_types[static_cast<size_t>(
+      MediaDeviceType::kMediaAudioOuput)] =
+      requested_types[static_cast<size_t>(MediaDeviceType::kMediaAudioOuput)];
+
+  EnumerateDevices(
+      requesting_display_id, internal_requested_types,
+      base::BindOnce(&MediaDevicesManager::OnDevicesEnumerated,
+                     weak_factory_.GetWeakPtr(), requested_types,
+                     request_video_input_capabilities,
+                     request_audio_input_capabilities, std::move(callback),
+                     std::move(salt_and_origin), has_permissions));
+}
+#endif
 
 MediaDevicesManager::EnumerationState::EnumerationState() = default;
 MediaDevicesManager::EnumerationState::EnumerationState(

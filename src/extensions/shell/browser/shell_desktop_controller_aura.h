@@ -25,6 +25,10 @@
 #include "ui/display/manager/display_configurator.h"
 #endif
 
+#if defined(USE_NEVA_APPRUNTIME)
+#include "ui/display/display_observer.h"
+#endif
+
 namespace aura {
 class WindowTreeHost;
 }  // namespace aura
@@ -49,6 +53,14 @@ class UserActivityPowerManagerNotifier;
 #endif
 }  // namespace ui
 
+#if defined(USE_NEVA_APPRUNTIME)
+namespace views {
+namespace corewm {
+class TooltipController;
+}  // namespace corewm
+}  // namespace views
+#endif
+
 namespace wm {
 class CompoundEventFilter;
 class CursorManager;
@@ -67,6 +79,9 @@ class ShellDesktopControllerAura
 #if BUILDFLAG(IS_CHROMEOS_ASH)
       public chromeos::PowerManagerClient::Observer,
       public display::DisplayConfigurator::Observer,
+#endif
+#if defined(USE_NEVA_APPRUNTIME)
+      public display::DisplayObserver,
 #endif
       public ui::ImeKeyEventDispatcher,
       public KeepAliveStateObserver {
@@ -98,6 +113,12 @@ class ShellDesktopControllerAura
   // display::DisplayConfigurator::Observer:
   void OnDisplayModeChanged(
       const display::DisplayConfigurator::DisplayStateList& displays) override;
+#endif
+
+#if defined(USE_NEVA_APPRUNTIME)
+  // Overridden from display::DisplayObserver:
+  void OnDisplayMetricsChanged(const display::Display& display,
+                               uint32_t metrics) override;
 #endif
 
   // ui::ImeKeyEventDispatcher:
@@ -172,6 +193,10 @@ class ShellDesktopControllerAura
 #if BUILDFLAG(IS_CHROMEOS_ASH)
   std::unique_ptr<ui::UserActivityDetector> user_activity_detector_;
   std::unique_ptr<ui::UserActivityPowerManagerNotifier> user_activity_notifier_;
+#endif
+#if defined(USE_NEVA_APPRUNTIME)
+  int current_rotation_ = -1;
+  std::unique_ptr<views::corewm::TooltipController> tooltip_controller_;
 #endif
 
   std::unique_ptr<AppWindowClient> app_window_client_;

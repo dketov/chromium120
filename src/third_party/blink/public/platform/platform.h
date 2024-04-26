@@ -57,6 +57,7 @@
 #include "third_party/blink/public/platform/web_audio_device.h"
 #include "third_party/blink/public/platform/web_common.h"
 #include "third_party/blink/public/platform/web_data.h"
+#include "third_party/blink/public/platform/web_dedicated_worker_host_factory_client.h"
 #include "third_party/blink/public/platform/web_string.h"
 #include "third_party/blink/public/platform/web_v8_value_converter.h"
 #include "third_party/blink/public/platform/websocket_handshake_throttle_provider.h"
@@ -126,7 +127,6 @@ class WebAudioLatencyHint;
 class WebAudioSinkDescriptor;
 class WebCrypto;
 class WebDedicatedWorker;
-class WebDedicatedWorkerHostFactoryClient;
 class WebGraphicsContext3DProvider;
 class WebLocalFrame;
 class WebSandboxSupport;
@@ -561,6 +561,13 @@ class BLINK_PLATFORM_EXPORT Platform {
   }
 
   virtual bool RTCSmoothnessAlgorithmEnabled() { return true; }
+
+#if defined(USE_NEVA_SUSPEND_MEDIA_CAPTURE)
+  virtual void AddSourceToAudioCapturerSourceManager(
+      media::AudioCapturerSource* source) {}
+  virtual void RemoveSourceFromAudioCapturerSourceManager(
+      media::AudioCapturerSource* source) {}
+#endif
 
   // WebRTC ----------------------------------------------------------
 

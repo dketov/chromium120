@@ -174,6 +174,11 @@
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 
+#if defined(USE_NEVA_APPRUNTIME)
+#include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
+#include "third_party/blink/public/mojom/neva/app_runtime_blink_delegate.mojom-blink.h"
+#endif
+
 namespace blink {
 namespace {
 
@@ -2478,7 +2483,15 @@ void DocumentLoader::InitializeWindow(Document* owner_document) {
   // TODO(crbug.com/1199077): Some tests (potentially other code?) rely on an
   // opaque origin + nonce. Investigate whether this combination should be
   // disallowed.
+  // TODO(neva): We need |storage_key| to be created based on |security_origin|
+  // even if storage_key's origin is not opaque. Otherwise the
+  // neva_app_runtime::WebView::DeleteWebStorages doesn't work.
+  // Bug: http://clm.lge.com/issue/browse/NEVA-8132
+#if defined(USE_NEVA_APPRUNTIME)
+  if (!storage_key.GetNonce()) {
+#else   // defined(USE_NEVA_APPRUNTIME)
   if (storage_key.GetSecurityOrigin()->IsOpaque() && !storage_key.GetNonce()) {
+#endif  // !defined(USE_NEVA_APPRUNTIME)
     storage_key = BlinkStorageKey::CreateFirstParty(security_origin);
   }
 
@@ -2998,6 +3011,22 @@ const AtomicString& DocumentLoader::MimeType() const {
 void DocumentLoader::BlockParser() {
   parser_blocked_count_++;
 }
+
+#if defined(USE_NEVA_APPRUNTIME)
+void DocumentLoader::CommitNonFirstMeaningfulPaintAfterLoad() {
+  if (frame_ && frame_->IsMainFrame() && state_ >= kCommitted) {
+    AssociatedInterfaceProvider* provider =
+        GetLocalFrameClient().GetRemoteNavigationAssociatedInterfaces();
+    if (provider) {
+      mojo::AssociatedRemote<mojom::blink::AppRuntimeBlinkDelegate>
+          app_runtime_blink_delegate;
+      provider->GetInterface(&app_runtime_blink_delegate);
+      if (app_runtime_blink_delegate.is_bound())
+        app_runtime_blink_delegate->DidNonFirstMeaningPaintAfterLoad();
+    }
+  }
+}
+#endif
 
 void DocumentLoader::ResumeParser() {
   parser_blocked_count_--;

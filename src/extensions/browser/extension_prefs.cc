@@ -2269,6 +2269,10 @@ void ExtensionPrefs::RegisterProfilePrefs(
   registry->RegisterBooleanPref(pref_names::kAppFullscreenAllowed, true);
 #endif
 
+#if defined(USE_NEVA_APPRUNTIME)
+  registry->RegisterBooleanPref(pref_names::kPrefPdfJsEnableScripting, false);
+#endif
+
   registry->RegisterBooleanPref(pref_names::kBlockExternalExtensions, false);
   registry->RegisterIntegerPref(pref_names::kExtensionUnpublishedAvailability,
                                 0);

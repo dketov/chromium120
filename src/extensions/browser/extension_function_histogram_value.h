@@ -1900,6 +1900,11 @@ enum HistogramValue {
   USERSCRIPTS_CONFIGUREWORLD = 1838,
   // Last entry: Add new entries above, then run:
   // tools/metrics/histograms/update_extension_histograms.py
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  WEBVIEWINTERNAL_RESUME,
+  WEBVIEWINTERNAL_SUSPEND,
+  ///@}
   ENUM_BOUNDARY
 };
 

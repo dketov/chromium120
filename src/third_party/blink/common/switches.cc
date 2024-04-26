@@ -12,6 +12,17 @@ namespace switches {
 // involving a command line switch.
 const char kAllowPreCommitInput[] = "allow-pre-commit-input";
 
+#if defined(USE_NEVA_APPRUNTIME)
+// Allow script to close windows that was opened by another scripts
+const char kAllowScriptsToCloseWindows[] = "allow-scripts-to-close-windows";
+// Set min and max time of first purging after a renderer is backgrounded.
+// Given value will replace default time.
+const char kMaxTimeToPurgeAfterBackgroundedInSeconds[] =
+    "max-delay-to-purge-after-backgrounded-in-seconds";
+const char kMinTimeToPurgeAfterBackgroundedInSeconds[] =
+    "min-delay-to-purge-after-backgrounded-in-seconds";
+#endif  // defined(USE_NEVA_APPRUNTIME)
+
 // Used to communicate managed policy for the
 // BeforeunloadEventCancelByPreventDefault feature. This feature is typically
 // controlled by base::Feature (see blink/common/features.*) but requires an

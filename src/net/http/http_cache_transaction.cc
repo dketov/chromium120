@@ -24,6 +24,7 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
+#include "base/logging.h"
 #include "base/memory/raw_ptr_exclusion.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
@@ -1640,6 +1641,28 @@ int HttpCache::Transaction::DoCacheReadResponseComplete(int result) {
   }
 
   TransitionToState(STATE_CACHE_DISPATCH_VALIDATION);
+
+  if (VLOG_IS_ON(2) && (next_state_ != STATE_SEND_REQUEST)) {
+    VLOG(2) << "C>" << request_->method << " " << request_->url.spec();
+
+    if (!request_->extra_headers.IsEmpty()) {
+      HttpRequestHeaders::Iterator ite(request_->extra_headers);
+      do {
+        VLOG(2) << "C> " << ite.name() << ": " << ite.value();
+      } while (ite.GetNext());
+    }
+    VLOG(2) << "C> ";
+
+    VLOG(2) << "C< " << response_.headers->GetStatusLine();
+    size_t iter = 0;
+    std::string name;
+    std::string value;
+    while (response_.headers->EnumerateHeaderLines(&iter, &name, &value)) {
+      VLOG(2) << "C< " << name << ": " << value;
+    }
+    VLOG(2) << "C< ";
+  }
+
   return OK;
 }
 

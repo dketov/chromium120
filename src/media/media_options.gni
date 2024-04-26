@@ -287,7 +287,7 @@ if (is_cast_media_device) {
   ]
   _default_mojo_media_host = "gpu"
 } else if (is_chromeos_ash || ((is_linux || is_chromeos_lacros) &&
-                               (use_vaapi || use_v4l2_codec))) {
+                               (use_vaapi || use_v4l2_codec || use_webos_codec))) {
   _default_mojo_media_services = [ "video_decoder" ]
   _default_mojo_media_host = "gpu"
 }
@@ -373,6 +373,10 @@ if (enable_library_cdms || is_win) {
   media_subcomponent_deps += [ "//media/cdm:cdm_type_conversion" ]
 }
 
+if (use_webos_audio) {
+  assert(use_pulseaudio,
+         "use_webos_audio is turned on without use_pulseaudio.")
+}
 if (is_win) {
   media_subcomponent_deps += [ "//media/base/win:media_foundation_util" ]
 }

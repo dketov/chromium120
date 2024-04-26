@@ -44,6 +44,10 @@
 #include "third_party/blink/public/mojom/permissions_policy/permissions_policy_feature.mojom.h"
 #include "url/gurl.h"
 
+#if defined(USE_NEVA_APPRUNTIME)
+#include "neva/app_runtime/public/file_security_origin.h"
+#endif
+
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
 #include "components/guest_view/browser/guest_view_base.h"
 #endif
@@ -100,7 +104,6 @@ void LogPermissionBlockedMessage(content::RenderFrameHost* rfh,
       base::StringPrintfNonConstexpr(
           message, PermissionUtil::GetPermissionString(type).c_str()));
 }
-
 }  // namespace
 
 // static
@@ -109,6 +112,33 @@ const char PermissionContextBase::kPermissionsKillSwitchFieldStudy[] =
 // static
 const char PermissionContextBase::kPermissionsKillSwitchBlockedValue[] =
     "blocked";
+
+#if defined(USE_NEVA_APPRUNTIME)
+GURL PermissionContextBase::convertToApplicationURL(const GURL& origin) {
+  GURL converted_origin = origin;
+  // To use per app based permission control we add app-id to postfix of origin
+  // so that always requesting domain becomes sub domain of the app-id.
+  // e.i. file://[app-id]-[file_security_origin]
+  if (origin.get_webapp_id()) {
+    std::string host = origin.host();
+    std::string file_security_origin =
+        neva_app_runtime::FileSchemeHostForApp(*origin.get_webapp_id());
+    if (host.empty())
+      host = file_security_origin;
+    else if (host != file_security_origin)
+      host = host + "." + file_security_origin;
+
+    GURL::Replacements repl;
+    repl.SetHostStr(host.c_str());
+
+    converted_origin = converted_origin.ReplaceComponents(repl);
+  } else {
+    LOG(ERROR) << __func__ << " origin(" << origin.spec()
+               << ") doesn't have a webapp id.";
+  }
+  return converted_origin;
+}
+#endif
 
 PermissionContextBase::PermissionContextBase(
     content::BrowserContext* browser_context,
@@ -442,9 +472,14 @@ ContentSetting PermissionContextBase::GetPermissionStatusInternal(
     content::RenderFrameHost* render_frame_host,
     const GURL& requesting_origin,
     const GURL& embedding_origin) const {
+  GURL converted_requesting_origin = requesting_origin;
+#if defined(USE_NEVA_APPRUNTIME)
+  converted_requesting_origin =
+      PermissionContextBase::convertToApplicationURL(requesting_origin);
+#endif
   return PermissionsClient::Get()
       ->GetSettingsMap(browser_context_)
-      ->GetContentSetting(requesting_origin, embedding_origin,
+      ->GetContentSetting(converted_requesting_origin, embedding_origin,
                           content_settings_type_);
 }
 
@@ -612,6 +647,11 @@ void PermissionContextBase::UpdateContentSetting(const GURL& requesting_origin,
   DCHECK(content_setting == CONTENT_SETTING_ALLOW ||
          content_setting == CONTENT_SETTING_BLOCK);
 
+  GURL converted_requesting_origin = requesting_origin;
+#if defined(USE_NEVA_APPRUNTIME)
+  converted_requesting_origin = convertToApplicationURL(requesting_origin);
+#endif
+
   content_settings::ContentSettingConstraints constraints;
   constraints.set_session_model(is_one_time
                                     ? content_settings::SessionModel::OneTime
@@ -643,9 +683,9 @@ void PermissionContextBase::UpdateContentSetting(const GURL& requesting_origin,
 
   PermissionsClient::Get()
       ->GetSettingsMap(browser_context_)
-      ->SetContentSettingDefaultScope(requesting_origin, embedding_origin,
-                                      content_settings_type_, content_setting,
-                                      constraints);
+      ->SetContentSettingDefaultScope(converted_requesting_origin,
+                                      embedding_origin, content_settings_type_,
+                                      content_setting, constraints);
 }
 
 bool PermissionContextBase::PermissionAllowedByPermissionsPolicy(

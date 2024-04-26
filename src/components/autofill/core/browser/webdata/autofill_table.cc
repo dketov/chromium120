@@ -344,12 +344,24 @@ constexpr std::string_view kPaymentInstrumentsTable = "payment_instruments";
 constexpr std::string_view kInstrumentType = "instrument_type";
 // kNickname = "nickname"
 constexpr std::string_view kDisplayIconUrl = "display_icon_url";
+// TODO(neva): Remove this when Neva GCC version upgraded to 12+.
+#if defined(COMPILER_GCC) && COMPILER_GCC < 12
+constexpr std::string_view INTEGER_NOT_NULL = "INTEGER NOT NULL";
+constexpr std::string_view VARCHAR = "VARCHAR";
+constexpr std::initializer_list<std::pair<std::string_view, std::string_view>>
+    kPaymentInstrumentsColumnNamesAndTypes = {
+        {kInstrumentId, INTEGER_NOT_NULL},
+        {kInstrumentType, INTEGER_NOT_NULL},
+        {kDisplayIconUrl, VARCHAR},
+        {kNickname, VARCHAR}};
+#else   // defined(COMPILER_GCC) && COMPILER_GCC < 12
 constexpr std::initializer_list<std::pair<std::string_view, std::string_view>>
     kPaymentInstrumentsColumnNamesAndTypes = {
         {kInstrumentId, "INTEGER NOT NULL"},
         {kInstrumentType, "INTEGER NOT NULL"},
         {kDisplayIconUrl, "VARCHAR"},
         {kNickname, "VARCHAR"}};
+#endif  // !defined(COMPILER_GCC) && COMPILER_GCC < 12
 constexpr std::initializer_list<std::string_view>
     kPaymentInstrumentsCompositePrimaryKey = {kInstrumentId, kInstrumentType};
 
@@ -359,12 +371,24 @@ constexpr std::string_view kPaymentInstrumentsMetadataTable =
 // kInstrumentType = "instrument_type"
 // kUseCount = "use_count"
 // kUseDate = "use_date"
+// TODO(neva): Remove this when Neva GCC version upgraded to 12+.
+#if defined(COMPILER_GCC) && COMPILER_GCC < 12
+constexpr std::string_view INTEGER_NOT_NULL_DEFAULT_0 =
+    "INTEGER NOT NULL DEFAULT 0";
+constexpr std::initializer_list<std::pair<std::string_view, std::string_view>>
+    kPaymentInstrumentsMetadataColumnNamesAndTypes = {
+        {kInstrumentId, INTEGER_NOT_NULL},
+        {kInstrumentType, INTEGER_NOT_NULL},
+        {kUseCount, INTEGER_NOT_NULL_DEFAULT_0},
+        {kUseDate, INTEGER_NOT_NULL_DEFAULT_0}};
+#else   // defined(COMPILER_GCC) && COMPILER_GCC < 12
 constexpr std::initializer_list<std::pair<std::string_view, std::string_view>>
     kPaymentInstrumentsMetadataColumnNamesAndTypes = {
         {kInstrumentId, "INTEGER NOT NULL"},
         {kInstrumentType, "INTEGER NOT NULL"},
         {kUseCount, "INTEGER NOT NULL DEFAULT 0"},
         {kUseDate, "INTEGER NOT NULL DEFAULT 0"}};
+#endif  // !defined(COMPILER_GCC) && COMPILER_GCC < 12
 constexpr std::initializer_list<std::string_view>
     kPaymentInstrumentsMetadataCompositePrimaryKey = {kInstrumentId,
                                                       kInstrumentType};
@@ -374,11 +398,18 @@ constexpr std::string_view kPaymentInstrumentSupportedRailsTable =
 // kInstrumentId = "instrument_id"
 // kInstrumentType = "instrument_type"
 constexpr std::string_view kPaymentRail = "payment_rail";
+// TODO(neva): Remove this when Neva GCC version upgraded to 12+.
 constexpr std::initializer_list<std::pair<std::string_view, std::string_view>>
     kPaymentInstrumentSupportedRailsColumnNamesAndTypes = {
+#if defined(COMPILER_GCC) && COMPILER_GCC < 12
+        {kInstrumentId, INTEGER_NOT_NULL},
+        {kInstrumentType, INTEGER_NOT_NULL},
+        {kPaymentRail, INTEGER_NOT_NULL}};
+#else   // defined(COMPILER_GCC) && COMPILER_GCC < 12
         {kInstrumentId, "INTEGER NOT NULL"},
         {kInstrumentType, "INTEGER NOT NULL"},
         {kPaymentRail, "INTEGER NOT NULL"}};
+#endif  // !defined(COMPILER_GCC) && COMPILER_GCC < 12
 constexpr std::initializer_list<std::string_view>
     kPaymentInstrumentSupportedRailsCompositePrimaryKey = {
         kInstrumentId, kInstrumentType, kPaymentRail};
@@ -388,12 +419,25 @@ constexpr std::string_view kBankAccountsTable = "bank_accounts";
 // kBankName = "bank_name"
 constexpr std::string_view kAccountNumberSuffix = "account_number_suffix";
 constexpr std::string_view kAccountType = "account_type";
+// TODO(neva): Remove this when Neva GCC version upgraded to 12+.
+#if defined(COMPILER_GCC) && COMPILER_GCC < 12
+constexpr std::string_view INTEGER_PRIMARY_KEY_NOT_NULL =
+    "INTEGER PRIMARY KEY NOT NULL";
+constexpr std::string_view INTEGER_DEFAULT_0 = "INTEGER DEFAULT 0";
+constexpr std::initializer_list<std::pair<std::string_view, std::string_view>>
+    bank_accounts_column_names_and_types = {
+        {kInstrumentId, INTEGER_PRIMARY_KEY_NOT_NULL},
+        {kBankName, VARCHAR},
+        {kAccountNumberSuffix, VARCHAR},
+        {kAccountType, INTEGER_DEFAULT_0}};
+#else   // defined(COMPILER_GCC) && COMPILER_GCC < 12
 constexpr std::initializer_list<std::pair<std::string_view, std::string_view>>
     bank_accounts_column_names_and_types = {
         {kInstrumentId, "INTEGER PRIMARY KEY NOT NULL"},
         {kBankName, "VARCHAR"},
         {kAccountNumberSuffix, "VARCHAR"},
         {kAccountType, "INTEGER DEFAULT 0"}};
+#endif  // !defined(COMPILER_GCC) && COMPILER_GCC < 12
 
 // Helper functions to construct SQL statements from string constants.
 // - Functions with names corresponding to SQL keywords execute the statement
@@ -1744,6 +1788,19 @@ std::unique_ptr<AutofillProfile> AutofillTable::GetAutofillProfile(
     int status;
     // Serialized observations for the stored type.
     std::vector<uint8_t> serialized_data;
+// TODO(neva): Remove this when Neva GCC support the syntax used in
+// upstream's implementation. (GCC version 10.5.0 can compile the original
+// implementation.)
+#if (__cplusplus < 202002L)
+    FieldTypeData(ServerFieldType type,
+                  std::u16string value,
+                  int status,
+                  std::vector<uint8_t> serialized_data)
+        : type(type),
+          value(value),
+          status(status),
+          serialized_data(serialized_data){};
+#endif
   };
 
   std::vector<FieldTypeData> field_type_values;

@@ -1,0 +1,71 @@
+From 8f7567de4781924015af58efa7cddcb0d98fcf8e Mon Sep 17 00:00:00 2001
+From: "donghwan.yu" <donghwan.yu@lge.com>
+Date: Sat, 29 Apr 2023 23:12:30 +0900
+Subject: [PATCH] [build] 113.0.5643.0~2: Fix specialization compile error of
+ 'std::hash<rx::vk::MemoryAllocInfoMapKey>'
+
+:Release Notes:
+Fixed specialization compile error of 'std::hash<rx::vk::MemoryAllocInfoMapKey>'
+after rolling to 113.0.5643.0~2
+
+:Detailed Notes:
+Upstream CL https://crrev.com/c/4284639 refactored the memory tracking
+classes to new files such as MemoryTracking.cpp(h).
+
+However it had a compile error:
+  third_party/angle/src/libANGLE/renderer/vulkan/MemoryTracking.h:209:8: error: specialization of 'std::hash<rx::vk::MemoryAllocInfoMapKey>' after instantiation
+
+Reason is when unordered map of MemoryAllocInfoMap type is used the
+hash is already instantiated. Specializing it afterwards is an error.
+
+So this CL moved the specialization of the std::hash before the
+unordered map.
+
+:Issues Addressed:
+[NEVA-8065] Upgrade neva-main-rolling up to 5643 BUILD
+---
+ src/libANGLE/renderer/vulkan/MemoryTracking.h | 22 ++++++++++---------
+ 1 file changed, 12 insertions(+), 10 deletions(-)
+
+diff --git a/src/libANGLE/renderer/vulkan/MemoryTracking.h b/src/libANGLE/renderer/vulkan/MemoryTracking.h
+index 3852dc5ee..d11bc5294 100644
+--- a/src/libANGLE/renderer/vulkan/MemoryTracking.h
++++ b/src/libANGLE/renderer/vulkan/MemoryTracking.h
+@@ -122,7 +122,19 @@ class MemoryReport final : angle::NonCopyable
+     angle::HashMap<uint64_t, int> mUniqueIDCounts;
+ };
+ }  // namespace vk
++} // namespace rx
+ 
++// Introduce std::hash for MemoryAllocInfoMapKey.
++namespace std
++{
++template <>
++struct hash<rx::vk::MemoryAllocInfoMapKey>
++{
++    size_t operator()(const rx::vk::MemoryAllocInfoMapKey &key) const { return key.hash(); }
++};
++}  // namespace std
++
++namespace rx {
+ // Memory tracker for allocations and deallocations, which is used in RendererVk.
+ class MemoryAllocationTracker : angle::NonCopyable
+ {
+@@ -202,14 +214,4 @@ class MemoryAllocationTracker : angle::NonCopyable
+ };
+ }  // namespace rx
+ 
+-// Introduce std::hash for MemoryAllocInfoMapKey.
+-namespace std
+-{
+-template <>
+-struct hash<rx::vk::MemoryAllocInfoMapKey>
+-{
+-    size_t operator()(const rx::vk::MemoryAllocInfoMapKey &key) const { return key.hash(); }
+-};
+-}  // namespace std
+-
+ #endif  // LIBANGLE_RENDERER_VULKAN_MEMORYTRACKING_H_
+-- 
+2.40.0
+

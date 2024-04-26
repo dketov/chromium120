@@ -8350,8 +8350,10 @@ bool Document::HaveRenderBlockingStylesheetsLoaded() const {
 }
 
 bool Document::HaveRenderBlockingResourcesLoaded() const {
-  return !render_blocking_resource_manager_ ||
-         !render_blocking_resource_manager_->HasRenderBlockingResources();
+  return (!render_blocking_resource_manager_ ||
+          !render_blocking_resource_manager_->HasRenderBlockingResources()) &&
+         (first_frame_policy_accepted_ ||
+          deferred_background_image_count_ == 0);
 }
 
 Locale& Document::GetCachedLocale(const AtomicString& locale) {
@@ -9277,6 +9279,39 @@ Resource* Document::GetPendingLinkPreloadForTesting(const KURL& url) {
     }
   }
   return nullptr;
+}
+
+bool Document::AddDeferredBackgroundImage() {
+  if (!IsMainThread() || !IsInMainFrame())
+    return false;
+
+  VLOG(1) << __func__;
+
+  ++deferred_background_image_count_;
+  return true;
+}
+
+void Document::RemoveDeferredBackgroundImage() {
+  if (!IsMainThread() || !IsInMainFrame())
+    return;
+
+  VLOG(1) << __func__;
+  --deferred_background_image_count_;
+
+  // resume update when all background images were undeferred
+  if (deferred_background_image_count_ == 0)
+    BeginLifecycleUpdatesIfRenderingReady();
+}
+
+void Document::SetFirstFramePolicyAccepted(bool accepted) {
+  if (!IsMainThread() || !IsInMainFrame())
+    return;
+  if (accepted == first_frame_policy_accepted_)
+    return;
+  first_frame_policy_accepted_ = accepted;
+  if (accepted) {
+    BeginLifecycleUpdatesIfRenderingReady();
+  }
 }
 
 // static

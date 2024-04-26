@@ -48,7 +48,16 @@ enum class SearchEngineTier {
 // `PrepopulateEngine` and tier per country.
 struct EngineAndTier {
   SearchEngineTier tier;
+  // TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+  const PrepopulatedEngine* search_engine;
+  EngineAndTier() = default;
+  constexpr EngineAndTier(SearchEngineTier tier,
+                          const PrepopulatedEngine* search_engine)
+      : tier(tier), search_engine(search_engine){};
+#else   // (__cplusplus < 202002L)
   const raw_ptr<PrepopulatedEngine const> search_engine;
+#endif  // !(__cplusplus < 202002L)
 };
 
 // Put the engines within each country in order with most interesting/important

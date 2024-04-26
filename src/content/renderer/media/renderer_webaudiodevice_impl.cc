@@ -37,6 +37,11 @@
 #include "third_party/blink/public/web/web_local_frame_client.h"
 #include "third_party/blink/public/web/web_view.h"
 
+#if defined(USE_WEBOS_AUDIO)
+#include "content/renderer/render_frame_impl.h"
+#include "media/audio/audio_device_description.h"
+#endif
+
 using blink::AudioDeviceFactory;
 using blink::WebAudioDevice;
 using blink::WebAudioLatencyHint;
@@ -324,11 +329,31 @@ void RendererWebAudioDeviceImpl::CreateAudioRendererSink() {
   CHECK(!sink_);
 
   switch (sink_descriptor_.Type()) {
-    case blink::WebAudioSinkDescriptor::kAudible:
-      sink_ = AudioDeviceFactory::GetInstance()->NewAudioRendererSink(
-          GetLatencyHintSourceType(latency_hint_.Category()), frame_token_,
-          media::AudioSinkParameters(base::UnguessableToken(),
-                                     sink_descriptor_.SinkId().Utf8()));
+    case blink::WebAudioSinkDescriptor::kAudible: {
+#if defined(USE_WEBOS_AUDIO)
+      std::string device_id;
+
+      WebLocalFrame* web_frame = blink::WebLocalFrame::FrameForCurrentContext();
+      if (web_frame) {
+        auto* render_frame = RenderFrameImpl::FromWebFrame(web_frame);
+        if (render_frame) {
+          device_id = media::AudioDeviceDescription::GetDefaultDeviceId(
+              render_frame->GetRendererPreferences().display_id);
+          VLOG(1) << __func__ << " defult device_id=[" << device_id << "]";
+        }
+      }
+
+      if (!device_id.empty()) {
+        sink_ = AudioDeviceFactory::GetInstance()->NewAudioRendererSink(
+            GetLatencyHintSourceType(latency_hint_.Category()), frame_token_,
+            media::AudioSinkParameters(base::UnguessableToken(), device_id));
+
+      } else
+#endif  // USE_WEBOS_AUDIO
+        sink_ = AudioDeviceFactory::GetInstance()->NewAudioRendererSink(
+            GetLatencyHintSourceType(latency_hint_.Category()), frame_token_,
+            media::AudioSinkParameters(base::UnguessableToken(),
+                                       sink_descriptor_.SinkId().Utf8()));
 
       // Use a task runner instead of the render thread for fake Render() calls
       // since it has special connotations for Blink and garbage collection.
@@ -338,6 +363,7 @@ void RendererWebAudioDeviceImpl::CreateAudioRendererSink() {
           GetSilentSinkTaskRunner());
       sink_->Initialize(current_sink_params_, silent_sink_suspender_.get());
       break;
+    }
     case blink::WebAudioSinkDescriptor::kSilent:
       sink_ = create_silent_sink_cb_.Run(GetSilentSinkTaskRunner());
       sink_->Initialize(current_sink_params_, this);

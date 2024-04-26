@@ -203,6 +203,13 @@ class COMPONENT_EXPORT(URL) Origin {
                                           std::string host,
                                           uint16_t port);
 
+#if defined(USE_NEVA_APPRUNTIME)
+  absl::optional<std::string> get_webapp_id() const { return webapp_id_; }
+  void set_webapp_id(const std::string& webapp_id) { webapp_id_ = webapp_id; }
+
+  static void SetFileOriginChanged(bool changed);
+#endif
+
   ~Origin();
 
   // For opaque origins, these return ("", "", 0).
@@ -456,6 +463,16 @@ class COMPONENT_EXPORT(URL) Origin {
   // the opaque origin was initially derived (we call this the "precursor"
   // origin).
   SchemeHostPort tuple_;
+
+#if defined(USE_NEVA_APPRUNTIME)
+  // webapp_id_ denotes the webapp-id that the Origin is created for and it is
+  // used to check permission of the url(origin). This value is only used in
+  // browser browser process and it needs to be set from browser process
+  // explicitly when it is created.
+  absl::optional<std::string> webapp_id_;
+
+  static bool file_origin_changed_;
+#endif
 
   // The nonce is used for maintaining identity of an opaque origin. This
   // nonce is preserved when an opaque origin is copied or moved. An Origin

@@ -91,6 +91,13 @@ class Bitset {
     return lhs.words_ == rhs.words_;
   }
 
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+  friend constexpr bool operator!=(const Bitset& lhs, const Bitset& rhs) {
+    return !(lhs == rhs);
+  }
+#endif  // (__cplusplus < 202002L)
+
   constexpr base::span<const Word, kNumWords> data() const { return words_; }
 
  private:
@@ -140,6 +147,13 @@ class Bitset<Word, kNumWords, std::enable_if_t<kNumWords == 1>> {
   friend constexpr bool operator==(Bitset lhs, Bitset rhs) {
     return lhs.word_ == rhs.word_;
   }
+
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+  friend constexpr bool operator!=(Bitset lhs, Bitset rhs) {
+    return !(lhs == rhs);
+  }
+#endif  // (__cplusplus < 202002L)
 
   constexpr base::span<const Word, 1> data() const {
     return base::span<const Word, 1>(&word_, 1u);

@@ -57,7 +57,20 @@ WaylandTouch::WaylandTouch(wl_touch* touch,
 }
 
 WaylandTouch::~WaylandTouch() {
-  delegate_->OnTouchCancelEvent();
+#if defined(OS_WEBOS)
+  int device_id = obj_.id();
+#endif  // defined(OS_WEBOS)
+  delegate_->OnTouchCancelEvent(
+#if defined(OS_WEBOS)
+      device_id
+#endif  // defined(OS_WEBOS)
+  );
+#if defined(OS_WEBOS)
+  if (auto* window_manager = connection_->window_manager()) {
+    window_manager->UngrabTouchEvents(
+        device_id, window_manager->touch_events_grabber(device_id));
+  }
+#endif  // defined(OS_WEBOS)
 }
 
 // static
@@ -83,11 +96,24 @@ void WaylandTouch::OnTouchDown(void* data,
     return;
   }
 
+#if defined(OS_WEBOS)
+  int device_id = self->obj_.id();
+
+  window->set_touch_device_id(device_id);
+  if (auto* window_manager = self->connection_->window_manager()) {
+    window_manager->GrabTouchEvents(device_id, window);
+  }
+#endif  // defined(OS_WEBOS)
   gfx::PointF location = self->connection_->MaybeConvertLocation(
       gfx::PointF(wl_fixed_to_double(x), wl_fixed_to_double(y)), window);
   base::TimeTicks timestamp = base::TimeTicks() + base::Milliseconds(time);
   self->delegate_->OnTouchPressEvent(window, location, timestamp, id,
-                                     EventDispatchPolicyForPlatform());
+                                     EventDispatchPolicyForPlatform()
+#if defined(OS_WEBOS)
+                                         ,
+                                     device_id
+#endif  // defined(OS_WEBOS)
+  );
 }
 
 // static
@@ -101,10 +127,16 @@ void WaylandTouch::OnTouchUp(void* data,
 
   base::TimeTicks timestamp = base::TimeTicks() + base::Milliseconds(time);
   self->delegate_->OnTouchReleaseEvent(timestamp, id,
-                                       EventDispatchPolicyForPlatform());
+                                       EventDispatchPolicyForPlatform()
+#if defined(OS_WEBOS)
+                                           ,
+                                       self->obj_.id()
+#endif  // defined(OS_WEBOS)
+  );
 }
 
 // static
+
 void WaylandTouch::OnTouchMotion(void* data,
                                  wl_touch* touch,
                                  uint32_t time,
@@ -114,7 +146,12 @@ void WaylandTouch::OnTouchMotion(void* data,
   auto* self = static_cast<WaylandTouch*>(data);
   DCHECK(self);
 
+#if defined(OS_WEBOS)
+  const WaylandWindow* target =
+      self->delegate_->GetTouchTarget(id, self->obj_.id());
+#else
   const WaylandWindow* target = self->delegate_->GetTouchTarget(id);
+#endif  // defined(OS_WEBOS)
   if (!target) {
     LOG(WARNING) << "Touch event fired with wrong id";
     return;
@@ -123,7 +160,12 @@ void WaylandTouch::OnTouchMotion(void* data,
       gfx::PointF(wl_fixed_to_double(x), wl_fixed_to_double(y)), target);
   base::TimeTicks timestamp = base::TimeTicks() + base::Milliseconds(time);
   self->delegate_->OnTouchMotionEvent(location, timestamp, id,
-                                      EventDispatchPolicyForPlatform());
+                                      EventDispatchPolicyForPlatform()
+#if defined(OS_WEBOS)
+                                          ,
+                                      self->obj_.id()
+#endif  // defined(OS_WEBOS)
+  );
 }
 
 // static
@@ -147,8 +189,20 @@ void WaylandTouch::OnTouchOrientation(void* data,
 void WaylandTouch::OnTouchCancel(void* data, wl_touch* touch) {
   auto* self = static_cast<WaylandTouch*>(data);
   DCHECK(self);
-
-  self->delegate_->OnTouchCancelEvent();
+#if defined(OS_WEBOS)
+  int device_id = self->obj_.id();
+#endif  // defined(OS_WEBOS)
+  self->delegate_->OnTouchCancelEvent(
+#if defined(OS_WEBOS)
+      device_id
+#endif  // defined(OS_WEBOS)
+  );
+#if defined(OS_WEBOS)
+  if (auto* window_manager = self->connection_->window_manager()) {
+    window_manager->UngrabTouchEvents(
+        device_id, window_manager->touch_events_grabber(device_id));
+  }
+#endif  // defined(OS_WEBOS)
 }
 
 // static

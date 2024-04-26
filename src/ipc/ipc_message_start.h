@@ -20,6 +20,10 @@ enum IPCMessageStart {
   ExtensionMsgStart,
   NaClHostMsgStart,
   GinJavaBridgeMsgStart,
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  OzoneGpuMsgStart,
+  ///@}
   ExtensionWorkerMsgStart,
   LastIPCMsgStart  // Must come last.
 };

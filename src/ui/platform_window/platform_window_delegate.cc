@@ -53,6 +53,13 @@ absl::optional<gfx::Size> PlatformWindowDelegate::GetMaximumSizeForWindow() {
   return absl::nullopt;
 }
 
+///@name USE_NEVA_APPRUNTIME
+///@{
+LinuxInputMethodContext* PlatformWindowDelegate::GetInputMethodContext() {
+  return nullptr;
+}
+///@}
+
 bool PlatformWindowDelegate::CanMaximize() {
   return false;
 }

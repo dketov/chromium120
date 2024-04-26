@@ -70,6 +70,10 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if defined(USE_NEVA_APPRUNTIME)
+#include "neva/pal_service/public/mojom/system_servicebridge.mojom.h"
+#endif
+
 namespace content {
 
 class ServiceWorkerContainerHost;
@@ -1039,6 +1043,12 @@ class CONTENT_EXPORT ServiceWorkerVersion
                                  GetClientCallback callback,
                                  bool success);
 
+#if defined(USE_NEVA_APPRUNTIME)
+  void LaunchWebApp(const std::string& webapp_id,
+                    const GURL& url,
+                    OpenNewTabCallback callback);
+#endif
+
   const int64_t version_id_;
   const int64_t registration_id_;
   const GURL script_url_;
@@ -1288,6 +1298,10 @@ class CONTENT_EXPORT ServiceWorkerVersion
   scoped_refptr<PolicyContainerHost> policy_container_host_;
 
   base::UnguessableToken reporting_source_;
+
+#if defined(USE_NEVA_APPRUNTIME)
+  mojo::Remote<pal::mojom::SystemServiceBridge> remote_system_bridge_;
+#endif
 
   // The checksum hash string, which is calculated from each checksum string in
   // |script_cache_map_|'s resources. This will be used to decide if the main

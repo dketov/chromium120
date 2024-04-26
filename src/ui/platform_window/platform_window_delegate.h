@@ -19,6 +19,11 @@
 #include "ui/gfx/geometry/insets.h"
 #endif  // BUILDFLAG(IS_FUCHSIA)
 
+///@name USE_NEVA_APPRUNTIME
+///@{
+#include "ui/platform_window/neva/platform_window_delegate.h"
+///@}
+
 namespace gfx {
 class Rect;
 class Size;
@@ -31,6 +36,11 @@ namespace ui {
 
 class Event;
 struct OwnedWindowAnchor;
+
+///@name USE_NEVA_APPRUNTIME
+///@{
+class LinuxInputMethodContext;
+///@}
 
 enum class PlatformWindowState {
   kUnknown,
@@ -57,7 +67,12 @@ enum class PlatformWindowTooltipTrigger {
   kKeyboard,
 };
 
-class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
+class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate
+    ///@name USE_NEVA_APPRUNTIME
+    ///@{
+    : public neva::PlatformWindowDelegate
+    ///@}
+{
  public:
   struct COMPONENT_EXPORT(PLATFORM_WINDOW) BoundsChange {
     BoundsChange() = delete;
@@ -182,6 +197,11 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
   // Requests size constraints for the PlatformWindow in DIP.
   virtual absl::optional<gfx::Size> GetMinimumSizeForWindow();
   virtual absl::optional<gfx::Size> GetMaximumSizeForWindow();
+
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  virtual LinuxInputMethodContext* GetInputMethodContext();
+  ///@}
 
   virtual bool CanMaximize();
   virtual bool CanFullscreen();

@@ -894,6 +894,10 @@ bool IsSchemefulSameSiteEnabled() {
   return base::FeatureList::IsEnabled(features::kSchemefulSameSite);
 }
 
+bool IsAggressiveFlushingEnabled() {
+  return base::FeatureList::IsEnabled(features::kAggressiveFlushing);
+}
+
 absl::optional<
     std::pair<FirstPartySetMetadata, FirstPartySetsCacheFilter::MatchInfo>>
 ComputeFirstPartySetMetadataMaybeAsync(

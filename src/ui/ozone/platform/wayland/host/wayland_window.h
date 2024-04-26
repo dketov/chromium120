@@ -266,6 +266,24 @@ class WaylandWindow : public PlatformWindow,
   // and sends the appropriate acks back to the wayland server.
   virtual void OnSequencePoint(int64_t seq) = 0;
 
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  virtual void HandleStateChanged(PlatformWindowState state);
+  virtual void HandleActivationChanged(bool is_activated);
+  void HandleKeyboardEnter();
+  void HandleKeyboardLeave();
+  void OnSurfaceContentChanged();
+
+  // neva::PlatformWindow
+  void SetInputArea(const std::vector<gfx::Rect>& regions) override;
+  void SetCustomCursor(neva_app_runtime::CustomCursorType type,
+                       const std::string& path,
+                       int hotspot_x,
+                       int hotspot_y,
+                       bool allowed_cursor_overriding) override;
+  void OnInputPanelVisibilityChanged(bool state) override;
+  ///@}
+
   // Called by shell surfaces to indicate that this window can start submitting
   // frames. Updating state based on configure is handled separately to this.
   void OnSurfaceConfigureEvent();
@@ -472,6 +490,15 @@ class WaylandWindow : public PlatformWindow,
   FRIEND_TEST_ALL_PREFIXES(WaylandWindowTest,
                            ServerInitiatedRestoreFromMinimizedState);
 
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  enum class CustomCursorMode {
+    OFF,
+    REQUESTED,
+    APPLIED
+  };
+  ///@}
+
   // Initializes the WaylandWindow with supplied properties.
   bool Initialize(PlatformWindowInitProperties properties);
 
@@ -558,6 +585,14 @@ class WaylandWindow : public PlatformWindow,
   // The current cursor bitmap (immutable).
   scoped_refptr<BitmapCursor> cursor_;
 #endif
+
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  bool allowed_cursor_overriding_ = false;
+  CustomCursorMode custom_cursor_mode_ = CustomCursorMode::OFF;
+  neva_app_runtime::CustomCursorType cursor_type_ =
+      neva_app_runtime::CustomCursorType::kNotUse;
+  ///@}
 
   // Margins between edges of the surface and the window geometry (i.e., the
   // area of the window that is visible to the user as the actual window).  The

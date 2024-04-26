@@ -17,7 +17,16 @@
 #include "media/gpu/macros.h"
 #include "third_party/libyuv/include/libyuv.h"
 
+#if defined(OS_WEBOS)
+#include "libdrm/drm_fourcc.h"
 namespace media {
+// Copied only the function from
+// media/gpu/chromeos/chromeos_compressed_gpu_memory_buffer_video_frame_utils.cc
+// rather then include the source file in to build
+bool IsIntelMediaCompressedModifier(uint64_t modifier) {
+  return modifier == I915_FORMAT_MOD_Y_TILED_GEN12_MC_CCS;
+}
+#endif
 
 namespace {
 

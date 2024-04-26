@@ -32,6 +32,12 @@ class PLATFORM_EXPORT FontPalette : public RefCounted<FontPalette> {
 
   // Data layout should match SkFontarguments::PaletteOverride::ColorOverride.
   struct FontPaletteOverride {
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+    FontPaletteOverride() = default;
+    FontPaletteOverride(int index, Color color) : index(index), color(color) {}
+#endif  // (__cplusplus < 202002L)
+
     int index;
     Color color;
 
@@ -60,6 +66,12 @@ class PLATFORM_EXPORT FontPalette : public RefCounted<FontPalette> {
   };
 
   struct NonNormalizedPercentages {
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+    NonNormalizedPercentages() = default;
+    NonNormalizedPercentages(double start, double end)
+        : start(start), end(end) {}
+#endif  // (__cplusplus < 202002L)
     double start;
     double end;
     bool operator==(const NonNormalizedPercentages& other) const {

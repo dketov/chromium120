@@ -188,6 +188,7 @@ class MEDIA_EXPORT VideoDecoderConfig {
   EncryptionScheme encryption_scheme_ = EncryptionScheme::kUnencrypted;
 
   VideoColorSpace color_space_info_;
+
   absl::optional<gfx::HDRMetadata> hdr_metadata_;
   bool is_rtc_ = false;
 

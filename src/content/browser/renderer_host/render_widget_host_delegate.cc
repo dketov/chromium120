@@ -155,4 +155,9 @@ int RenderWidgetHostDelegate::GetVirtualKeyboardResizeHeight() {
   return 0;
 }
 
+#if defined(USE_NEVA_APPRUNTIME)
+bool RenderWidgetHostDelegate::IsPinchToZoomEnabled() const {
+  return true;
+}
+#endif
 }  // namespace content

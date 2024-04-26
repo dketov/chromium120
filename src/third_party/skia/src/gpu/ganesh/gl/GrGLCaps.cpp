@@ -1098,6 +1098,9 @@ void GrGLCaps::initFSAASupport(const GrContextOptions& contextOptions,
             fMSFBOType = kStandard_MSFBOType;
         }
     } else if (GR_IS_GR_GL_ES(ctxInfo.standard())) {
+#if defined(DISABLE_MSAA)
+        fMSFBOType = kNone_MSFBOType;
+#else  // defined(DISABLE_MSAA)
         // We prefer multisampled-render-to-texture extensions over ES3 MSAA because we've observed
         // ES3 driver bugs on at least one device with a tiled GPU (N10).
         if (ctxInfo.hasExtension("GL_EXT_multisampled_render_to_texture")) {
@@ -1115,6 +1118,7 @@ void GrGLCaps::initFSAASupport(const GrContextOptions& contextOptions,
         } else if (ctxInfo.hasExtension("GL_APPLE_framebuffer_multisample")) {
             fMSFBOType = kES_Apple_MSFBOType;
         }
+#endif  // !defined(DISABLE_MSAA)
     } else if (GR_IS_GR_WEBGL(ctxInfo.standard())) {
         // No support in WebGL 1, but there is for 2.0
         if (ctxInfo.version() >= GR_GL_VER(2,0)) {

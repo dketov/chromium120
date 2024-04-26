@@ -39,7 +39,10 @@ namespace mojo::core {
 
 namespace {
 
-#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+// TODO(neva): Remove USE_NEVA_APPRUNTIME if mojoipcz is better when considering
+// memory and perormance perspective.
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
+    defined(USE_NEVA_APPRUNTIME)
 std::atomic<bool> g_mojo_ipcz_enabled{false};
 #else
 // Default to enabled even if InitFeatures() is never called.

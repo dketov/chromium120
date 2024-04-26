@@ -293,6 +293,8 @@ bool CSSPropertyEquality::PropertiesEqual(const PropertyHandle& property,
     case CSSPropertyID::kCaretColor:
       return a.CaretColor() == b.CaretColor() &&
              a.InternalVisitedCaretColor() == b.InternalVisitedCaretColor();
+    case CSSPropertyID::kCaretWidth:
+      return a.CaretWidth() == b.CaretWidth();
     case CSSPropertyID::kClear:
       return a.Clear() == b.Clear();
     case CSSPropertyID::kClip:
@@ -523,6 +525,20 @@ bool CSSPropertyEquality::PropertiesEqual(const PropertyHandle& property,
       return a.MinWidth() == b.MinWidth();
     case CSSPropertyID::kMixBlendMode:
       return a.GetBlendMode() == b.GetBlendMode();
+    case CSSPropertyID::kNavDown:
+      return a.Navigation(CSSPropertyID::kNavDown) ==
+             b.Navigation(CSSPropertyID::kNavDown);
+    case CSSPropertyID::kNavIndex:
+      return a.NavigationIndex() == b.NavigationIndex();
+    case CSSPropertyID::kNavLeft:
+      return a.Navigation(CSSPropertyID::kNavLeft) ==
+             b.Navigation(CSSPropertyID::kNavLeft);
+    case CSSPropertyID::kNavRight:
+      return a.Navigation(CSSPropertyID::kNavRight) ==
+             b.Navigation(CSSPropertyID::kNavRight);
+    case CSSPropertyID::kNavUp:
+      return a.Navigation(CSSPropertyID::kNavUp) ==
+             b.Navigation(CSSPropertyID::kNavUp);
     case CSSPropertyID::kObjectFit:
       return a.GetObjectFit() == b.GetObjectFit();
     case CSSPropertyID::kObjectPosition:

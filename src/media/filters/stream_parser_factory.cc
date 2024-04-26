@@ -92,16 +92,21 @@ struct SupportedTypeInfo {
   RAW_PTR_EXCLUSION const CodecInfo* const* codecs;
 };
 
+#if defined(ENABLE_WEBM_VIDEO_CODECS)
 static const CodecInfo kVP8CodecInfo = {"vp8", CodecInfo::VIDEO, nullptr,
                                         CodecInfo::HISTOGRAM_VP8};
 static const CodecInfo kLegacyVP9CodecInfo = {"vp9", CodecInfo::VIDEO, nullptr,
                                               CodecInfo::HISTOGRAM_VP9};
 static const CodecInfo kVP9CodecInfo = {"vp09.*", CodecInfo::VIDEO, nullptr,
                                         CodecInfo::HISTOGRAM_VP9};
+#endif
+#if defined(ENABLE_WEBM_VIDEO_CODECS) || defined(ENABLE_WEBM_AUDIO_CODECS)
 static const CodecInfo kVorbisCodecInfo = {"vorbis", CodecInfo::AUDIO, nullptr,
                                            CodecInfo::HISTOGRAM_VORBIS};
+#endif
 static const CodecInfo kOpusCodecInfo = {"opus", CodecInfo::AUDIO, nullptr,
                                          CodecInfo::HISTOGRAM_OPUS};
+
 static const CodecInfo kOpusCodecInfo2 = {"Opus", CodecInfo::AUDIO, nullptr,
                                           CodecInfo::HISTOGRAM_OPUS};
 
@@ -111,6 +116,7 @@ static const CodecInfo kAV1CodecInfo = {"av01.*", CodecInfo::VIDEO, nullptr,
                                         CodecInfo::HISTOGRAM_AV1};
 #endif
 
+#if defined(ENABLE_WEBM_VIDEO_CODECS)
 static const CodecInfo* const kVideoWebMCodecs[] = {
     &kVP8CodecInfo,  &kLegacyVP9CodecInfo, &kVP9CodecInfo, &kVorbisCodecInfo,
     &kOpusCodecInfo, &kOpusCodecInfo2,
@@ -118,14 +124,19 @@ static const CodecInfo* const kVideoWebMCodecs[] = {
     &kAV1CodecInfo,
 #endif
     nullptr};
+#endif
 
+#if defined(ENABLE_WEBM_AUDIO_CODECS)
 static const CodecInfo* const kAudioWebMCodecs[] = {
     &kVorbisCodecInfo, &kOpusCodecInfo, &kOpusCodecInfo2, nullptr};
+#endif
 
+#if defined(ENABLE_WEBM_VIDEO_CODECS) || defined(ENABLE_WEBM_AUDIO_CODECS)
 static StreamParser* BuildWebMParser(base::span<const std::string> codecs,
                                      MediaLog* media_log) {
   return new WebMStreamParser();
 }
+#endif
 
 #if BUILDFLAG(USE_PROPRIETARY_CODECS)
 static int GetMP4AudioObjectType(base::StringPiece codec_id,
@@ -448,12 +459,27 @@ static StreamParser* BuildMP2TParser(base::span<const std::string> codecs,
 #endif  // ENABLE_MSE_MPEG2TS_STREAM_PARSER
 #endif  // BUILDFLAG(USE_PROPRIETARY_CODECS)
 
+#if defined(USE_NEVA_MEDIA)
+// Since we turn on Werror build flag in PC build, an warning
+// 'Wexit-time-destructors' introduces compile error. So suppress the warning.
+// TODO(neva): How to declare destructor of static array?
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wexit-time-destructors"
+#endif  // defined(USE_NEVA_MEDIA)
+
 static const SupportedTypeInfo kSupportedTypeInfo[] = {
+#if defined(ENABLE_WEBM_VIDEO_CODECS)
     {"video/webm", &BuildWebMParser, kVideoWebMCodecs},
+#endif
+#if defined(ENABLE_WEBM_AUDIO_CODECS)
     {"audio/webm", &BuildWebMParser, kAudioWebMCodecs},
+#endif
     {"audio/mpeg", &BuildMP3Parser, kAudioMP3Codecs},
     // NOTE: Including proprietary MP4 codecs is gated by build flags above.
     {"video/mp4", &BuildMP4Parser, kVideoMP4Codecs},
+#if defined(OS_WEBOS)
+    {"video/x-m4v", &BuildMP4Parser, kVideoMP4Codecs},
+#endif
     {"audio/mp4", &BuildMP4Parser, kAudioMP4Codecs},
 #if BUILDFLAG(USE_PROPRIETARY_CODECS)
     {"audio/aac", &BuildADTSParser, kAudioADTSCodecs},
@@ -462,6 +488,10 @@ static const SupportedTypeInfo kSupportedTypeInfo[] = {
 #endif
 #endif
 };
+
+#if defined(USE_NEVA_MEDIA)
+#pragma clang diagnostic pop
+#endif  // defined(USE_NEVA_MEDIA)
 
 // Verify that |codec_info| is supported on this platform.
 //

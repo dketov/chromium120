@@ -86,12 +86,29 @@ class EmbeddedPermissionPromptBaseView : public PermissionPromptBaseView {
   struct RequestLineConfiguration {
     const raw_ptr<const gfx::VectorIcon> icon;
     std::u16string message;
+// TODO(neva): Remove this when Neva GCC support the syntax used in
+// upstream's implementation. (GCC version 10.5.0 can compile the original
+// implementation.)
+#if (__cplusplus < 202002L)
+    RequestLineConfiguration(raw_ptr<const gfx::VectorIcon> icon,
+                             const std::u16string& message)
+        : icon(icon), message(message) {}
+#endif
   };
 
   struct ButtonConfiguration {
     std::u16string label;
     ButtonType type;
     ui::ButtonStyle style;
+// TODO(neva): Remove this when Neva GCC support the syntax used in
+// upstream's implementation. (GCC version 10.5.0 can compile the original
+// implementation.)
+#if (__cplusplus < 202002L)
+    ButtonConfiguration(const std::u16string& label,
+                        ButtonType type,
+                        ui::ButtonStyle style)
+        : label(label), type(type), style(style) {}
+#endif
   };
 
   static int GetViewId(ButtonType button) { return static_cast<int>(button); }

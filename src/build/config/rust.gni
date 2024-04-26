@@ -6,6 +6,7 @@ import("//build/config/chrome_build.gni")
 import("//build/config/compiler/compiler.gni")
 import("//build/config/sanitizers/sanitizers.gni")
 import("//build/toolchain/toolchain.gni")
+import("//neva/neva.gni")
 
 if (is_android) {
   import("//build/config/android/config.gni")
@@ -24,7 +25,9 @@ declare_args() {
   # Chromium-based projects that are built for for architectures Chrome does not
   # support may need to disable this as well, though they may need to replace
   # code with C/C++ to get a functional product.
-  enable_rust = build_with_chromium
+  # TODO(neva): Remove this workaround to avoid Rust build error for
+  # webOS/OSE and PC build using |use_neva_appruntime|.
+  enable_rust = build_with_chromium && !use_neva_appruntime
 
   # The CXX tool is in //third_party/rust which is not shared with downstream
   # projects yet. So they need to copy the required dependencies and GN files

@@ -401,6 +401,9 @@ void Display::Initialize(DisplayClient* client,
 
   damage_tracker_ = std::make_unique<DisplayDamageTracker>(surface_manager_,
                                                            aggregator_.get());
+#if defined(USE_NEVA_APPRUNTIME)
+  damage_tracker_->SetFrameSinkId(frame_sink_id_);
+#endif
   if (scheduler_)
     scheduler_->SetDamageTracker(damage_tracker_.get());
 
@@ -597,6 +600,19 @@ void Display::InitializeRenderer(bool enable_shared_images) {
 bool Display::IsRootFrameMissing() const {
   return damage_tracker_->root_frame_missing();
 }
+
+#if defined(USE_NEVA_APPRUNTIME)
+void Display::RenderProcessGone() {
+  if (scheduler_)
+    scheduler_->RenderProcessGone();
+}
+
+void Display::SetFirstActivateTimeout(base::TimeDelta timeout) {
+  if (scheduler_)
+    scheduler_->SetFirstActivateTimeout(timeout);
+}
+
+#endif
 
 bool Display::HasPendingSurfaces(const BeginFrameArgs& args) const {
   return damage_tracker_->HasPendingSurfaces(args);

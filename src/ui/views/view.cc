@@ -1569,7 +1569,12 @@ void View::OnMouseEvent(ui::MouseEvent* event) {
 void View::OnScrollEvent(ui::ScrollEvent* event) {}
 
 void View::OnTouchEvent(ui::TouchEvent* event) {
+// TODO(neva): Workaround to enable touch events on webOS platforms.
+// This should be investigated and revised later.
+// Bugs: NEVA-8096, NEVA-8097.
+#if !defined(OS_WEBOS)
   NOTREACHED_NORETURN() << "Views should not receive touch events.";
+#endif
 }
 
 void View::OnGestureEvent(ui::GestureEvent* event) {}

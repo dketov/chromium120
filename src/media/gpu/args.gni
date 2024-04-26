@@ -4,6 +4,7 @@
 
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/ozone.gni")
+import("//neva/neva.gni")
 
 declare_args() {
   # Indicates if X11 VA-API-based hardware acceleration is to be used.

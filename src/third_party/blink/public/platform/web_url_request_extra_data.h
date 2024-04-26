@@ -61,6 +61,17 @@ class BLINK_PLATFORM_EXPORT WebURLRequestExtraData
   void set_allow_cross_origin_auth_prompt(bool allow_cross_origin_auth_prompt) {
     allow_cross_origin_auth_prompt_ = allow_cross_origin_auth_prompt;
   }
+#if defined(USE_NEVA_APPRUNTIME)
+  absl::optional<bool> allow_third_party_cookies() const {
+    return allow_third_party_cookies_;
+  }
+  void set_allow_third_party_cookies(bool allow) {
+    allow_third_party_cookies_ = allow;
+  }
+  void reset_allow_third_party_cookies() {
+    allow_third_party_cookies_ = absl::nullopt;
+  }
+#endif  // defined(USE_NEVA_APPRUNTIME)
 
   void CopyToResourceRequest(network::ResourceRequest* request) const;
 
@@ -75,6 +86,9 @@ class BLINK_PLATFORM_EXPORT WebURLRequestExtraData
   bool originated_from_service_worker_ = false;
   WebString custom_user_agent_;
   bool allow_cross_origin_auth_prompt_ = false;
+#if defined(USE_NEVA_APPRUNTIME)
+  absl::optional<bool> allow_third_party_cookies_;
+#endif
 };
 
 }  // namespace blink

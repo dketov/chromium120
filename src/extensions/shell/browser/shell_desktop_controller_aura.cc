@@ -52,6 +52,22 @@
 #include "ui/views/widget/desktop_aura/desktop_screen.h"
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
+///@name USE_NEVA_APPRUNTIME
+///@{
+// FIXME(neva): Added for switches::kEnableNevaIme usage
+// in CreateRootWindowControllerForDisplay() below.
+// Need to revise whole kEnableNevaIme usage.
+#include "base/command_line.h"
+#include "ui/base/ui_base_neva_switches.h"
+///@}
+
+#if defined(USE_NEVA_APPRUNTIME)
+#include "ui/views/corewm/tooltip_aura.h"
+#include "ui/views/corewm/tooltip_controller.h"
+#include "ui/wm/public/activation_client.h"
+#include "ui/wm/public/tooltip_client.h"
+#endif
+
 namespace extensions {
 
 namespace {
@@ -199,11 +215,37 @@ void ShellDesktopControllerAura::AddAppWindow(AppWindow* app_window,
         CreateRootWindowControllerForDisplay(display);
   }
   root_window_controllers_[display.id()]->AddAppWindow(app_window, window);
+
+#if defined(OS_WEBOS)
+  const char kAppId[] = "appId";
+  const char kWebOSAccessPolicyKeysBack[] = "_WEBOS_ACCESS_POLICY_KEYS_BACK";
+  std::string app_id = app_window->GetApplicationId();
+  if (!app_id.empty()) {
+    aura::WindowTreeHost* window_tree_host =
+        root_window_controllers_[display.id()]->host();
+    window_tree_host->SetWindowProperty(kAppId, app_id);
+    window_tree_host->SetWindowProperty(kWebOSAccessPolicyKeysBack, "true");
+
+    const char kDisplayAffinity[] = "displayAffinity";
+    std::string display_id = app_window->GetDisplayId();
+    if (!display_id.empty())
+      window_tree_host->SetWindowProperty(kDisplayAffinity, display_id);
+  }
+#endif
+#if defined(USE_NEVA_APPRUNTIME)
+  display::Screen::GetScreen()->AddObserver(this);
+  if (display::Screen::GetScreen()->GetNumDisplays() > 0)
+    current_rotation_ =
+        display::Screen::GetScreen()->GetPrimaryDisplay().RotationAsDegree();
+#endif
 }
 
 void ShellDesktopControllerAura::CloseAppWindows() {
   for (auto& pair : root_window_controllers_)
     pair.second->CloseAppWindows();
+#if defined(USE_NEVA_APPRUNTIME)
+  display::Screen::GetScreen()->RemoveObserver(this);
+#endif
 }
 
 void ShellDesktopControllerAura::CloseRootWindowController(
@@ -236,6 +278,51 @@ void ShellDesktopControllerAura::OnDisplayModeChanged(
     auto it = root_window_controllers_.find(display_mode->display_id());
     if (it != root_window_controllers_.end())
       it->second->UpdateSize(display_mode->current_mode()->size());
+  }
+}
+#endif
+
+#if defined(USE_NEVA_APPRUNTIME)
+namespace {
+bool IsLandscape(int rotation) {
+  return rotation == 0 || rotation == 180;
+}
+
+bool IsPortrait(int rotation) {
+  return rotation == 90 || rotation == 270;
+}
+}  // namespace
+
+void ShellDesktopControllerAura::OnDisplayMetricsChanged(
+    const display::Display& display,
+    uint32_t metrics) {
+  if (metrics & display::DisplayObserver::DISPLAY_METRIC_ROTATION) {
+    // Get new rotation from primary display
+    int screen_rotation =
+        display::Screen::GetScreen()->GetPrimaryDisplay().RotationAsDegree();
+
+    if (screen_rotation == current_rotation_)
+      return;
+
+    auto it = root_window_controllers_.find(display.id());
+    if (it != root_window_controllers_.end()) {
+      const gfx::Rect& rect =
+          it->second->GetDefaultParent(nullptr, gfx::Rect(), display.id())
+              ->bounds();
+      if (!rect.IsEmpty()) {
+        if (IsLandscape(current_rotation_)) {
+          if (IsPortrait(screen_rotation)) {
+            it->second->UpdateSize(gfx::Size(rect.height(), rect.width()));
+          }
+        } else if (IsPortrait(current_rotation_)) {
+          if (IsLandscape(screen_rotation)) {
+            it->second->UpdateSize(gfx::Size(rect.height(), rect.width()));
+          }
+        }
+      }
+    }
+
+    current_rotation_ = screen_rotation;
   }
 }
 #endif
@@ -369,6 +456,9 @@ void ShellDesktopControllerAura::TearDownWindowManager() {
     screen_.reset();
   }
   root_window_event_filter_.reset();
+#if defined(USE_NEVA_APPRUNTIME)
+  tooltip_controller_.reset();
+#endif
 }
 
 std::unique_ptr<RootWindowController>
@@ -388,8 +478,15 @@ ShellDesktopControllerAura::CreateRootWindowControllerForDisplay(
   root_window->AddPreTargetHandler(focus_controller_.get());
   wm::SetActivationClient(root_window, focus_controller_.get());
   aura::client::SetCursorClient(root_window, cursor_manager_.get());
-
-  if (!input_method_) {
+#if defined(USE_NEVA_APPRUNTIME)
+  tooltip_controller_ = std::make_unique<views::corewm::TooltipController>(
+      std::make_unique<views::corewm::TooltipAura>(),
+      wm::GetActivationClient(root_window));
+  root_window->AddPreTargetHandler(tooltip_controller_.get());
+  wm::SetTooltipClient(root_window, tooltip_controller_.get());
+#endif
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (!command_line->HasSwitch(switches::kEnableNevaIme) && !input_method_) {
     // Create an input method and become its key event dispatcher.
     input_method_ = ui::CreateInputMethod(
         this, root_window_controller->host()->GetAcceleratedWidget());
@@ -404,6 +501,9 @@ void ShellDesktopControllerAura::TearDownRootWindowController(
   root->host()->window()->RemovePreTargetHandler(
       root_window_event_filter_.get());
   root->host()->window()->RemovePreTargetHandler(focus_controller_.get());
+#if defined(USE_NEVA_APPRUNTIME)
+  root->host()->window()->RemovePreTargetHandler(tooltip_controller_.get());
+#endif
 }
 
 void ShellDesktopControllerAura::MaybeQuit() {

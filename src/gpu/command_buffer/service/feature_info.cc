@@ -1348,6 +1348,10 @@ void FeatureInfo::InitializeFeatures() {
   bool is_webgl_compatibility_context =
       gfx::HasExtension(extensions, "GL_ANGLE_webgl_compatibility");
   bool have_es2_draw_buffers =
+#if defined(OS_WEBOS)
+      // Support for the teapot test for webOS VMware.
+      !workarounds_.disable_ext_draw_buffers &&
+#endif
       (have_es2_draw_buffers_vendor_agnostic ||
        can_emulate_es2_draw_buffers_on_es3_nv) &&
       (context_type_ == CONTEXT_TYPE_OPENGLES2 ||
@@ -1475,6 +1479,9 @@ void FeatureInfo::InitializeFeatures() {
     }
   }
 
+#if defined(USE_NEVA_APPRUNTIME)
+  if (!workarounds_.disable_texture_rg)
+#endif
   if ((gl_version_info_->is_es3 || gl_version_info_->is_desktop_core_profile ||
        gfx::HasExtension(extensions, "GL_EXT_texture_rg") ||
        gfx::HasExtension(extensions, "GL_ARB_texture_rg")) &&

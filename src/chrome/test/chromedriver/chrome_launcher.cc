@@ -203,6 +203,13 @@ Status PrepareDesktopCommandLine(const Capabilities& capabilities,
       // after the migration to the New Headless
       command.AppendArg("data:,");
     }
+#if defined(USE_NEVA_APPRUNTIME)
+    else {
+    // Append arbitrary startup url for launching wam_demo properly.
+    // TODO(neva): Need to ensure this line don't disturb preference in profile.
+    command.AppendArg("data:,");
+    }
+#endif  // defined(USE_NEVA_APPRUNTIME)
     base::FilePath::StringType user_data_dir_value =
         switches.GetSwitchValueNative("user-data-dir");
     if (user_data_dir_value.empty())

@@ -81,6 +81,11 @@ class WaylandToplevelWindow : public WaylandWindow,
   void OnSequencePoint(int64_t seq) override;
   bool IsSurfaceConfigured() override;
   void AckConfigure(uint32_t serial) override;
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  void HandleStateChanged(PlatformWindowState state) override;
+  void HandleActivationChanged(bool is_activated) override;
+  ///@}
 
   bool OnInitialize(PlatformWindowInitProperties properties,
                     PlatformWindowDelegate::State* state) override;
@@ -112,6 +117,9 @@ class WaylandToplevelWindow : public WaylandWindow,
   // PlatformWindow:
   void Show(bool inactive) override;
   void Hide() override;
+#if defined(USE_NEVA_MEDIA)
+  void Close() override;
+#endif  // defined(USE_NEVA_MEDIA)
   bool IsVisible() const override;
   void SetTitle(const std::u16string& title) override;
   void SetFullscreen(bool fullscreen, int64_t target_display_id) override;

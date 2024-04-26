@@ -37,6 +37,10 @@
 #include "third_party/blink/public/platform/web_media_player.h"
 #include "ui/gfx/color_space.h"
 
+#if defined(USE_NEVA_MEDIA)
+#include "third_party/blink/public/platform/neva/web_media_player_client.h"
+#endif
+
 namespace cc {
 class Layer;
 }
@@ -52,7 +56,12 @@ namespace blink {
 class WebMediaSource;
 class WebRemotePlaybackClient;
 
+#if defined(USE_NEVA_MEDIA)
+class BLINK_PLATFORM_EXPORT WebMediaPlayerClient
+    : public neva::WebMediaPlayerClient {
+#else
 class BLINK_PLATFORM_EXPORT WebMediaPlayerClient {
+#endif
  public:
   enum VideoTrackKind {
     kVideoTrackKindNone,

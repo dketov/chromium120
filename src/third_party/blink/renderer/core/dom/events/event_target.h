@@ -320,6 +320,17 @@ class CORE_EXPORT EventTarget : public ScriptWrappable {
   DEFINE_ATTRIBUTE_EVENT_LISTENER(webkitanimationstart, kWebkitAnimationStart)
   DEFINE_ATTRIBUTE_EVENT_LISTENER(webkittransitionend, kWebkitTransitionEnd)
   DEFINE_ATTRIBUTE_EVENT_LISTENER(wheel, kWheel)
+  ///@name USE_NEVA_MEDIA
+  ///@{
+  DEFINE_ATTRIBUTE_EVENT_LISTENER(umsmediainfo, kUmsmediainfo)
+  DEFINE_ATTRIBUTE_EVENT_LISTENER(webosmediafocuschange, kWebosmediafocuschange)
+
+  ///@name USE_NEVA_MEDIA_PLAYER_CAMERA
+  ///@{
+  DEFINE_ATTRIBUTE_EVENT_LISTENER(updatecamerastate, kUpdatecamerastate)
+  ///@}
+
+  ///@}
 
   void Trace(Visitor*) const override;
 

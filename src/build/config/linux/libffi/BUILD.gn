@@ -10,7 +10,8 @@ declare_args() {
   # on Linux, libffi must be statically linked to prevent a situation where the
   # runtime version of libffi is different from the build-time version from the
   # sysroot.
-  use_system_libffi = default_toolchain == "//build/toolchain/cros:target"
+  use_system_libffi = (default_toolchain == "//build/toolchain/cros:target" ||
+                       (is_webos && default_toolchain == "//build/toolchain/linux:clang_webos_$target_cpu"))
 }
 
 if (use_system_libffi) {

@@ -161,6 +161,55 @@ CreditCardIssuer GetCardNetwork(const std::string& number) {
   return CreditCardIssuer::kGenericCard;
 }
 
+  // TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+bool HasCorrectLength(const std::string& number) {
+  // Credit card numbers are at most 19 digits in length, 12 digits seems to
+  // be a fairly safe lower-bound [1].  Specific card issuers have more rigidly
+  // defined sizes.
+  // (Last updated: May 29, 2017)
+  // [1] https://en.wikipedia.org/wiki/Payment_card_number.
+  if (number.size() < 12 || number.size() > 19) {
+    return false;
+  }
+  const std::vector<char> kUnlikelyIin{'0', '7', '8', '9'};
+  if (base::Contains(kUnlikelyIin, number.front())) {
+    return false;
+  }
+
+  const CreditCardIssuer type = GetCardNetwork(number);
+  if (type == CreditCardIssuer::kGenericCard) {
+    return true;
+  }
+
+  switch (number.size()) {
+    case 13:
+      return type == CreditCardIssuer::kVisaCard;
+    case 14:
+      return type == CreditCardIssuer::kDinersCard;
+    case 15:
+      return type == CreditCardIssuer::kAmericanExpressCard;
+    case 16:
+      return (type == CreditCardIssuer::kDiscoverCard ||
+              type == CreditCardIssuer::kJCBCard ||
+              type == CreditCardIssuer::kMasterCard ||
+              type == CreditCardIssuer::kMirCard ||
+              type == CreditCardIssuer::kTroyCard ||
+              type == CreditCardIssuer::kUnionPay ||
+              type == CreditCardIssuer::kVisaCard);
+    case 17:
+      [[fallthrough]];
+    case 18:
+      return type == CreditCardIssuer::kUnionPay;
+    case 19:
+      return (type == CreditCardIssuer::kUnionPay ||
+              type == CreditCardIssuer::kVisaCard);
+    default: {
+      return false;
+    }
+  }
+}
+#else   // !(__cplusplus < 202002L)
 bool HasCorrectLength(const std::string& number) {
   using enum CreditCardIssuer;
   // Credit card numbers are at most 19 digits in length, 12 digits seems to
@@ -203,6 +252,7 @@ bool HasCorrectLength(const std::string& number) {
     }
   }
 }
+#endif  // !(__cplusplus < 202002L)
 
 bool PassesLuhnCheck(const std::string& number) {
   // Use the Luhn formula [3] to validate the number.

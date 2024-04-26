@@ -401,6 +401,9 @@ class FuchsiaPerfettoProducerConnector;
 namespace ui {
 class DrmThreadProxy;
 class DrmDisplayHostManager;
+#if defined(USE_NEVA_APPRUNTIME)
+class ScopedAllowBlockingForBitmap;
+#endif
 class ScopedAllowBlockingForGbmSurface;
 class SelectFileDialogLinux;
 class WindowResizeHelperMac;
@@ -626,6 +629,9 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBlocking {
       ScopedBypassIOThreadRestrictions;  // http://crbug.com/1144161
   friend class remoting::ScopedAllowBlockingForCrashReporting;
   friend class ui::DrmDisplayHostManager;
+#if defined(USE_NEVA_APPRUNTIME)
+  friend class ui::ScopedAllowBlockingForBitmap;
+#endif
   friend class ui::ScopedAllowBlockingForGbmSurface;
   friend class ui::SelectFileDialogLinux;
   friend class weblayer::BrowserContextImpl;

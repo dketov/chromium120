@@ -26,6 +26,7 @@
 #include "base/unguessable_token.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "components/cookie_config/cookie_store_util_neva.h"
 #include "mojo/public/cpp/base/big_buffer.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
@@ -42,6 +43,7 @@
 #include "net/first_party_sets/first_party_set_metadata.h"
 #include "net/http/http_auth_preferences.h"
 #include "net/net_buildflags.h"
+#include "neva/pal_service/public/mojom/os_crypt.mojom.h"
 #include "services/network/cors/preflight_controller.h"
 #include "services/network/first_party_sets/first_party_sets_access_delegate.h"
 #include "services/network/http_cache_data_counter.h"
@@ -511,6 +513,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
       const std::string& realm,
       LookupProxyAuthCredentialsCallback callback) override;
 #endif
+  void SetOSCrypt(mojo::PendingRemote<pal::mojom::OSCrypt> os_crypt) override;
   void SetSharedDictionaryCacheMaxSize(uint64_t cache_max_size) override;
   void ClearSharedDictionaryCache(
       base::Time start_time,
@@ -693,8 +696,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
       scoped_refptr<SessionCleanupCookieStore>,
       OnURLRequestContextBuilderConfiguredCallback
           on_url_request_context_builder_configured);
-  scoped_refptr<SessionCleanupCookieStore> MakeSessionCleanupCookieStore()
-      const;
+  scoped_refptr<SessionCleanupCookieStore> MakeSessionCleanupCookieStore();
 
   // Invoked when the HTTP cache was cleared. Invokes |callback|.
   void OnHttpCacheCleared(ClearHttpCacheCallback callback,
@@ -777,6 +779,8 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
       VerifyIpProtectionConfigGetterForTestingCallback callback);
 
   const raw_ptr<NetworkService> network_service_;
+
+  scoped_refptr<cookie_config::CookieNevaCryptoDelegate> crypto_delegate_;
 
   mojo::Remote<mojom::NetworkContextClient> client_;
 

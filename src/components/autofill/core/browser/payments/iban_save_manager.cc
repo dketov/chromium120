@@ -14,6 +14,12 @@
 #include "components/autofill/core/browser/strike_databases/payments/iban_save_strike_database.h"
 #include "components/sync/service/sync_user_settings.h"
 
+// TODO(neva): Remove the following lines wrapped by __cplusplus direcitve
+// when Neva GCC starts supporting C++20
+#if (__cplusplus < 202002L)
+#include "base/ranges/algorithm.h"
+#endif
+
 namespace autofill {
 
 IbanSaveManager::IbanSaveManager(AutofillClient* client,
@@ -123,7 +129,7 @@ bool IbanSaveManager::ShouldOfferUploadSave(
 
   // Offer server save for this IBAN if it doesn't already match an existing
   // server IBAN.
-  return std::ranges::none_of(
+  return base::ranges::none_of(
       personal_data_manager_->GetServerIbans(),
       [&iban_import_candidate](const auto& iban) {
         return iban->MatchesPrefixSuffixAndLength(iban_import_candidate);

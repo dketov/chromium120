@@ -15,6 +15,7 @@
 #include "base/functional/callback_helpers.h"
 #include "base/i18n/base_i18n_switches.h"
 #include "base/logging.h"
+#include "base/neva/base_switches.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/threading/thread.h"
@@ -381,6 +382,7 @@ bool UtilityProcessHost::StartProcess() {
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
       switches::kEnableResourcesFileSharing,
 #endif
+      switches::kNevaCertificatesPath,
 #if BUILDFLAG(USE_CHROMEOS_MEDIA_ACCELERATION)
       switches::kChromeOSVideoDecoderTaskRunner,
       switches::kHardwareVideoDecodeFrameRate,

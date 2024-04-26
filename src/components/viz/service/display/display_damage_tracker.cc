@@ -67,6 +67,28 @@ void DisplayDamageTracker::SetRootFrameMissing(bool missing) {
   NotifyRootFrameMissing(missing);
 }
 
+#if defined(USE_NEVA_APPRUNTIME)
+void DisplayDamageTracker::SetFrameSinkId(const FrameSinkId& frame_sink_id) {
+  DCHECK(!frame_sink_id_.is_valid());
+  frame_sink_id_ = frame_sink_id;
+}
+
+void DisplayDamageTracker::MaybeNotifyPendingActivations() {
+  for (auto const& pending_activation : pending_activations_) {
+    if (surface_manager_->IsOrContainsFrameSink(
+            frame_sink_id_, pending_activation.first.frame_sink_id())) {
+      if (delegate_) {
+        delegate_->NotifyPendingActivation(
+            pending_activation.second.is_first_contentful_paint,
+            pending_activation.second.did_reset_container_state,
+            pending_activation.second.seen_first_contentful_paint);
+      }
+      pending_activations_.erase(pending_activation.first);
+    }
+  }
+}
+#endif
+
 void DisplayDamageTracker::SetNewRootSurface(const SurfaceId& root_surface_id) {
   TRACE_EVENT0("viz", "DisplayDamageTracker::SetNewRootSurface");
   root_surface_id_ = root_surface_id;
@@ -178,6 +200,41 @@ bool DisplayDamageTracker::HasPendingSurfaces(
   return false;
 }
 
+void DisplayDamageTracker::OnSurfaceActivatedEx(
+    const SurfaceId& surface_id,
+    bool is_first_contentful_paint,
+    bool did_reset_container_state,
+    bool seen_first_contentful_paint) {
+  if (!surface_manager_->IsOrContainsFrameSink(frame_sink_id_,
+                                               surface_id.frame_sink_id())) {
+    auto it = pending_activations_.find(surface_id);
+    if (it == pending_activations_.end()) {
+      pending_activations_[surface_id] = {is_first_contentful_paint,
+                                          did_reset_container_state,
+                                          seen_first_contentful_paint};
+    } else {
+      if (did_reset_container_state) {
+        it->second.is_first_contentful_paint = false;
+        it->second.seen_first_contentful_paint = false;
+        it->second.did_reset_container_state = true;
+      } else if (is_first_contentful_paint) {
+        it->second.is_first_contentful_paint = true;
+        it->second.seen_first_contentful_paint = false;
+        it->second.did_reset_container_state = false;
+      } else if (seen_first_contentful_paint &&
+                 !it->second.is_first_contentful_paint) {
+        it->second.seen_first_contentful_paint = true;
+      }
+    }
+    return;
+  }
+  if (delegate_) {
+    delegate_->OnSurfaceActivated(is_first_contentful_paint,
+                                  did_reset_container_state,
+                                  seen_first_contentful_paint);
+  }
+}
+
 bool DisplayDamageTracker::HasDamageDueToInteraction() {
   return has_surface_damage_due_to_interaction_;
 }
@@ -190,11 +247,16 @@ void DisplayDamageTracker::DidFinishFrame() {
 
 void DisplayDamageTracker::OnSurfaceMarkedForDestruction(
     const SurfaceId& surface_id) {
+#if defined(USE_NEVA_APPRUNTIME)
+  auto pending_activation_it = pending_activations_.find(surface_id);
+  if (pending_activation_it != pending_activations_.end())
+    pending_activations_.erase(pending_activation_it);
+#endif
+
   auto it = surface_states_.find(surface_id);
   if (it == surface_states_.end())
     return;
   surface_states_.erase(it);
-
   NotifyPendingSurfacesChanged();
 }
 
@@ -253,6 +315,9 @@ void DisplayDamageTracker::OnSurfaceDamageExpected(const SurfaceId& surface_id,
 void DisplayDamageTracker::UpdateRootFrameMissing() {
   Surface* surface = surface_manager_->GetSurfaceForId(root_surface_id_);
   SetRootFrameMissing(!surface || !surface->HasActiveFrame());
+#if defined(USE_NEVA_APPRUNTIME)
+  MaybeNotifyPendingActivations();
+#endif
 }
 
 void DisplayDamageTracker::RunDrawCallbacks() {

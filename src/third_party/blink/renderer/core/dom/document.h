@@ -1731,6 +1731,9 @@ class CORE_EXPORT Document : public ContainerNode,
   SlotAssignmentEngine& GetSlotAssignmentEngine();
 
   bool IsSlotAssignmentDirty() const;
+  bool AddDeferredBackgroundImage();
+  void RemoveDeferredBackgroundImage();
+  void SetFirstFramePolicyAccepted(bool);
 
 #if DCHECK_IS_ON()
   unsigned& SlotAssignmentRecalcForbiddenRecursionDepth() {
@@ -2673,6 +2676,8 @@ class CORE_EXPORT Document : public ContainerNode,
 
   bool rendering_has_begun_ = false;
 
+  int deferred_background_image_count_ = 0;
+
   DeclarativeShadowRootAllowState declarative_shadow_root_allow_state_ =
       DeclarativeShadowRootAllowState::kNotSet;
 
@@ -2721,6 +2726,10 @@ class CORE_EXPORT Document : public ContainerNode,
   //
   // If you need to add new data members to blink::Document and it requires new
   // #includes, add them to blink::DocumentData instead.
+
+  bool accessibility_alert_done_ = false;
+
+  bool first_frame_policy_accepted_ = false;
 };
 
 extern template class CORE_EXTERN_TEMPLATE_EXPORT Supplement<Document>;

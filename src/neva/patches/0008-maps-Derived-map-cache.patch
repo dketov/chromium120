@@ -1,0 +1,491 @@
+From 17265684713a864e5d83c1e4d600ea09501ef296 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Olivier=20Fl=C3=BCckiger?= <olivf@chromium.org>
+Date: Mon, 11 Dec 2023 14:16:32 +0100
+Subject: [PATCH] [maps] Derived map cache
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Cache derived maps for reflect.construct or proxies on the prototype
+info. This ensures we have a re-usable map for every prototype+
+constructor combination.
+
+Bug: chromium:1492212, v8:13978
+Change-Id: I86caa5bc4277db730bf19fdb31f9092173d27c2b
+Reviewed-on: https://chromium-review.googlesource.com/c/v8/v8/+/4943950
+Reviewed-by: Toon Verwaest <verwaest@chromium.org>
+Commit-Queue: Olivier Flückiger <olivf@chromium.org>
+Cr-Commit-Position: refs/heads/main@{#91451}
+---
+ src/builtins/base.tq                          |   7 ++
+ src/builtins/builtins-object-gen.cc           |  12 +-
+ src/builtins/ic-callable.tq                   |   7 --
+ src/builtins/object.tq                        |   8 +-
+ src/compiler/heap-refs.cc                     |   2 +-
+ src/diagnostics/objects-debug.cc              |   8 ++
+ src/diagnostics/objects-printer.cc            |   2 +-
+ src/objects/js-function.cc                    |  12 +-
+ src/objects/map.cc                            |  46 +++++++-
+ src/objects/map.h                             |   5 +
+ src/objects/objects-body-descriptors-inl.h    |   4 +-
+ src/objects/prototype-info-inl.h              | 104 ++++++++++++++++--
+ src/objects/prototype-info.h                  |  16 ++-
+ src/objects/prototype-info.tq                 |   6 +-
+ .../regress/regress-reflect-construct.js      |  31 ++++++
+ 15 files changed, 221 insertions(+), 49 deletions(-)
+ create mode 100644 test/mjsunit/regress/regress-reflect-construct.js
+
+diff --git a/src/builtins/base.tq b/src/builtins/base.tq
+index 565b8d172ad..b0c8f1e63af 100644
+--- a/src/builtins/base.tq
++++ b/src/builtins/base.tq
+@@ -75,6 +75,13 @@ macro WeakToStrong<T: type>(x: Weak<T>): T labels ClearedWeakPointer {
+   return %RawDownCast<T>(x);
+ }
+ 
++macro MaybeObjectToStrong(maybeObject: MaybeObject):
++    HeapObject labels IfCleared {
++  dcheck(IsWeakOrCleared(maybeObject));
++  const weakObject = %RawDownCast<Weak<HeapObject>>(maybeObject);
++  return WeakToStrong(weakObject) otherwise IfCleared;
++}
++
+ // Defined to coincide with https://tc39.es/ecma262/#sec-ispropertykey
+ // Doesn't include PrivateSymbol.
+ type PropertyKey = String|PublicSymbol;
+diff --git a/src/builtins/builtins-object-gen.cc b/src/builtins/builtins-object-gen.cc
+index 648cfc0c3e0..b56ee4d6ae5 100644
+--- a/src/builtins/builtins-object-gen.cc
++++ b/src/builtins/builtins-object-gen.cc
+@@ -1092,9 +1092,15 @@ TF_BUILTIN(ObjectCreate, ObjectBuiltinsAssembler) {
+       TNode<PrototypeInfo> prototype_info =
+           LoadMapPrototypeInfo(LoadMap(CAST(prototype)), &call_runtime);
+       Comment("Load ObjectCreateMap from PrototypeInfo");
+-      TNode<MaybeObject> maybe_map = LoadMaybeWeakObjectField(
+-          prototype_info, PrototypeInfo::kObjectCreateMapOffset);
+-      GotoIf(TaggedEqual(maybe_map, UndefinedConstant()), &call_runtime);
++      TNode<HeapObject> derived_maps = CAST(
++          LoadObjectField(prototype_info, PrototypeInfo::kDerivedMapsOffset));
++      // In case it exists, derived maps is a weak array list where the first
++      // element is the object create map.
++      GotoIf(TaggedEqual(derived_maps, UndefinedConstant()), &call_runtime);
++      CSA_DCHECK(this, InstanceTypeEqual(LoadInstanceType(derived_maps),
++                                         WEAK_ARRAY_LIST_TYPE));
++      TNode<MaybeObject> maybe_map = UncheckedCast<MaybeObject>(LoadObjectField(
++          derived_maps, IntPtrConstant(WeakArrayList::kHeaderSize)));
+       map = CAST(GetHeapObjectAssumeWeak(maybe_map, &call_runtime));
+       Goto(&instantiate_map);
+     }
+diff --git a/src/builtins/ic-callable.tq b/src/builtins/ic-callable.tq
+index 7443ad1b381..22dd6de51ba 100644
+--- a/src/builtins/ic-callable.tq
++++ b/src/builtins/ic-callable.tq
+@@ -19,13 +19,6 @@ macro InSameNativeContext(lhs: Context, rhs: Context): bool {
+   return LoadNativeContext(lhs) == LoadNativeContext(rhs);
+ }
+ 
+-macro MaybeObjectToStrong(maybeObject: MaybeObject):
+-    HeapObject labels IfCleared {
+-  dcheck(IsWeakOrCleared(maybeObject));
+-  const weakObject = %RawDownCast<Weak<HeapObject>>(maybeObject);
+-  return WeakToStrong(weakObject) otherwise IfCleared;
+-}
+-
+ macro TryInitializeAsMonomorphic(
+     implicit context: Context)(maybeTarget: JSAny,
+     feedbackVector: FeedbackVector,
+diff --git a/src/builtins/object.tq b/src/builtins/object.tq
+index 8adc64564d7..0969726915e 100644
+--- a/src/builtins/object.tq
++++ b/src/builtins/object.tq
+@@ -110,12 +110,14 @@ transitioning builtin CreateObjectWithoutProperties(
+         map = UnsafeCast<Map>(objectFunction.prototype_or_initial_map);
+         if (prototype != map.prototype) {
+           const prototypeInfo = prototype.map.PrototypeInfo() otherwise Runtime;
+-          typeswitch (prototypeInfo.object_create_map) {
++          typeswitch (prototypeInfo.derived_maps) {
+             case (Undefined): {
+               goto Runtime;
+             }
+-            case (weak_map: Weak<Map>): {
+-              map = WeakToStrong(weak_map) otherwise Runtime;
++            case (derived_maps: WeakArrayList): {
++              const theMap = MaybeObjectToStrong(derived_maps.objects[0])
++                  otherwise Runtime;
++              map = UnsafeCast<Map>(theMap);
+             }
+           }
+         }
+diff --git a/src/compiler/heap-refs.cc b/src/compiler/heap-refs.cc
+index 8d1886acfc8..f1f88a9e9c3 100644
+--- a/src/compiler/heap-refs.cc
++++ b/src/compiler/heap-refs.cc
+@@ -2299,7 +2299,7 @@ OptionalMapRef JSObjectRef::GetObjectCreateMap(JSHeapBroker* broker) const {
+ 
+   MaybeObject maybe_object_create_map =
+       Handle<PrototypeInfo>::cast(maybe_proto_info)
+-          ->object_create_map(kAcquireLoad);
++          ->ObjectCreateMap(kAcquireLoad);
+   if (!maybe_object_create_map->IsWeak()) return {};
+ 
+   return MapRef(broker->GetOrCreateData(
+diff --git a/src/diagnostics/objects-debug.cc b/src/diagnostics/objects-debug.cc
+index 27d8ac1663b..95fedb197d3 100644
+--- a/src/diagnostics/objects-debug.cc
++++ b/src/diagnostics/objects-debug.cc
+@@ -1963,6 +1963,14 @@ void PrototypeInfo::PrototypeInfoVerify(Isolate* isolate) {
+   } else {
+     CHECK(IsSmi(prototype_users()));
+   }
++  Tagged<HeapObject> derived = derived_maps(isolate);
++  if (!IsUndefined(derived)) {
++    auto derived_list = WeakArrayList::cast(derived);
++    CHECK_GT(derived_list->length(), 0);
++    for (int i = 0; i < derived_list->length(); ++i) {
++      derived_list->Get(i)->IsWeakOrCleared();
++    }
++  }
+ }
+ 
+ void PrototypeUsers::Verify(Tagged<WeakArrayList> array) {
+diff --git a/src/diagnostics/objects-printer.cc b/src/diagnostics/objects-printer.cc
+index b070a9aa861..ab0c386e9f4 100644
+--- a/src/diagnostics/objects-printer.cc
++++ b/src/diagnostics/objects-printer.cc
+@@ -2120,7 +2120,7 @@ void PrototypeInfo::PrototypeInfoPrint(std::ostream& os) {
+   os << "\n - module namespace: " << Brief(module_namespace());
+   os << "\n - prototype users: " << Brief(prototype_users());
+   os << "\n - registry slot: " << registry_slot();
+-  os << "\n - object create map: " << Brief(object_create_map());
++  os << "\n - derived maps: " << Brief(derived_maps());
+   os << "\n - should_be_fast_map: " << should_be_fast_map();
+   os << "\n";
+ }
+diff --git a/src/objects/js-function.cc b/src/objects/js-function.cc
+index c40bab05cb3..8a4a8f13512 100644
+--- a/src/objects/js-function.cc
++++ b/src/objects/js-function.cc
+@@ -1097,14 +1097,10 @@ MaybeHandle<Map> JSFunction::GetDerivedMap(Isolate* isolate,
+                                          isolate);
+     prototype = handle(realm_constructor->prototype(), isolate);
+   }
+-
+-  Handle<Map> map = Map::CopyInitialMap(isolate, constructor_initial_map);
+-  map->set_new_target_is_base(false);
+-  CHECK(IsJSReceiver(*prototype));
+-  if (map->prototype() != *prototype)
+-    Map::SetPrototype(isolate, map, Handle<HeapObject>::cast(prototype));
+-  map->SetConstructor(*constructor);
+-  return map;
++  DCHECK_EQ(constructor_initial_map->constructor_or_back_pointer(),
++            *constructor);
++  return Map::GetDerivedMap(isolate, constructor_initial_map,
++                            Handle<JSReceiver>::cast(prototype));
+ }
+ 
+ namespace {
+diff --git a/src/objects/map.cc b/src/objects/map.cc
+index 7fea7536f37..42251d352ce 100644
+--- a/src/objects/map.cc
++++ b/src/objects/map.cc
+@@ -879,12 +879,13 @@ Handle<Map> Map::GetObjectCreateMap(Isolate* isolate,
+     Handle<PrototypeInfo> info =
+         Map::GetOrCreatePrototypeInfo(js_prototype, isolate);
+     // TODO(verwaest): Use inobject slack tracking for this map.
+-    if (info->HasObjectCreateMap()) {
+-      map = handle(info->ObjectCreateMap(), isolate);
++    Tagged<HeapObject> map_obj;
++    if (info->ObjectCreateMap()->GetHeapObjectIfWeak(&map_obj)) {
++      map = handle(Tagged<Map>::cast(map_obj), isolate);
+     } else {
+       map = Map::CopyInitialMap(isolate, map);
+       Map::SetPrototype(isolate, map, prototype);
+-      PrototypeInfo::SetObjectCreateMap(info, map);
++      PrototypeInfo::SetObjectCreateMap(info, map, isolate);
+     }
+     return map;
+   }
+@@ -892,6 +893,45 @@ Handle<Map> Map::GetObjectCreateMap(Isolate* isolate,
+   return Map::TransitionToPrototype(isolate, map, prototype);
+ }
+ 
++// static
++Handle<Map> Map::GetDerivedMap(Isolate* isolate, Handle<Map> from,
++                               Handle<JSReceiver> prototype) {
++  auto CreateDerivedMap = [&]() {
++    Handle<Map> map = Map::CopyInitialMap(isolate, from);
++    map->set_new_target_is_base(false);
++    if (map->prototype() != *prototype) {
++      Map::SetPrototype(isolate, map, prototype);
++    }
++    return map;
++  };
++
++  if (IsJSObjectThatCanBeTrackedAsPrototype(*prototype)) {
++    Handle<JSObject> js_prototype = Handle<JSObject>::cast(prototype);
++    if (!js_prototype->map()->is_prototype_map()) {
++      JSObject::OptimizeAsPrototype(js_prototype);
++    }
++    Handle<PrototypeInfo> info =
++        Map::GetOrCreatePrototypeInfo(js_prototype, isolate);
++    Tagged<HeapObject> map_obj;
++    Handle<Map> map;
++    if (info->GetDerivedMap(from).GetHeapObjectIfWeak(&map_obj)) {
++      map = handle(Tagged<Map>::cast(map_obj), isolate);
++    } else {
++      map = CreateDerivedMap();
++      PrototypeInfo::AddDerivedMap(info, map, isolate);
++    }
++    return map;
++  }
++
++  CHECK(IsJSProxy(*prototype));
++
++  // The TransitionToPrototype map will not have new_target_is_base reset. But
++  // we don't need it to for proxies.
++  // TODO(olivf): If we never create objects with `this` map (instead of the
++  // derived map) then slack tracking will never finish.
++  return Map::TransitionToPrototype(isolate, from, prototype);
++}
++
+ static bool ContainsMap(MapHandles const& maps, Tagged<Map> map) {
+   DCHECK(!map.is_null());
+   for (Handle<Map> current : maps) {
+diff --git a/src/objects/map.h b/src/objects/map.h
+index 62269f8fed2..fb6b3f390ff 100644
+--- a/src/objects/map.h
++++ b/src/objects/map.h
+@@ -816,6 +816,11 @@ class Map : public TorqueGeneratedMap<Map, HeapObject> {
+   static Handle<Map> GetObjectCreateMap(Isolate* isolate,
+                                         Handle<HeapObject> prototype);
+ 
++  // Returns the map to be used for instances when the given {prototype} is
++  // passed to Reflect.construct or proxy constructors.
++  static Handle<Map> GetDerivedMap(Isolate* isolate, Handle<Map> from,
++                                   Handle<JSReceiver> prototype);
++
+   // Computes a hash value for this map, to be used in HashTables and such.
+   int Hash();
+ 
+diff --git a/src/objects/objects-body-descriptors-inl.h b/src/objects/objects-body-descriptors-inl.h
+index a94a62c75f2..c6ad3060429 100644
+--- a/src/objects/objects-body-descriptors-inl.h
++++ b/src/objects/objects-body-descriptors-inl.h
+@@ -622,9 +622,7 @@ class PrototypeInfo::BodyDescriptor final : public BodyDescriptorBase {
+   template <typename ObjectVisitor>
+   static inline void IterateBody(Tagged<Map> map, Tagged<HeapObject> obj,
+                                  int object_size, ObjectVisitor* v) {
+-    IteratePointers(obj, HeapObject::kHeaderSize, kObjectCreateMapOffset, v);
+-    IterateMaybeWeakPointer(obj, kObjectCreateMapOffset, v);
+-    static_assert(kObjectCreateMapOffset + kTaggedSize == kHeaderSize);
++    IteratePointers(obj, HeapObject::kHeaderSize, object_size, v);
+   }
+ 
+   static inline int SizeOf(Tagged<Map> map, Tagged<HeapObject> obj) {
+diff --git a/src/objects/prototype-info-inl.h b/src/objects/prototype-info-inl.h
+index 168c4a9d130..8036ea26584 100644
+--- a/src/objects/prototype-info-inl.h
++++ b/src/objects/prototype-info-inl.h
+@@ -24,26 +24,106 @@ namespace internal {
+ 
+ TQ_OBJECT_CONSTRUCTORS_IMPL(PrototypeInfo)
+ 
+-DEF_GETTER(PrototypeInfo, object_create_map, MaybeObject) {
+-  return TaggedField<MaybeObject, kObjectCreateMapOffset>::load(cage_base,
+-                                                                *this);
++DEF_GETTER(PrototypeInfo, derived_maps, Tagged<HeapObject>) {
++  return TaggedField<HeapObject, kDerivedMapsOffset>::load(cage_base, *this);
++}
++RELEASE_ACQUIRE_ACCESSORS(PrototypeInfo, derived_maps, Tagged<HeapObject>,
++                          kDerivedMapsOffset)
++
++MaybeObject PrototypeInfo::ObjectCreateMap() {
++  auto derived = derived_maps();
++  if (IsUndefined(derived)) {
++    return MaybeObject();
++  }
++  // Index 0 is the map for object create
++  Tagged<WeakArrayList> derived_list = Tagged<WeakArrayList>::cast(derived);
++  DCHECK_GT(derived_list->length(), 0);
++  MaybeObject el = derived_list->Get(0);
++  DCHECK(el.IsWeakOrCleared());
++  return el;
+ }
+-RELEASE_ACQUIRE_WEAK_ACCESSORS(PrototypeInfo, object_create_map,
+-                               kObjectCreateMapOffset)
+ 
+-Tagged<Map> PrototypeInfo::ObjectCreateMap() {
+-  return Map::cast(object_create_map().GetHeapObjectAssumeWeak());
++MaybeObject PrototypeInfo::ObjectCreateMap(AcquireLoadTag tag) {
++  auto derived = derived_maps(tag);
++  if (IsUndefined(derived)) {
++    return MaybeObject();
++  }
++  // Index 0 is the map for object create
++  Tagged<WeakArrayList> derived_list = Tagged<WeakArrayList>::cast(derived);
++  DCHECK_GT(derived_list->length(), 0);
++  MaybeObject el = derived_list->Get(0);
++  DCHECK(el.IsWeakOrCleared());
++  return el;
+ }
+ 
+ // static
+ void PrototypeInfo::SetObjectCreateMap(Handle<PrototypeInfo> info,
+-                                       Handle<Map> map) {
+-  info->set_object_create_map(HeapObjectReference::Weak(*map), kReleaseStore);
++                                       Handle<Map> map, Isolate* isolate) {
++  if (IsUndefined(info->derived_maps())) {
++    Tagged<WeakArrayList> derived = *isolate->factory()->NewWeakArrayList(1);
++    derived->Set(0, HeapObjectReference::Weak(*map));
++    derived->set_length(1);
++    info->set_derived_maps(derived, kReleaseStore);
++  } else {
++    Tagged<WeakArrayList> derived =
++        Tagged<WeakArrayList>::cast(info->derived_maps());
++    DCHECK(derived->Get(0).IsCleared());
++    DCHECK_GT(derived->length(), 0);
++    derived->Set(0, HeapObjectReference::Weak(*map));
++  }
++}
++
++MaybeObject PrototypeInfo::GetDerivedMap(Handle<Map> from) {
++  if (IsUndefined(derived_maps())) {
++    return MaybeObject();
++  }
++  auto derived = Tagged<WeakArrayList>::cast(derived_maps());
++  // Index 0 is the map for object create
++  for (int i = 1; i < derived->length(); ++i) {
++    MaybeObject el = derived->Get(i);
++    Tagged<Map> map_obj;
++    if (el.GetHeapObjectIfWeak(&map_obj)) {
++      Tagged<Map> to = Tagged<Map>::cast(map_obj);
++      if (to->GetConstructor() == from->GetConstructor() &&
++          to->instance_type() == from->instance_type()) {
++        return el;
++      }
++    }
++  }
++  return MaybeObject();
+ }
+ 
+-bool PrototypeInfo::HasObjectCreateMap() {
+-  MaybeObject cache = object_create_map();
+-  return cache->IsWeak();
++// static
++void PrototypeInfo::AddDerivedMap(Handle<PrototypeInfo> info, Handle<Map> to,
++                                  Isolate* isolate) {
++  if (IsUndefined(info->derived_maps())) {
++    // Index 0 is the map for object create
++    Tagged<WeakArrayList> derived = *isolate->factory()->NewWeakArrayList(2);
++    // GetConstructMap assumes a weak pointer.
++    derived->Set(0, HeapObjectReference::ClearedValue(isolate));
++    derived->Set(1, HeapObjectReference::Weak(*to));
++    derived->set_length(2);
++    info->set_derived_maps(derived, kReleaseStore);
++    return;
++  }
++  auto derived = Tagged<WeakArrayList>::cast(info->derived_maps());
++  // Index 0 is the map for object create
++  int i = 1;
++  for (; i < derived->length(); ++i) {
++    MaybeObject el = derived->Get(i);
++    if (el.IsCleared()) {
++      derived->Set(i, HeapObjectReference::Weak(*to));
++      return;
++    }
++  }
++
++  auto bigger =
++      WeakArrayList::EnsureSpace(isolate, handle(derived, isolate), i + 1);
++  bigger->Set(i, HeapObjectReference::Weak(*to));
++  bigger->set_length(i + 1);
++  if (*bigger != *derived) {
++    info->set_derived_maps(*bigger, kReleaseStore);
++  }
+ }
+ 
+ bool PrototypeInfo::IsPrototypeInfoFast(Tagged<Object> object) {
+diff --git a/src/objects/prototype-info.h b/src/objects/prototype-info.h
+index 5a4440dd60a..8d465328ecd 100644
+--- a/src/objects/prototype-info.h
++++ b/src/objects/prototype-info.h
+@@ -24,14 +24,18 @@ class PrototypeInfo
+  public:
+   static const int UNREGISTERED = -1;
+ 
+-  // [object_create_map]: A field caching the map for Object.create(prototype).
+-  DECL_GETTER(object_create_map, MaybeObject)
+-  DECL_RELEASE_ACQUIRE_WEAK_ACCESSORS(object_create_map)
++  // For caching derived maps for Object.create, Reflect.construct and proxies.
++  DECL_GETTER(derived_maps, Tagged<HeapObject>)
++  DECL_RELEASE_ACQUIRE_ACCESSORS(derived_maps, Tagged<HeapObject>)
+ 
+   static inline void SetObjectCreateMap(Handle<PrototypeInfo> info,
+-                                        Handle<Map> map);
+-  inline Tagged<Map> ObjectCreateMap();
+-  inline bool HasObjectCreateMap();
++                                        Handle<Map> map, Isolate* isolate);
++  inline MaybeObject ObjectCreateMap(AcquireLoadTag);
++  inline MaybeObject ObjectCreateMap();
++
++  static inline void AddDerivedMap(Handle<PrototypeInfo> info, Handle<Map> to,
++                                   Isolate* isolate);
++  inline MaybeObject GetDerivedMap(Handle<Map> from);
+ 
+   static inline bool IsPrototypeInfoFast(Tagged<Object> object);
+ 
+diff --git a/src/objects/prototype-info.tq b/src/objects/prototype-info.tq
+index d7df74bbc9e..732b8e39c80 100644
+--- a/src/objects/prototype-info.tq
++++ b/src/objects/prototype-info.tq
+@@ -25,6 +25,8 @@ extern class PrototypeInfo extends Struct {
+ 
+   bit_field: SmiTagged<PrototypeInfoFlags>;
+ 
+-  // [object_create_map]: A field caching the map for Object.create(prototype).
+-  object_create_map: Weak<Map>|Undefined;
++  // [derived_maps]: A field caching derived maps. The first entry is the map
++  // for Object.create. The following contain entries used by GetDerivedMap
++  // which feeds Reflect.construct, proxies and similar.
++  derived_maps: WeakArrayList|Undefined;
+ }
+diff --git a/test/mjsunit/regress/regress-reflect-construct.js b/test/mjsunit/regress/regress-reflect-construct.js
+new file mode 100644
+index 00000000000..35f1c47f592
+--- /dev/null
++++ b/test/mjsunit/regress/regress-reflect-construct.js
+@@ -0,0 +1,31 @@
++// Copyright 2023 the V8 project authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++// Flags: --allow-natives-syntax
++
++
++class A {};
++class B {};
++class C {};
++class D {};
++class E {};
++class V { constructor() { this.v = 1 } };
++class W { constructor() { this.w = 1 } };
++class X { constructor() { this.x = 1 } };
++class Y { constructor() { this.y = 1 } };
++class Z { constructor() { this.z = 1 } };
++
++var ctrs = [
++  function() {},
++  A,B,C,D,E,V,W,X,Y,Z
++];
++
++for (var it = 0; it < 20; ++it) {
++  for (var i in ctrs) {
++    for (var j in ctrs) {
++      assertTrue(%HaveSameMap(Reflect.construct(ctrs[i],[],ctrs[j]),
++                              Reflect.construct(ctrs[i],[],ctrs[j])));
++    }
++  }
++}
+-- 
+2.43.0
+

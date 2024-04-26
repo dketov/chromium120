@@ -914,10 +914,22 @@ const absl::optional<GeneratedIconFix>& WebApp::generated_icon_fix() const {
   return generated_icon_fix_;
 }
 
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+bool WebApp::IsolationData::PendingUpdateInfo::operator==(
+    const WebApp::IsolationData::PendingUpdateInfo& other) const {
+  return location == other.location && version == other.version;
+}
+bool WebApp::IsolationData::PendingUpdateInfo::operator!=(
+    const WebApp::IsolationData::PendingUpdateInfo& other) const {
+  return !(*this == other);
+}
+#else   // (__cplusplus < 202002L)
 bool WebApp::IsolationData::PendingUpdateInfo::operator==(
     const WebApp::IsolationData::PendingUpdateInfo& other) const = default;
 bool WebApp::IsolationData::PendingUpdateInfo::operator!=(
     const WebApp::IsolationData::PendingUpdateInfo& other) const = default;
+#endif  // !(__cplusplus < 202002L)
 
 bool WebApp::operator==(const WebApp& other) const {
   auto AsTuple = [](const WebApp& app) {

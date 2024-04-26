@@ -43,6 +43,8 @@ import("//build_overrides/build.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
 
+import("//neva/neva.gni")
+
 if (is_mac) {
   # Used to generate fuzzer corpus :base_mach_port_rendezvous_convert_corpus.
   import("//third_party/protobuf/proto_library.gni")
@@ -2247,6 +2249,24 @@ component("base") {
     ]
   }
 
+  # webOS supports PmLog and mapping Chromium LOG().
+  if (is_webos) {
+    sources += [
+      "logging_category.cc",
+      "logging_category.h"
+    ]
+  }
+
+  if (use_pmlog && current_toolchain == default_toolchain) {
+    configs += [ "//build/config/linux/pmlog:pmloglib" ]
+    sources += [
+      "logging_pmlog.cc",
+      "logging_pmlog.h",
+      "logging_pmlog_provider.cc",
+      "logging_pmlog_provider.h",
+    ]
+  }
+
   # Android and MacOS have their own custom shared memory handle
   # implementations. e.g. due to supporting both POSIX and native handles.
   if (is_posix && !is_android && !is_apple) {
@@ -2436,6 +2456,10 @@ component("base") {
     configs -= [ "//build/config/compiler:default_optimization" ]
     configs += [ "//build/config/compiler:optimize_max" ]
   }
+
+  if (use_lttng && current_toolchain == default_toolchain) {
+    deps += [ "//base/trace_event/neva/lttng:chromium_lttng_provider" ]
+  }
 }
 
 # Build flags for Control Flow Integrity
@@ -2619,6 +2643,10 @@ static_library("base_static") {
   if (!is_debug) {
     configs -= [ "//build/config/compiler:default_optimization" ]
     configs += [ "//build/config/compiler:optimize_max" ]
+  }
+
+  if (use_neva_appruntime) {
+    public_deps = [ "//base/neva" ]
   }
 }
 

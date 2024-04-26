@@ -109,13 +109,23 @@ void WaylandPointer::OnEnter(void* data,
   if (!window) {
     return;
   }
+#if defined(OS_WEBOS)
+  if (auto* window_manager = self->connection_->window_manager()) {
+    window_manager->GrabPointerEvents(self->id(), window);
+  }
+#endif  // defined(OS_WEBOS)
 
   gfx::PointF location{static_cast<float>(wl_fixed_to_double(surface_x)),
                        static_cast<float>(wl_fixed_to_double(surface_y))};
 
   self->delegate_->OnPointerFocusChanged(
       window, self->connection_->MaybeConvertLocation(location, window),
-      EventDispatchPolicyForPlatform());
+      EventDispatchPolicyForPlatform()
+#if defined(OS_WEBOS)
+          ,
+      self->id()
+#endif  // defined(OS_WEBOS)
+  );
 }
 
 // static
@@ -130,6 +140,12 @@ void WaylandPointer::OnLeave(void* data,
                   " a window drag 'n drop operation. IGNORING.";
     return;
   }
+#if defined(OS_WEBOS)
+  WaylandWindow* window = wl::RootWindowFromWlSurface(surface);
+  if (auto* window_manager = self->connection_->window_manager()) {
+    window_manager->UngrabPointerEvents(self->id(), window);
+  }
+#endif  // defined(OS_WEBOS)
 
   self->connection_->serial_tracker().ResetSerial(wl::SerialType::kMouseEnter);
 
@@ -140,7 +156,12 @@ void WaylandPointer::OnLeave(void* data,
           : wl::EventDispatchPolicy::kImmediate;
 
   self->delegate_->OnPointerFocusChanged(
-      nullptr, self->delegate_->GetPointerLocation(), event_dispatch_policy);
+      nullptr, self->delegate_->GetPointerLocation(), event_dispatch_policy
+#if defined(OS_WEBOS)
+      ,
+      self->id()
+#endif  // defined(OS_WEBOS)
+  );
 }
 
 // static
@@ -156,7 +177,12 @@ void WaylandPointer::OnMotion(void* data,
 
   self->delegate_->OnPointerMotionEvent(
       self->connection_->MaybeConvertLocation(location, target),
-      EventDispatchPolicyForPlatform());
+      EventDispatchPolicyForPlatform()
+#if defined(OS_WEBOS)
+          ,
+      self->id()
+#endif  // defined(OS_WEBOS)
+  );
 }
 
 // static
@@ -196,9 +222,15 @@ void WaylandPointer::OnButton(void* data,
     self->connection_->serial_tracker().UpdateSerial(
         wl::SerialType::kMousePress, serial);
   }
-  self->delegate_->OnPointerButtonEvent(type, changed_button,
-                                        /*window=*/nullptr,
-                                        EventDispatchPolicyForPlatform());
+  self->delegate_->OnPointerButtonEvent(
+      type, changed_button,
+      /*window=*/nullptr, EventDispatchPolicyForPlatform(),
+      /*allow_release_of_unpressed_button=*/false
+#if defined(OS_WEBOS)
+      ,
+      self->id()
+#endif  // defined(OS_WEBOS)
+  );
 }
 
 // static

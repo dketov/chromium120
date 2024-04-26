@@ -895,6 +895,17 @@ template("clang_toolchain") {
     ar = "${prefix}/llvm-ar"
     nm = "${prefix}/llvm-nm"
 
+#@name USE_NEVA_APPRUNTIME
+#@{
+    forward_variables_from(invoker,
+                           [
+                             "extra_cflags",
+                             "extra_cxxflags",
+                             "extra_cppflags",
+                             "extra_ldflags",
+                           ])
+#@}
+
     forward_variables_from(invoker, "*", [ "toolchain_args" ])
 
     toolchain_args = {

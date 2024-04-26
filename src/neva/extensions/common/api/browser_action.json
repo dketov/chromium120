@@ -1,0 +1,78 @@
+// Copyright 2012 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+[
+  {
+    "namespace": "browserAction",
+    "description": "Use browser actions to put icons in the main Google Chrome toolbar, to the right of the address bar. In addition to its <a href='browserAction#icon'>icon</a>, a browser action can have a <a href='browserAction#tooltip'>tooltip</a>, a <a href='browserAction#badge'>badge</a>, and a <a href='browserAction#popups'>popup</a>.",
+    "compiler_options": {
+      "implemented_in": "chrome/browser/extensions/api/extension_action/extension_action_api.h"
+    },
+    "types": [
+      {
+        "id": "ColorArray",
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "minItems": 4,
+        "maxItems": 4
+      }
+    ],
+    "functions": [
+      {
+        "name": "setBadgeText",
+        "type": "function",
+        "description": "Sets the badge text for the browser action. The badge is displayed on top of the icon.",
+        "parameters": [
+          {
+            "name": "details",
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "optional": true,
+                "description": "Any number of characters can be passed, but only about four can fit into the space. If an empty string (<code>''</code>) is passed, the badge text is cleared.  If <code>tabId</code> is specified and <code>text</code> is null, the text for the specified tab is cleared and defaults to the global badge text."
+              },
+              "tabId": {
+                "type": "integer",
+                "optional": true,
+                "description": "Limits the change to when a particular tab is selected. Automatically resets when the tab is closed."
+              }
+            }
+          }
+        ],
+        "returns_async": {"name": "callback", "parameters": [], "optional": true}
+      },
+      {
+        "name": "setBadgeBackgroundColor",
+        "type": "function",
+        "description": "Sets the background color for the badge.",
+        "parameters": [
+          {
+            "name": "details",
+            "type": "object",
+            "properties": {
+              "color": {
+                "description": "An array of four integers in the range 0-255 that make up the RGBA color of the badge. Can also be a string with a CSS hex color value; for example, <code>#FF0000</code> or <code>#F00</code> (red). Renders colors at full opacity.",
+                "choices": [
+                  {"type": "string"},
+                  {"$ref": "ColorArray"}
+                ]
+              },
+              "tabId": {
+                "type": "integer",
+                "optional": true,
+                "description": "Limits the change to when a particular tab is selected. Automatically resets when the tab is closed."
+              }
+            }
+          }
+        ],
+        "returns_async": {"name": "callback", "parameters": [], "optional": true}
+      }
+    ]
+  }
+]

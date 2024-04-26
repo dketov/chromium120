@@ -61,6 +61,10 @@ class VIZ_HOST_EXPORT HostDisplayClient : public mojom::DisplayClient {
 #endif  // BUILDFLAG(OZONE_PLATFORM_X11)
 #endif  // BUILFFLAG(IS_OZONE)
 
+#if defined(USE_NEVA_APPRUNTIME)
+  void DidCompleteSwap() override;
+#endif
+
   mojo::Receiver<mojom::DisplayClient> receiver_{this};
 #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN)
   gfx::AcceleratedWidget widget_;

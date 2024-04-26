@@ -56,6 +56,10 @@
 #include "third_party/blink/renderer/platform/wtf/cross_thread_copier_media.h"
 #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
 
+#if defined(USE_WEBOS_AUDIO)
+#include "media/audio/audio_device_description.h"
+#endif
+
 namespace WTF {
 
 template <>
@@ -89,6 +93,12 @@ const char* LoadTypeToString(WebMediaPlayer::LoadType type) {
       return "MediaSource";
     case WebMediaPlayer::kLoadTypeMediaStream:
       return "MediaStream";
+#if defined(USE_NEVA_MEDIA)
+    case blink::WebMediaPlayer::kLoadTypeBlobURL:
+      return "BlobURL";
+    case blink::WebMediaPlayer::kLoadTypeDataURL:
+      return "DataURL";
+#endif
   }
 }
 
@@ -951,6 +961,12 @@ bool WebMediaPlayerMS::SetSinkId(
   }
 
   auto sink_id_utf8 = sink_id.Utf8();
+#if defined(USE_WEBOS_AUDIO)
+  if (!initial_audio_output_device_id_.IsEmpty() &&
+      sink_id_utf8 == media::AudioDeviceDescription::kDefaultDeviceId) {
+    return true;
+  }
+#endif
   audio_renderer_->SwitchOutputDevice(sink_id_utf8, std::move(callback));
   return true;
 }

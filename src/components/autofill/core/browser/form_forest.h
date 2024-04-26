@@ -241,7 +241,12 @@ class FormForest {
    public:
     // Dangerous: only use this if you know what you're doing. See
     // GetRendererFormsOfBrowserForm() to understand the consequences.
+    // TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+    static const SecurityOptions TrustAllOrigins() { return {}; }
+#else  // (__cplusplus < 202002L)
     static constexpr SecurityOptions TrustAllOrigins() { return {}; }
+#endif  // !(__cplusplus < 202002L)
 
     SecurityOptions(
         const url::Origin* triggered_origin,

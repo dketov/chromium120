@@ -79,11 +79,18 @@ v8::Local<v8::Module> ModuleRecord::Compile(
   // TODO(chromium:1406506): Add a compile hints solution for module records.
   constexpr bool kMightGenerateCompileHints = false;
   std::tie(compile_options, produce_cache_options, no_cache_reason) =
+#if defined(USE_FILESCHEME_CODECACHE)
+      V8CodeCache::GetCompileOptions(
+          v8_cache_options, params.CacheHandler(),
+          params.GetSourceText().length(), params.SourceLocationType(),
+          params.BaseURL(), params.SourceURL().IsLocalFile(),
+          kMightGenerateCompileHints);
+#else   // defined(USE_FILESCHEME_CODECACHE)
       V8CodeCache::GetCompileOptions(
           v8_cache_options, params.CacheHandler(),
           params.GetSourceText().length(), params.SourceLocationType(),
           params.BaseURL(), kMightGenerateCompileHints);
-
+#endif  // !defined(USE_FILESCHEME_CODECACHE)
   if (!V8ScriptRunner::CompileModule(
            isolate, params, text_position, compile_options, no_cache_reason,
            ReferrerScriptInfo(params.BaseURL(), options))

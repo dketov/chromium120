@@ -1150,6 +1150,13 @@ BASE_FEATURE(kLoadingTasksUnfreezable,
              "LoadingTasksUnfreezable",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
+#if defined(USE_FILESCHEME_CODECACHE)
+// Enabled the code cache for local resources
+BASE_FEATURE(kLocalResourceCodeCache,
+             "LocalResourceCodeCache",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
+
 BASE_FEATURE(kLogUnexpectedIPCPostedToBackForwardCachedDocuments,
              "LogUnexpectedIPCPostedToBackForwardCachedDocuments",
              base::FEATURE_ENABLED_BY_DEFAULT);

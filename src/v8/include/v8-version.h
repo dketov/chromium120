@@ -17,4 +17,9 @@
 // (Boolean macro values are not supported by all preprocessors.)
 #define V8_IS_CANDIDATE_VERSION 0
 
+#if defined(OS_WEBOS) && defined(WEBOS_SUBMISSION_NUMBER)
+#undef V8_PATCH_LEVEL
+#define V8_PATCH_LEVEL (25*1000 + WEBOS_SUBMISSION_NUMBER)
+#endif
+
 #endif  // V8_INCLUDE_VERSION_H_

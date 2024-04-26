@@ -126,6 +126,7 @@ void StreamFactory::CreateOutputStream(
     const base::UnguessableToken& group_id,
     CreateOutputStreamCallback created_callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(owning_sequence_);
+
   TRACE_EVENT_NESTABLE_ASYNC_INSTANT2("audio", "CreateOutputStream", this,
                                       "device id", output_device_id, "params",
                                       params.AsHumanReadableString());

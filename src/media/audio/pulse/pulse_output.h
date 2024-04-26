@@ -61,7 +61,11 @@ class PulseAudioOutputStream : public AudioOutputStream {
   void SetVolume(double volume) override;
   void GetVolume(double* volume) override;
 
+#if defined(USE_WEBOS_AUDIO)
+ protected:
+#else
  private:
+#endif
   // Helper method used for sending native logs to the registered client.
   void SendLogMessage(const char* format, ...) PRINTF_FORMAT(2, 3);
 
@@ -84,7 +88,11 @@ class PulseAudioOutputStream : public AudioOutputStream {
   const AudioParameters params_;
 
   // The device ID for the device to open.
+#if defined(USE_WEBOS_AUDIO)
+  std::string device_id_;
+#else
   const std::string device_id_;
+#endif
 
   // Audio manager that created us.  Used to report that we've closed.
   raw_ptr<AudioManagerBase> manager_;

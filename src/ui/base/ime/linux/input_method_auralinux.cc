@@ -44,8 +44,15 @@ bool IsSameKeyEvent(const ui::KeyEvent& lhs, const ui::KeyEvent& rhs) {
 namespace ui {
 
 InputMethodAuraLinux::InputMethodAuraLinux(
-    ImeKeyEventDispatcher* ime_key_event_dispatcher)
+    ImeKeyEventDispatcher* ime_key_event_dispatcher
+#if defined(OZONE_PLATFORM_WAYLAND_EXTERNAL)
+    , unsigned handle
+#endif
+    )
     : InputMethodBase(ime_key_event_dispatcher),
+#if defined(OZONE_PLATFORM_WAYLAND_EXTERNAL)
+      handle_(handle),
+#endif
       text_input_type_(TEXT_INPUT_TYPE_NONE),
       is_sync_mode_(false),
       composition_changed_(false) {
@@ -462,6 +469,13 @@ bool InputMethodAuraLinux::IsCandidatePopupOpen() const {
   return false;
 }
 
+///@name USE_NEVA_APPRUNTIME
+///@{
+LinuxInputMethodContext* InputMethodAuraLinux::GetInputMethodContext() {
+  return context_.get();
+}
+///@}
+
 VirtualKeyboardController*
 InputMethodAuraLinux::GetVirtualKeyboardController() {
   // This should only be not null when set via testing.
@@ -473,6 +487,14 @@ InputMethodAuraLinux::GetVirtualKeyboardController() {
 // Overriden from ui::LinuxInputMethodContextDelegate
 
 void InputMethodAuraLinux::OnCommit(const std::u16string& text) {
+#if defined(USE_NEVA_APPRUNTIME)
+  // NEVA: A workaround is needed on the webOS platform for |ET_KEY_PRESSED|
+  // event with alphabet characters.
+  bool mark_send_key_press_event = false;
+  mark_send_key_press_event = mark_send_key_press_event_;
+  mark_send_key_press_event_ = false;
+#endif
+
   if (IgnoringNonKeyInput() || !GetTextInputClient())
     return;
 
@@ -493,9 +515,19 @@ void InputMethodAuraLinux::OnCommit(const std::u16string& text) {
   if (!is_sync_mode_ && !IsTextInputTypeNone()) {
     ui::KeyEvent event =
         ui::KeyEvent(ui::ET_KEY_PRESSED, ui::VKEY_PROCESSKEY, 0);
-    if (ime_filtered_key_event_.has_value()) {
-      event = std::move(*ime_filtered_key_event_);
-      ime_filtered_key_event_.reset();
+    if (ime_filtered_key_event_.has_value()
+#if defined(USE_NEVA_APPRUNTIME)
+        || mark_send_key_press_event
+#endif
+    ) {
+#if defined(USE_NEVA_APPRUNTIME)
+      if (ime_filtered_key_event_.has_value()) {
+#endif
+        event = std::move(*ime_filtered_key_event_);
+        ime_filtered_key_event_.reset();
+#if defined(USE_NEVA_APPRUNTIME)
+      }
+#endif
       ui::EventDispatchDetails details =
           DispatchImeFilteredKeyPressEvent(&event);
       if (details.target_destroyed || details.dispatcher_destroyed ||
@@ -524,6 +556,12 @@ void InputMethodAuraLinux::OnDeleteSurroundingText(size_t before,
   if (client && composition_.text.empty())
     client->ExtendSelectionAndDelete(before, after);
 }
+
+#if defined(USE_NEVA_APPRUNTIME)
+void InputMethodAuraLinux::OnMarkToSendKeyPressEvent() {
+  mark_send_key_press_event_ = true;
+}
+#endif
 
 void InputMethodAuraLinux::OnPreeditChanged(
     const CompositionText& composition_text) {
@@ -668,5 +706,16 @@ void InputMethodAuraLinux::ConfirmCompositionText(bool keep_selection) {
   composition_changed_ = false;
   result_text_.reset();
 }
+
+///@name USE_NEVA_APPRUNTIME
+///@{
+bool InputMethodAuraLinux::SystemKeyboardDisabled() {
+  // returns true if VKB is explicitly disabled by client, false otherwise
+  if (!GetTextInputClient())
+    return false;
+  else
+    return GetTextInputClient()->SystemKeyboardDisabled();
+}
+///@}
 
 }  // namespace ui

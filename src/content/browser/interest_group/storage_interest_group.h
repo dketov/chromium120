@@ -47,6 +47,15 @@ struct CONTENT_EXPORT StorageInterestGroup {
     bool is_k_anonymous;
     // The last time the unique user count was updated.
     base::Time last_updated;
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+    KAnonymityData(std::string key,
+                   bool is_k_anonymous,
+                   base::Time last_updated)
+        : key(key),
+          is_k_anonymous(is_k_anonymous),
+          last_updated(last_updated){};
+#endif
   };
 
   blink::InterestGroup interest_group;

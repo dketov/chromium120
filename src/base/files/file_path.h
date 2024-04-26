@@ -152,7 +152,7 @@ class PickleIterator;
 
 // An abstraction to isolate users from the differences between native
 // pathnames on different platforms.
-class BASE_EXPORT FilePath {
+class CBE_BASE_EXPORT BASE_EXPORT FilePath {
  public:
 #if BUILDFLAG(IS_WIN)
   // On Windows, for Unicode-aware applications, native pathnames are wchar_t

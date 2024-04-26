@@ -37,7 +37,7 @@ using stat_wrapper_t = struct stat;
 //
 // On POSIX, if the given file is a symbolic link, most of the methods apply to
 // the file that the symbolic link resolves to.
-class BASE_EXPORT File {
+class CBE_BASE_EXPORT BASE_EXPORT File {
  public:
   // FLAG_(OPEN|CREATE).* are mutually exclusive. You should specify exactly one
   // of the five (possibly combining with other flags) when opening or creating

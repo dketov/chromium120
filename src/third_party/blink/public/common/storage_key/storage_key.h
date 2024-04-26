@@ -109,6 +109,9 @@ class BLINK_COMMON_EXPORT StorageKey {
   static StorageKey CreateFromStringForTesting(const std::string& origin);
 
   // (1G) Copy, move, and destruct.
+#if defined(USE_NEVA_APPRUNTIME)
+  StorageKey(const StorageKey& other, const std::string& app_id);
+#endif
   StorageKey(const StorageKey& other) = default;
   StorageKey& operator=(const StorageKey& other) = default;
   StorageKey(StorageKey&& other) noexcept = default;

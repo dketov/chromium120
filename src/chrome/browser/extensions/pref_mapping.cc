@@ -2,7 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// TODO(neva): <span> is part of C++20, which is not available with GCC v.9.x.x
+#if !defined(__clang__)
+#include <map>  // std::size.
+#else
 #include <span>  // std::size.
+#endif
 
 #include "base/containers/contains.h"
 #include "base/strings/stringprintf.h"

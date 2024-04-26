@@ -33,7 +33,10 @@ BASE_FEATURE(kMojoInlineMessagePayloads,
              "MojoInlineMessagePayloads",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
-#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+// TODO(neva): Remove USE_NEVA_APPRUNTIME if mojoipcz is better when considering
+// memory and perormance perspective.
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
+    defined(USE_NEVA_APPRUNTIME)
 BASE_FEATURE(kMojoIpcz, "MojoIpcz", base::FEATURE_DISABLED_BY_DEFAULT);
 #else
 BASE_FEATURE(kMojoIpcz, "MojoIpcz", base::FEATURE_ENABLED_BY_DEFAULT);

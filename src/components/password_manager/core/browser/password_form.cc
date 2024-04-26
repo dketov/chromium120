@@ -245,7 +245,15 @@ AlternativeElement& AlternativeElement::operator=(AlternativeElement&& rhs) =
 
 AlternativeElement::~AlternativeElement() = default;
 
+// TODO(neva): Remove this when Neva GCC starts supporting C++20.
+#if (__cplusplus < 202002L)
+bool AlternativeElement::operator==(const AlternativeElement& other) const {
+  return field_renderer_id == other.field_renderer_id && name == other.name &&
+         value == other.value;
+};
+#else
 bool AlternativeElement::operator==(const AlternativeElement&) const = default;
+#endif
 
 bool AlternativeElement::operator<(const AlternativeElement& other) const {
   return std::tie(value, field_renderer_id, name) <

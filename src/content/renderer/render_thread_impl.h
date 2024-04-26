@@ -63,6 +63,16 @@
 #include "third_party/blink/public/web/web_memory_statistics.h"
 #include "ui/gfx/native_widget_types.h"
 
+///@name USE_NEVA_APPRUNTIME
+///@{
+#include "third_party/blink/public/platform/web_scoped_page_pauser.h"
+///@}
+
+#if defined(USE_NEVA_MEDIA) || defined(USE_NEVA_SUSPEND_MEDIA_CAPTURE)
+// Mix-in for neva
+#include "content/renderer/neva/render_thread_impl.h"
+#endif
+
 namespace blink {
 class WebVideoCaptureImplManager;
 }
@@ -123,6 +133,9 @@ class CONTENT_EXPORT RenderThreadImpl
     : public RenderThread,
       public ChildThreadImpl,
       public mojom::Renderer,
+#if defined(USE_NEVA_MEDIA) || defined(USE_NEVA_SUSPEND_MEDIA_CAPTURE)
+      public neva::RenderThreadImpl<RenderThreadImpl>,
+#endif
       public viz::mojom::CompositingModeWatcher {
  public:
   static RenderThreadImpl* current();
@@ -376,6 +389,11 @@ class CONTENT_EXPORT RenderThreadImpl
     run_loop_start_time_ = run_loop_start_time;
   }
 
+#if defined(USE_NEVA_MEDIA)
+  void SetUseVideoDecodeAccelerator(bool use);
+  bool UseVideoDecodeAccelerator() { return use_video_decode_accelerator_; }
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   // Provide private memory footprint for browser process.
   void SetPrivateMemoryFootprint(uint64_t private_memory_footprint_bytes);
@@ -438,6 +456,13 @@ class CONTENT_EXPORT RenderThreadImpl
   void PurgeResourceCache(PurgeResourceCacheCallback callback) override;
   void SetProcessState(mojom::RenderProcessBackgroundState background_state,
                        mojom::RenderProcessVisibleState visible_state) override;
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  void ProcessResume() override;
+  void ProcessSuspend() override;
+  void OnSystemMemoryPressureLevelChanged(
+      base::MemoryPressureListener::MemoryPressureLevel level) override;
+  ///@}
   void SetIsLockedToSite() override;
 #if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
   void WriteClangProfilingProfile(
@@ -586,6 +611,24 @@ class CONTENT_EXPORT RenderThreadImpl
   // this member.
   mojo::Receiver<viz::mojom::CompositingModeWatcher>
       compositing_mode_watcher_receiver_{this};
+
+#if defined(USE_NEVA_MEDIA)
+  template <typename original_t>
+  friend class neva::RenderThreadImpl;
+#endif
+
+#if defined(USE_NEVA_APPRUNTIME)
+  unsigned suspension_count_ = 0;
+#endif
+
+#if defined(USE_NEVA_MEDIA)
+  bool use_video_decode_accelerator_ = false;
+#endif
+
+///@name USE_NEVA_APPRUNTIME
+///@{
+  std::unique_ptr<blink::WebScopedPagePauser> page_pauser_;
+///@}
 
   // Tracks the time the run loop started for this thread.
   base::TimeTicks run_loop_start_time_;

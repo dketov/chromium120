@@ -41,6 +41,18 @@ void InitializeSkia() {
 
   const int kMB = 1024 * 1024;
   size_t font_cache_limit;
+#if defined(USE_NEVA_APPRUNTIME)
+  size_t font_cache_count_limit;
+
+  if (cmd.HasSwitch(switches::kSkiaFontCacheCountLimit)) {
+    if (base::StringToSizeT(
+            cmd.GetSwitchValueASCII(switches::kSkiaFontCacheCountLimit),
+            &font_cache_count_limit)) {
+      SkGraphics::SetFontCacheCountLimit(font_cache_count_limit);
+    }
+  }
+#endif  // USE_NEVA_APPRUNTIME
+
 #if BUILDFLAG(IS_ANDROID)
   font_cache_limit =
       base::SysInfo::IsLowEndDeviceOrPartialLowEndModeEnabled() ? kMB : 8 * kMB;

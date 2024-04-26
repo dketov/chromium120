@@ -1,0 +1,32 @@
+{
+  "com.webos.app.enactbrowser": [
+    "application.operation",
+    "applications",
+    "settings.read",
+    "signals.all"
+  ],
+  "com.webos.app.test.browsershell*": [
+    "application.operation",
+    "applications"
+  ],
+  "com.webos.settingsservice.client*": [
+    "settings.read",
+    "settings.query"
+  ],
+  "com.webos.chromium.memory.*": [
+    "signals.all",
+    "system",
+    "memorymanager.query"
+  ],
+  "com.webos.chromium.audio-*": [
+    "audio.query",
+    "audio.operation"
+  ],
+  "com.webos.chromium.camera-*": [
+    "camera.query",
+    "camera.operation"
+  ],
+  "com.webos.rm.client.*": [
+    "media"
+  ]
+}

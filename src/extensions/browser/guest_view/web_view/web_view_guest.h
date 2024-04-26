@@ -28,6 +28,12 @@ namespace content {
 class StoragePartitionConfig;
 }
 
+#if defined(USE_NEVA_APPRUNTIME) && defined(OS_WEBOS)
+namespace neva_app_runtime {
+class WebViewControllerDelegate;
+}
+#endif
+
 namespace extensions {
 
 class WebViewInternalFindFunction;
@@ -120,6 +126,17 @@ class WebViewGuest : public guest_view::GuestView<WebViewGuest> {
 
   // Stop loading the guest.
   void Stop();
+
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  // Suspend the guest process.
+  void Suspend();
+
+  // Resume the guest process.
+  void Resume();
+
+  bool IsSuspended() const { return is_suspended_; }
+  ///@}
 
   // Kill the guest process.
   void Terminate();
@@ -275,6 +292,12 @@ class WebViewGuest : public guest_view::GuestView<WebViewGuest> {
   void RenderFrameHostChanged(content::RenderFrameHost* old_host,
                               content::RenderFrameHost* new_host) final;
   void WebContentsDestroyed() final;
+#if defined(USE_NEVA_APPRUNTIME)
+  void ResourceLoadComplete(
+      content::RenderFrameHost* render_frame_host,
+      const content::GlobalRequestID& request_id,
+      const blink::mojom::ResourceLoadInfo& resource_load_info) final;
+#endif
 
   // Informs the embedder of a frame name change.
   void ReportFrameNameChange(const std::string& name);
@@ -382,6 +405,12 @@ class WebViewGuest : public guest_view::GuestView<WebViewGuest> {
   // Whether the GuestView set an explicit zoom level.
   bool did_set_explicit_zoom_ = false;
 
+  ///@name USE_NEVA_APPRUNTIME
+  ///@{
+  // Whether the GuestView is suspended.
+  bool is_suspended_ = false;
+  ///@}
+
   // Store spatial navigation status.
   bool is_spatial_navigation_enabled_;
 
@@ -392,6 +421,14 @@ class WebViewGuest : public guest_view::GuestView<WebViewGuest> {
   // This is used to ensure pending tasks will not fire after this object is
   // destroyed.
   base::WeakPtrFactory<WebViewGuest> weak_ptr_factory_{this};
+
+#if defined(USE_NEVA_APPRUNTIME)
+  GURL cors_exception_pdf_url_;
+#endif
+#if defined(USE_NEVA_APPRUNTIME) && defined(OS_WEBOS)
+  std::unique_ptr<neva_app_runtime::WebViewControllerDelegate>
+      webview_controller_delegate_;
+#endif
 };
 
 }  // namespace extensions

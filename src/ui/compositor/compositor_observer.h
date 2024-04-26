@@ -56,6 +56,9 @@ class COMPOSITOR_EXPORT CompositorObserver {
                                                     const gfx::Size& size) {}
 #endif  // BUILDFLAG(OZONE_PLATFORM_X11)
 #endif  // BUILFFLAG(IS_OZONE)
+#if defined(USE_NEVA_APPRUNTIME)
+  virtual void OnCompositingCompleteSwap(ui::Compositor* compositor) {}
+#endif
 
   // Called at the top of the compositor's destructor, to give observers a
   // chance to remove themselves.

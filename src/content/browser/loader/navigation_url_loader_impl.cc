@@ -37,6 +37,7 @@
 #include "content/browser/renderer_host/frame_tree_node.h"
 #include "content/browser/renderer_host/navigation_request.h"
 #include "content/browser/renderer_host/navigation_request_info.h"
+#include "content/browser/renderer_host/render_frame_host_delegate.h"
 #include "content/browser/service_worker/service_worker_container_host.h"
 #include "content/browser/service_worker/service_worker_main_resource_handle.h"
 #include "content/browser/service_worker/service_worker_main_resource_loader_interceptor.h"
@@ -111,6 +112,10 @@
 
 #if BUILDFLAG(ENABLE_PLUGINS)
 #include "content/public/browser/plugin_service.h"
+#endif
+
+#if defined(USE_NEVA_APPRUNTIME)
+#include "content/browser/renderer_host/frame_tree.h"
 #endif
 
 namespace content {
@@ -241,6 +246,26 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
 
   new_request->method = request_info.common_params->method;
   new_request->url = request_info.common_params->url;
+#if defined(USE_NEVA_APPRUNTIME)
+  // navigation url is passed to ServiceWorkerContainerHost and it is used for
+  // the storage key when calling RegisterServiceWorker. The origin of the
+  // storage key is bind to the origin when service worker uses permission
+  // service. So here we set webapp_id to the url of the request.
+  //
+  // Calling stack of the passing the url to ServiceWorkerContainerHost
+  // content::ServiceWorkerContainerHost::UpdateUrls
+  // content::ServiceWorkerControlleeRequestHandler::InitializeContainerHost
+  // content::ServiceWorkerControlleeRequestHandler::MaybeCreateLoader
+  // content::ServiceWorkerMainResourceLoaderInterceptor::MaybeCreateLoader
+  // content::NavigationURLLoaderImpl::MaybeStartLoader
+  // content::NavigationURLLoaderImpl::Restart
+  // content::NavigationURLLoaderImpl::StartImpl
+  // content::NavigationURLLoaderImpl::Start
+  if (frame_tree_node && frame_tree_node->current_frame_host()) {
+    new_request->url.set_webapp_id(
+        frame_tree_node->current_frame_host()->GetWebAppId());
+  }
+#endif
   new_request->navigation_redirect_chain.push_back(new_request->url);
   new_request->site_for_cookies =
       request_info.isolation_info.site_for_cookies();
@@ -350,9 +375,24 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
 // Called for requests that we don't have a URLLoaderFactory for.
 void UnknownSchemeCallback(
     bool handled_externally,
+#if defined(USE_NEVA_APPRUNTIME)
+    const network::ResourceRequest& request /* resource_request */,
+#else
     const network::ResourceRequest& /* resource_request */,
+#endif
     mojo::PendingReceiver<network::mojom::URLLoader> receiver,
     mojo::PendingRemote<network::mojom::URLLoaderClient> client) {
+
+#if defined(USE_NEVA_APPRUNTIME)
+  if (request.url == url::kIllegalDataURL) {
+    mojo::Remote<network::mojom::URLLoaderClient>(std::move(client))
+        ->OnComplete(
+            network::URLLoaderCompletionStatus(net::ERR_BLOCKED_BY_CLIENT));
+
+    return;
+  }
+#endif
+
   mojo::Remote<network::mojom::URLLoaderClient>(std::move(client))
       ->OnComplete(network::URLLoaderCompletionStatus(
           handled_externally ? net::ERR_ABORTED : net::ERR_UNKNOWN_URL_SCHEME));
@@ -701,6 +741,25 @@ void NavigationURLLoaderImpl::FallbackToNonInterceptedRequest(
       PrepareForNonInterceptedRequest();
   uint32_t options =
       GetURLLoaderOptions(resource_request_->is_outermost_main_frame);
+
+#if defined(USE_NEVA_APPRUNTIME)
+  FrameTreeNode* frame_tree_node =
+      FrameTreeNode::GloballyFindByID(frame_tree_node_id_);
+  if (frame_tree_node) {
+    RenderFrameHostDelegate* rfhd =
+        frame_tree_node->frame_tree().render_frame_delegate();
+    if (rfhd) {
+      if (rfhd->GetOrCreateWebPreferences().third_party_cookies_policy ==
+          blink::mojom::ThirdPartyCookiesPolicy::kDeny) {
+        options |= network::mojom::kURLLoadOptionBlockThirdPartyCookies;
+      } else if (rfhd->GetOrCreateWebPreferences().third_party_cookies_policy ==
+                 blink::mojom::ThirdPartyCookiesPolicy::kAllow) {
+        options &= ~network::mojom::kURLLoadOptionBlockThirdPartyCookies;
+      }
+    }
+  }
+#endif
+
   if (url_loader_) {
     // `url_loader_` is using the factory for the interceptor that decided to
     // fallback, so restart it with the non-interceptor factory.

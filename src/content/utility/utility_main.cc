@@ -266,6 +266,9 @@ int UtilityMain(MainFunctionParams parameters) {
   auto sandbox_type =
       sandbox::policy::SandboxTypeFromCommandLine(*parameters.command_line);
   sandbox::policy::SandboxLinux::PreSandboxHook pre_sandbox_hook;
+#if defined(OS_WEBOS)
+  if (!sandbox::policy::IsUnsandboxedSandboxType(sandbox_type))
+#endif
   switch (sandbox_type) {
     case sandbox::mojom::Sandbox::kNetwork:
       pre_sandbox_hook = base::BindOnce(&network::NetworkPreSandboxHook,

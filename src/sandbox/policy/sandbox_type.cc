@@ -18,6 +18,10 @@
 #include "sandbox/policy/mojom/sandbox.mojom.h"
 #include "sandbox/policy/switches.h"
 
+#if defined(USE_NEVA_CDM)
+#include "base/command_line.h"
+#endif
+
 namespace sandbox {
 namespace policy {
 using sandbox::mojom::Sandbox;
@@ -46,6 +50,11 @@ bool IsUnsandboxedSandboxType(Sandbox sandbox_type) {
       return false;
     case Sandbox::kOnDeviceModelExecution:
       return false;
+#if defined(USE_NEVA_CDM)
+    case Sandbox::kCdm:
+      return base::CommandLine::ForCurrentProcess()->HasSwitch(
+          sandbox::policy::switches::kNoCdmSandbox);
+#endif
     case Sandbox::kRenderer:
     case Sandbox::kService:
     case Sandbox::kServiceWithJit:
@@ -54,7 +63,9 @@ bool IsUnsandboxedSandboxType(Sandbox sandbox_type) {
 #if BUILDFLAG(ENABLE_PPAPI)
     case Sandbox::kPpapi:
 #endif
+#if !defined(USE_NEVA_CDM)
     case Sandbox::kCdm:
+#endif
 #if BUILDFLAG(ENABLE_OOP_PRINTING)
     case Sandbox::kPrintBackend:
 #endif

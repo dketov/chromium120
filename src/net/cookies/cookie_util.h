@@ -287,6 +287,9 @@ NET_EXPORT bool IsSchemeBoundCookiesEnabled();
 // Returns whether the respective feature is enabled.
 NET_EXPORT bool IsSchemefulSameSiteEnabled();
 
+// Returns whether aggressive flushing is enabled.
+NET_EXPORT bool IsAggressiveFlushingEnabled();
+
 // Computes the First-Party Sets metadata and cache match information.
 // `isolation_info` must be fully populated.
 //

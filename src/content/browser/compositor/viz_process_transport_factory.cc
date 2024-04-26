@@ -117,6 +117,9 @@ class HostDisplayClient : public viz::HostDisplayClient {
   }
 #endif  // BUILDFLAG(OZONE_PLATFORM_X11)
 #endif  // BUILFFLAG(IS_OZONE)
+#if defined(USE_NEVA_APPRUNTIME)
+  void DidCompleteSwap() override { compositor_->OnCompleteSwap(); }
+#endif
 
 #if BUILDFLAG(IS_WIN)
   void AddChildWindowToBrowser(gpu::SurfaceHandle child_window) override {

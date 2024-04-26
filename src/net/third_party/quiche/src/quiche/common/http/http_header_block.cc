@@ -163,7 +163,11 @@ bool HttpHeaderBlock::ValueProxy::operator==(absl::string_view value) const {
   }
 }
 
-std::string HttpHeaderBlock::ValueProxy::as_string() const {
+bool HttpHeaderBlock::ValueProxy::operator!=(absl::string_view value) const {
+  return !operator==(value);
+}
+
+std::string HttpHeaderBlock::ValueProxy::as_string()const {
   if (lookup_result_ == block_->map_.end()) {
     return "";
   } else {
