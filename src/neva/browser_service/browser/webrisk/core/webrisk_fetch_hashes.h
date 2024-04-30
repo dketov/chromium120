@@ -73,12 +73,13 @@ class WebRiskFetchHashes {
 
   base::OneShotTimer update_timer_;
 
-  FetchHashStatusCallback fetch_status_callback_;
-
   std::string webrisk_key_;
   const scoped_refptr<WebRiskDataStore> webrisk_data_store_;
-  const scoped_refptr<base::SingleThreadTaskRunner> file_thread_task_runner_;
   network::SharedURLLoaderFactory* url_loader_factory_ = nullptr;
+  const scoped_refptr<base::SingleThreadTaskRunner> file_thread_task_runner_;
+
+  FetchHashStatusCallback fetch_status_callback_;
+
   base::WeakPtrFactory<WebRiskFetchHashes> weak_factory_{this};
 };
 

@@ -58,8 +58,7 @@ const char kSetSourceInputVolume[] = "setSourceInputVolume";
                      FROM_HERE)
 
 WebOSAudioService::WebOSAudioService()
-    : weak_factory_(this),
-      luna_call_thread_("WebOSAudioLunaCallThread"),
+    : luna_call_thread_("WebOSAudioLunaCallThread"),
       luna_response_runner_(base::ThreadPool::CreateSingleThreadTaskRunner(
           {base::MayBlock(), base::TaskShutdownBehavior::BLOCK_SHUTDOWN})) {
   VLOG(1) << __func__ << " this[" << this << "]";

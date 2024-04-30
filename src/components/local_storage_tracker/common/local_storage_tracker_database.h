@@ -47,8 +47,8 @@ class LocalStorageTrackerDatabase {
   bool CreateOriginsTable();
   bool EnsurePath(const base::FilePath& path);
 
-  sql::Database db_;
   base::FilePath data_file_name_;
+  sql::Database db_;
 };
 }  // namespace content
 

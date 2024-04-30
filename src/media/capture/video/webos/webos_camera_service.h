@@ -114,7 +114,7 @@ class CAPTURE_EXPORT WebOSCameraService
   std::unique_ptr<camera::CameraBuffer> camera_buffer_;
 
   base::WeakPtr<WebOSCameraService> weak_this_;
-  base::WeakPtrFactory<WebOSCameraService> weak_factory_;
+  base::WeakPtrFactory<WebOSCameraService> weak_factory_{this};
 };
 
 }  // namespace media

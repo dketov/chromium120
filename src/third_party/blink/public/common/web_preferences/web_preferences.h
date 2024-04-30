@@ -211,6 +211,8 @@ struct BLINK_COMMON_EXPORT WebPreferences {
 
   bool immersive_mode_enabled;
 
+  bool accessibility_explore_by_mouse_enabled;
+
   bool double_tap_to_zoom_enabled;
 
   bool fullscreen_supported;
@@ -219,8 +221,6 @@ struct BLINK_COMMON_EXPORT WebPreferences {
 
   // Representation of the Web App Manifest scope if any.
   GURL web_app_scope;
-
-  bool accessibility_explore_by_mouse_enabled;
 
 #if BUILDFLAG(IS_ANDROID)
   float font_scale_factor;

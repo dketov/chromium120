@@ -94,7 +94,7 @@ class MEDIA_EXPORT WebOSAudioService
   base::Lock audio_service_lock_;
 
   base::WeakPtr<WebOSAudioService> weak_this_;
-  base::WeakPtrFactory<WebOSAudioService> weak_factory_;
+  base::WeakPtrFactory<WebOSAudioService> weak_factory_{this};
 };
 
 }  // namespace media

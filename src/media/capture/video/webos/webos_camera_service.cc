@@ -44,8 +44,7 @@ void SigHandlerForCameraService(int signum) {
                      FROM_HERE)
 
 WebOSCameraService::WebOSCameraService()
-    : weak_factory_(this),
-      luna_call_thread_("WebOSCameraLunaCallThread"),
+    : luna_call_thread_("WebOSCameraLunaCallThread"),
       luna_response_runner_(base::ThreadPool::CreateSingleThreadTaskRunner(
           {base::MayBlock(), base::TaskShutdownBehavior::BLOCK_SHUTDOWN})) {
   VLOG(1) << __func__ << " this[" << this << "]";

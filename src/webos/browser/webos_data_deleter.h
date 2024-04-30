@@ -46,9 +46,25 @@ class WebOSDataDeleter final : public content::DataDeleter {
       scoped_refptr<content::DataDeleter::DeletionContext> context) override;
 
  private:
-  const neva_app_runtime::BrowsingDataRemover::RemoveBrowsingDataMask mask_;
+  const neva_app_runtime::BrowsingDataRemover::RemoveBrowsingDataMask mask_ =
+      static_cast<
+          neva_app_runtime::BrowsingDataRemover::RemoveBrowsingDataMask>(
+          neva_app_runtime::BrowsingDataRemover::RemoveBrowsingDataMask::
+              REMOVE_LOCAL_STORAGE |
+          neva_app_runtime::BrowsingDataRemover::RemoveBrowsingDataMask::
+              REMOVE_INDEXEDDB |
+          neva_app_runtime::BrowsingDataRemover::RemoveBrowsingDataMask::
+              REMOVE_WEBSQL |
+          neva_app_runtime::BrowsingDataRemover::RemoveBrowsingDataMask::
+              REMOVE_SERVICE_WORKERS |
+          neva_app_runtime::BrowsingDataRemover::RemoveBrowsingDataMask::
+              REMOVE_CACHE_STORAGE |
+          neva_app_runtime::BrowsingDataRemover::RemoveBrowsingDataMask::
+              REMOVE_FILE_SYSTEMS |
+          neva_app_runtime::BrowsingDataRemover::RemoveBrowsingDataMask::
+              REMOVE_MEDIA_LICENSES);
 
-  base::WeakPtrFactory<WebOSDataDeleter> weak_factory_;
+  base::WeakPtrFactory<WebOSDataDeleter> weak_factory_{this};
 };
 
 }  // namespace webos
