@@ -121,8 +121,7 @@ mojom::GeopositionResultPtr GeolocationRequestGeoplugin::ParseServerResponse(
     std::unique_ptr<std::string> response_body) {
   if (!response_body) {
     LOG(ERROR) << __func__ << ", Geoplugin response was empty !";
-    return mojom::GeopositionResult::NewError(
-        std::move(mojom::GeopositionError::New()));
+    return mojom::GeopositionResult::NewError(mojom::GeopositionError::New());
   }
 
   auto response_result =
@@ -131,13 +130,11 @@ mojom::GeopositionResultPtr GeolocationRequestGeoplugin::ParseServerResponse(
     LOG(ERROR) << __func__
                << ", JSONReader failed to parse geoplugin response: "
                << response_result.error().message << std::endl;
-    return mojom::GeopositionResult::NewError(
-        std::move(mojom::GeopositionError::New()));
+    return mojom::GeopositionResult::NewError(mojom::GeopositionError::New());
   } else if (!response_result->is_dict()) {
     LOG(ERROR) << __func__
                << ", Unexpected response type: " << response_result->type();
-    return mojom::GeopositionResult::NewError(
-        std::move(mojom::GeopositionError::New()));
+    return mojom::GeopositionResult::NewError(mojom::GeopositionError::New());
   }
 
   const base::Value::Dict& response_dict = response_result->GetDict();
@@ -150,8 +147,7 @@ mojom::GeopositionResultPtr GeolocationRequestGeoplugin::ParseServerResponse(
         response_dict.FindStringByDottedPath(kGeopluginLatitude);
     if (!latitude_string) {
       LOG(ERROR) << __func__ << ", Invalid geoplugin_latitude!";
-      return mojom::GeopositionResult::NewError(
-          std::move(mojom::GeopositionError::New()));
+      return mojom::GeopositionResult::NewError(mojom::GeopositionError::New());
     }
     latitude = ::atof(latitude_string->c_str());
   } else {
@@ -165,8 +161,7 @@ mojom::GeopositionResultPtr GeolocationRequestGeoplugin::ParseServerResponse(
         response_dict.FindStringByDottedPath(kGeopluginLongitude);
     if (!longitude_string) {
       LOG(ERROR) << __func__ << ", Invalid geoplugin_longitude!";
-      return mojom::GeopositionResult::NewError(
-          std::move(mojom::GeopositionError::New()));
+      return mojom::GeopositionResult::NewError(mojom::GeopositionError::New());
     }
     longitude = ::atof(longitude_string->c_str());
   } else {
