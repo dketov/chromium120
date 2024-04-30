@@ -224,7 +224,7 @@ absl::optional<base::Value> WebOSCameraService::GetProperties(
 
   VLOG(1) << __func__ << "device_id=" << device_id;
 
-  if (device_id.empty() < 0) {
+  if (device_id.empty()) {
     LOG(ERROR) << __func__ << " Invalid camera id";
     return absl::nullopt;
   }
