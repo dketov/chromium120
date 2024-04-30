@@ -26,8 +26,7 @@
 class BrowserShellPermissionPromptDelegate
     : public PermissionPromptWebOS::PlatformDelegate {
  public:
-  BrowserShellPermissionPromptDelegate() = default;
-  BrowserShellPermissionPromptDelegate(
+  explicit BrowserShellPermissionPromptDelegate(
       permissions::PermissionPrompt::Delegate* delegate);
 
   BrowserShellPermissionPromptDelegate(
