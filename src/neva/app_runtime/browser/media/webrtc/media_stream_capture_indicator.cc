@@ -371,7 +371,7 @@ void MediaStreamCaptureIndicator::NotifyStopped(
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
 
   auto it = usage_map_.find(web_contents);
-  DCHECK(it != usage_map_.end());
+  CHECK(it != usage_map_.end());
   it->second->NotifyStopped();
 
   for (auto* inner_contents : web_contents->GetInnerWebContents())
