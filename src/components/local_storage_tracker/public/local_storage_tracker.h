@@ -23,7 +23,6 @@
 #include <string>
 
 #include "base/functional/callback.h"
-#include "base/memory/ref_counted.h"
 #include "base/memory/weak_ptr.h"
 #include "components/local_storage_tracker/common/local_storage_tracker_store.h"
 #include "content/public/browser/web_contents.h"
@@ -35,8 +34,7 @@ class URLRequest;
 
 namespace content {
 
-class LocalStorageTracker
-    : public base::RefCountedThreadSafe<LocalStorageTracker> {
+class LocalStorageTracker {
  public:
   LocalStorageTracker() = default;
   LocalStorageTracker(const LocalStorageTracker&) = delete;
@@ -53,8 +51,6 @@ class LocalStorageTracker
 
   virtual void OnAppInstalled(const std::string& app_id) = 0;
   virtual void OnAppRemoved(const std::string& app_id) = 0;
-
-  friend class base::RefCountedThreadSafe<LocalStorageTracker>;
 };
 
 }  // namespace content

@@ -215,7 +215,7 @@ AppRuntimeBrowserContext::GetBrowsingDataRemoverDelegate() {
 content::LocalStorageTracker*
 AppRuntimeBrowserContext::GetLocalStorageTracker() {
 #if defined(USE_LOCAL_STORAGE_TRACKER)
-  return local_storage_tracker_.get();
+  return local_storage_tracker_;
 #else
   return nullptr;
 #endif

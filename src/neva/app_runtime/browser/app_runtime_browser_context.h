@@ -83,7 +83,7 @@ class AppRuntimeBrowserContext : public content::BrowserContext {
   std::unique_ptr<content::ResourceContext> resource_context_;
   const base::FilePath path_;
 #if defined(USE_LOCAL_STORAGE_TRACKER)
-  scoped_refptr<content::LocalStorageTracker> local_storage_tracker_;
+  content::LocalStorageTracker* local_storage_tracker_ = nullptr;
 #endif
   std::unique_ptr<PrefService> user_pref_service_;
   std::unique_ptr<NotifierClient> notifier_client_;

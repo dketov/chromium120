@@ -47,7 +47,8 @@ void LocalStorageTrackerImpl::Initialize(const base::FilePath& data_file_path) {
       new LocalStorageTrackerStore(main_thread_runner, db_thread_runner));
   store_->Initialize(
       data_file_path,
-      base::BindRepeating(&LocalStorageTrackerImpl::OnStoreInitialized, this));
+      base::BindRepeating(&LocalStorageTrackerImpl::OnStoreInitialized,
+                          base::Unretained(this)));
 }
 
 void LocalStorageTrackerImpl::OnAppInstalled(const std::string& app_id) {
@@ -60,7 +61,8 @@ void LocalStorageTrackerImpl::OnAppInstalled(const std::string& app_id) {
   if (inserted) {
     store_->AddApplication(
         ApplicationData{app_id, true},
-        base::BindRepeating(&LocalStorageTrackerImpl::OnStoreModified, this,
+        base::BindRepeating(&LocalStorageTrackerImpl::OnStoreModified,
+                            base::Unretained(this),
                             StoreModificationOperation::kAddApplication));
   }
   VLOG(1) << "OnAppInstalled appID=" << app_id;
@@ -87,7 +89,8 @@ void LocalStorageTrackerImpl::OnAppRemoved(const std::string& app_id) {
         origins_to_clear.insert(origin.first);
         store_->DeleteOrigin(
             origin.first,
-            base::BindRepeating(&LocalStorageTrackerImpl::OnStoreModified, this,
+            base::BindRepeating(&LocalStorageTrackerImpl::OnStoreModified,
+                                base::Unretained(this),
                                 StoreModificationOperation::kDeleteOrigin));
       }
       StartDeleteOriginData(origin_to_clear);
@@ -97,7 +100,8 @@ void LocalStorageTrackerImpl::OnAppRemoved(const std::string& app_id) {
     origins_.erase(origin);
   store_->DeleteApplication(
       app_id,
-      base::BindRepeating(&LocalStorageTrackerImpl::OnStoreModified, this,
+      base::BindRepeating(&LocalStorageTrackerImpl::OnStoreModified,
+                          base::Unretained(this),
                           StoreModificationOperation::kDeleteApplication));
 }
 
@@ -154,7 +158,8 @@ void LocalStorageTrackerImpl::OnAccessOrigin(
     it_app = apps_.insert({app_id, false}).first;
     store_->AddApplication(
         {app_id, false},
-        base::BindRepeating(&LocalStorageTrackerImpl::OnStoreModified, this,
+        base::BindRepeating(&LocalStorageTrackerImpl::OnStoreModified,
+                            base::Unretained(this),
                             StoreModificationOperation::kAddApplication));
   }
 
@@ -229,8 +234,8 @@ void LocalStorageTrackerImpl::OnApplicationsLoaded(
     const ApplicationDataList& apps_list) {
   VLOG(1) << "Applications loaded successfully = " << success;
   if (success) {
-    store_->GetAccesses(
-        base::BindRepeating(&LocalStorageTrackerImpl::OnAccessesLoaded, this));
+    store_->GetAccesses(base::BindRepeating(
+        &LocalStorageTrackerImpl::OnAccessesLoaded, base::Unretained(this)));
     for (auto& item : apps_list) {
       apps_[item.app_id_] = item.installed_;
     }
@@ -250,8 +255,9 @@ void LocalStorageTrackerImpl::OnStoreModified(
 void LocalStorageTrackerImpl::OnStoreInitialized(bool success) {
   VLOG(1) << "Store initialized success=" << success;
   if (success) {
-    store_->GetApplications(base::BindRepeating(
-        &LocalStorageTrackerImpl::OnApplicationsLoaded, this));
+    store_->GetApplications(
+        base::BindRepeating(&LocalStorageTrackerImpl::OnApplicationsLoaded,
+                            base::Unretained(this)));
   } else {
     init_status_ = InitializationStatus::kFailed;
     OnInitializeFailed();
@@ -309,9 +315,9 @@ LocalStorageTrackerImpl::VerifyOriginAppLink(const GURL& origin,
     VLOG(1) << "VerifyOriginAppLink: adding origin, origin=" << origin;
     it_origin = origins_.insert({origin, OriginData()}).first;
     store_->AddOrigin(
-        {origin},
-        base::BindRepeating(&LocalStorageTrackerImpl::OnStoreModified, this,
-                            StoreModificationOperation::kAddOrigin));
+        {origin}, base::BindRepeating(&LocalStorageTrackerImpl::OnStoreModified,
+                                      base::Unretained(this),
+                                      StoreModificationOperation::kAddOrigin));
   }
   AppLinkVerifyResult result = AppLinkVerifyResult::kExist;
   OriginData& data = it_origin->second;
@@ -321,7 +327,8 @@ LocalStorageTrackerImpl::VerifyOriginAppLink(const GURL& origin,
     data.apps.insert(app_id);
     store_->AddAccess(
         {app_id, origin},
-        base::BindRepeating(&LocalStorageTrackerImpl::OnStoreModified, this,
+        base::BindRepeating(&LocalStorageTrackerImpl::OnStoreModified,
+                            base::Unretained(this),
                             StoreModificationOperation::kAddAccess));
     result = data.apps.size() == 1 ? AppLinkVerifyResult::kAddedNewOriginEntry
                                    : AppLinkVerifyResult::kAdded;
