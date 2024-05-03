@@ -419,9 +419,10 @@ void WebAppInstallFinalizer::SetWebAppManifestFieldsAndWriteData(
     std::unique_ptr<WebApp> web_app,
     CommitCallback commit_callback,
     bool skip_icon_writes_on_download_failure) {
+#if !defined(ENABLE_PWA_MANAGER_WEBAPI)
   SetWebAppManifestFields(web_app_info, *web_app,
                           skip_icon_writes_on_download_failure);
-
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
   webapps::AppId app_id = web_app->app_id();
   auto write_translations_callback = base::BindOnce(
       &WebAppInstallFinalizer::WriteTranslations,

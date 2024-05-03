@@ -43,6 +43,10 @@ config("config") {
     defines += [ "ENABLE_NETWORK_ERROR_PAGE_CONTROLLER_WEBAPI=1" ]
   }
 
+  if (enable_pwa_manager_webapi) {
+    defines += [ "ENABLE_PWA_MANAGER_WEBAPI=1" ]
+  }
+
   if (enable_webos_service_bridge_webapi) {
     defines += [ "ENABLE_WEBOS_SERVICE_BRIDGE_WEBAPI=1" ]
   }

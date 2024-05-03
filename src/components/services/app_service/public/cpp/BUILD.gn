@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/config/chromeos/ui_mode.gni")
+import("//neva/neva.gni")
 
 # Component for the core data structures and types used by App Service. Large
 # parts of the codebase are dependent on this target (via
@@ -154,6 +155,10 @@ source_set("app_share_target") {
   ]
 
   visibility = [ "//components/services/app_service/*" ]
+
+  if (enable_pwa_manager_webapi) {
+     visibility += ["//chrome/browser/web_applications/*"]
+  }
 }
 
 source_set("macros") {
@@ -212,6 +217,10 @@ source_set("app_url_handling") {
   deps = [ "//url" ]
 
   visibility = [ "//components/services/app_service/*" ]
+
+  if (enable_pwa_manager_webapi) {
+     visibility += ["//chrome/browser/web_applications/*"]
+  }
 }
 
 source_set("icon_loader") {
@@ -230,6 +239,10 @@ source_set("icon_loader") {
   ]
 
   visibility = [ "//components/services/app_service/*" ]
+
+  if (enable_pwa_manager_webapi) {
+     visibility += ["//chrome/browser/web_applications/*"]
+  }
 }
 
 source_set("intents") {
@@ -261,6 +274,10 @@ source_set("protocol_handling") {
   deps = [ "//url" ]
 
   visibility = [ "//components/services/app_service/*" ]
+
+  if (enable_pwa_manager_webapi) {
+     visibility += ["//chrome/browser/web_applications/*"]
+  }
 }
 
 source_set("preferred_apps") {

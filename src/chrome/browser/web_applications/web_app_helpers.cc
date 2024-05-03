@@ -125,25 +125,36 @@ bool IsValidWebAppUrl(const GURL& app_url) {
   return app_url.SchemeIs(url::kHttpScheme) ||
          app_url.SchemeIs(url::kHttpsScheme) ||
          app_url.SchemeIs("chrome-extension") ||
-         (app_url.SchemeIs("chrome") &&
-          (app_url.host() == password_manager::kChromeUIPasswordManagerHost));
+         (app_url.SchemeIs("chrome")
+#if !defined(ENABLE_PWA_MANAGER_WEBAPI)
+          && (app_url.host() == chrome::kChromeUIPasswordManagerHost)
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
+         );
 }
 
 absl::optional<webapps::AppId> FindInstalledAppWithUrlInScope(
     Profile* profile,
     const GURL& url,
     bool window_only) {
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+  return absl::nullopt;
+#else
   auto* provider = WebAppProvider::GetForLocalAppsUnchecked(profile);
   return provider ? provider->registrar_unsafe().FindInstalledAppWithUrlInScope(
                         url, window_only)
                   : absl::nullopt;
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
 }
 
 bool IsNonLocallyInstalledAppWithUrlInScope(Profile* profile, const GURL& url) {
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+  return false;
+#else
   auto* provider = WebAppProvider::GetForWebApps(profile);
   return provider ? provider->registrar_unsafe()
                         .IsNonLocallyInstalledAppWithUrlInScope(url)
                   : false;
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
 }
 
 bool LooksLikePlaceholder(const WebApp& app) {
