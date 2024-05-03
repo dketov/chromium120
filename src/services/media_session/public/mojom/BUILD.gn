@@ -70,8 +70,4 @@ mojom("mojom") {
       ]
     },
   ]
-  enabled_features = []
-  if (is_webos) {
-    enabled_features += [ "is_webos" ]
-  }
 }

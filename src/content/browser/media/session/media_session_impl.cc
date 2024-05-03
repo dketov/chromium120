@@ -46,9 +46,9 @@
 #include "content/browser/media/session/media_session_android.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if defined(OS_WEBOS) && defined(USE_GST_MEDIA)
+#if defined(OS_WEBOS)
 #include "content/browser/media/session/webos/media_session_webos.h"
-#endif  // defined(OS_WEBOS) && defined(USE_GST_MEDIA)
+#endif  // defined(OS_WEBOS)
 
 namespace content {
 
@@ -454,16 +454,6 @@ bool MediaSessionImpl::AddPlayer(MediaSessionPlayerObserver* observer,
   if (audio_focus_state_ != State::ACTIVE)
     return false;
 
-#if defined(OS_WEBOS)
-  auto it = normal_players_.find(key);
-  if (it == normal_players_.end()) {
-    base::UnguessableToken request_id = GetRequestId();
-    VLOG(1) << __func__ << " request_id: " << request_id.ToString();
-    for (auto& observer : observers_)
-      observer->MediaSessionRequestChanged(request_id);
-  }
-#endif  // defined(OS_WEBOS)
-
   // The session should be reset if a player is starting while all players are
   // suspended.
   if (old_audio_focus_state != State::ACTIVE)
@@ -493,13 +483,6 @@ void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
 
   if (guarding_player_id_ && *guarding_player_id_ == identifier)
     ResetDurationUpdateGuard();
-
-#if defined(OS_WEBOS)
-  if (normal_players_.find(identifier) != normal_players_.end()) {
-    for (auto& observer : observers_)
-      observer->MediaSessionRequestChanged(absl::nullopt);
-  }
-#endif  // defined(OS_WEBOS)
 
   AbandonSystemAudioFocusIfNeeded();
   UpdateRoutedService();
@@ -591,7 +574,7 @@ void MediaSessionImpl::RebuildAndNotifyMediaPositionChanged() {
     // no effective way to disdinguish updates from single player or
     // different players.
     ResetDurationUpdateGuard();
-#if defined(OS_WEBOS) && defined(USE_GST_MEDIA)
+#if defined(OS_WEBOS)
     // routed_service_ is MediaSessionServiceImpl, and its position is updated
     // only when SetPositionState is called. On webOS, position information
     // should be constantly updated so we clear the position information from
@@ -603,7 +586,7 @@ void MediaSessionImpl::RebuildAndNotifyMediaPositionChanged() {
     // not constantly updated from blink::MediaSession, but we have to clear up
     // the use case.
     routed_service_->ClearPositionState();
-#endif
+#endif  // defined(OS_WEBOS)
   }
 
   // If we only have a single player then we should use the position from that.
@@ -983,9 +966,9 @@ MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
   should_throttle_duration_update_ = true;
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if defined(OS_WEBOS) && defined(USE_GST_MEDIA)
+#if defined(OS_WEBOS)
   media_session_webos_ = std::make_unique<MediaSessionWebOS>(this);
-#endif  // defined(OS_WEBOS) && defined(USE_GST_MEDIA)
+#endif  // defined(OS_WEBOS)
 
   if (web_contents && web_contents->GetPrimaryMainFrame() &&
       web_contents->GetPrimaryMainFrame()->GetView()) {

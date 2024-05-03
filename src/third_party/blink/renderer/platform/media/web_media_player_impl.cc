@@ -314,16 +314,13 @@ bool MediaPositionNeedsUpdate(
   // media position. We choose an arbitrary tolerance that is high enough to
   // eliminate a lot of MediaPosition updates and low enough not to make a
   // perceptible difference.
-#if defined(OS_WEBOS) && defined(USE_GST_MEDIA)
-  // GetPosition() method returns adjusted value based on TimeTicks::Now(), so
-  // drift's value is too low to update media position. So get_position() is
-  // introduced not to use TimeTicks::Now().
+#if defined(OS_WEBOS)
   const auto drift =
       (old_position.get_position() - new_position.get_position()).magnitude();
 #else
   const auto drift =
       (old_position.GetPosition() - new_position.GetPosition()).magnitude();
-#endif
+#endif  // defined(OS_WEBOS)
   return drift > base::Milliseconds(100);
 }
 

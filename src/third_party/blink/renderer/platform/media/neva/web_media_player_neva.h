@@ -316,6 +316,15 @@ class BLINK_PLATFORM_EXPORT WebMediaPlayerNeva
   // for MSE implementation
   void OnMediaSourceOpened(WebMediaSource* web_media_source);
 
+  // Returns whether the player has an audio track and whether it should be
+  // allowed to play it.
+  bool HasUnmutedAudio() const;
+
+  // Notifies the `client_` and the `delegate_` about metadata change.
+  void DidMediaMetadataChange();
+
+  media::MediaContentType GetMediaContentType() const;
+
   // Called when a decoder detects that the key needed to decrypt the stream
   // is not available.
   // void OnWaitingForDecryptionKey() override;
@@ -460,6 +469,8 @@ class BLINK_PLATFORM_EXPORT WebMediaPlayerNeva
 
   media_session::MediaPosition media_position_state_;
   double playback_rate_ = 1.0f;
+
+  bool delegate_has_audio_ = false;
 
   base::WeakPtr<WebMediaPlayerNeva> weak_this_;
   base::WeakPtrFactory<WebMediaPlayerNeva> weak_factory_{this};

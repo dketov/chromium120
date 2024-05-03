@@ -48,8 +48,6 @@ class MediaSessionWebOS final
   ~MediaSessionWebOS() override;
 
   // media_session::mojom::MediaSessionObserver implementation:
-  void MediaSessionRequestChanged(
-      const absl::optional<base::UnguessableToken>& request_id) override;
   void MediaSessionInfoChanged(
       media_session::mojom::MediaSessionInfoPtr session_info) override;
   void MediaSessionMetadataChanged(
@@ -71,6 +69,13 @@ class MediaSessionWebOS final
     kPause,
     kNext,
     kPrevious,
+    kSeekTo,
+    kToggleMic,
+    kToggleCamera,
+    kHangUp,
+    kMute,
+    kUnmute,
+    kSkipAd,
   };
 
   enum class PlaybackState {
@@ -80,6 +85,7 @@ class MediaSessionWebOS final
     kStopped,
   };
 
+  void RequestMediaSession(const std::string& request_id);
   bool RegisterMediaSession(const std::string& session_id);
   void UnregisterMediaSession();
   bool ActivateMediaSession(const std::string& session_id);
@@ -87,6 +93,9 @@ class MediaSessionWebOS final
 
   // Sets the current Playback Status to MCS.
   void SetPlaybackStatusInternal(PlaybackState playback_state);
+
+  // Sets the current Mute State to MCS.
+  void SetMediaMuteStatusInternal(bool is_muted);
 
   // Sets the playback position and duration value to MCS.
   void SetMediaPositionInternal(const base::TimeDelta& position);
@@ -106,7 +115,7 @@ class MediaSessionWebOS final
 
   // True if registration requested to com.webos.service.mediacontroller
   // service.
-  bool registered_ = false;
+  bool registration_requested_ = false;
   bool mcs_permission_error_ = false;
 
   MediaSessionImpl* const media_session_;
@@ -117,6 +126,7 @@ class MediaSessionWebOS final
   LSMessageToken subscribe_key_ = 0;
   std::unique_ptr<base::LunaServiceClient> luna_service_client_;
 
+  bool is_muted_ = false;
   MediaSessionWebOS::PlaybackState playback_state_ = PlaybackState::kStopped;
   base::TimeDelta duration_;
 

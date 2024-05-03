@@ -58,12 +58,23 @@ const char kMediaPlayStatusPaused[] = "PLAYSTATE_PAUSED";
 const char kMediaPlayStatusPlaying[] = "PLAYSTATE_PLAYING";
 const char kMediaPlayStatusNone[] = "PLAYSTATE_NONE";
 
+const char kMediaMuteStatus[] = "muteStatus";
+const char kMuteStatusMuted[] = "MUTESTATE_MUTED";
+const char kMuteStatusUnmuted[] = "MUTESTATE_UNMUTED";
+
 const char kMediaPlayPosition[] = "playPosition";
 
 const char kPlayEvent[] = "play";
 const char kPauseEvent[] = "pause";
 const char kNextEvent[] = "next";
 const char kPreviousEvent[] = "previous";
+const char kSeekToEvent[] = "seekTo";
+const char kToggleMicEvent[] = "toggleMic";
+const char kToggleCameraEvent[] = "toggleCamera";
+const char kHangUpEvent[] = "hangUp";
+const char kMuteEvent[] = "mute";
+const char kUnmuteEvent[] = "unmute";
+const char kSkipAdEvent[] = "skipAd";
 
 const char kRegisterMediaSession[] = "registerMediaSession";
 const char kUnregisterMediaSession[] = "unregisterMediaSession";
@@ -72,6 +83,7 @@ const char kDeactivateMediaSession[] = "deactivateMediaSession";
 const char kSetMediaMetaData[] = "setMediaMetaData";
 const char kSetMediaPlayStatus[] = "setMediaPlayStatus";
 const char kSetMediaPlayPosition[] = "setMediaPlayPosition";
+const char kSetMediaMuteStatus[] = "setMediaMuteStatus";
 
 }  // namespace
 
@@ -107,43 +119,29 @@ MediaSessionWebOS::~MediaSessionWebOS() {
   UnregisterMediaSession();
 }
 
-void MediaSessionWebOS::MediaSessionRequestChanged(
-    const absl::optional<base::UnguessableToken>& request_id) {
-  NEVA_VLOGTF(1);
-
-  if (!session_id_.empty()) {
-    // Previous session is active. Deactivate it.
-    UnregisterMediaSession();
-  }
-
-  if (!request_id.has_value()) {
-    NEVA_LOGF(ERROR) << " Session id is not received";
-    return;
-  }
-
-  if (!RegisterMediaSession(request_id->ToString())) {
-    NEVA_LOGF(ERROR) << " Register session failed for "
-                     << request_id->ToString();
-    return;
-  }
-
-  if (!ActivateMediaSession(request_id->ToString())) {
-    NEVA_LOGF(ERROR) << " Activate session failed for "
-                     << request_id->ToString();
-    return;
-  }
-
-  session_id_ = request_id->ToString();
-}
-
 void MediaSessionWebOS::MediaSessionInfoChanged(
     media_session::mojom::MediaSessionInfoPtr session_info) {
-  NEVA_VLOGTF(1) << ", playback_state: " << session_info->playback_state;
-  if (session_id_.empty() || mcs_permission_error_)
+  NEVA_VLOGTF(1) << " state: " << session_info->state
+                 << ", playback_state: " << session_info->playback_state
+                 << ", session_id: " << session_id_
+                 << ", request_id: " << media_session_->GetRequestId()
+                 << ", registration_requested: " << registration_requested_
+                 << ", mcs_permission_error: " << mcs_permission_error_;
+  if (mcs_permission_error_)
     return;
+
+  if (!registration_requested_ &&
+      media_session::mojom::MediaSessionInfo_SessionState::kActive ==
+          session_info->state) {
+    NEVA_LOGF(INFO) << " state: active";
+    RequestMediaSession(media_session_->GetRequestId().ToString());
+    return;
+  }
 
   SetPlaybackStatusInternal(
       ConvertIntoWebOSPlaybackState(session_info->playback_state));
+
+  SetMediaMuteStatusInternal(session_info->muted);
 }
 
 void MediaSessionWebOS::MediaSessionMetadataChanged(
@@ -189,6 +187,32 @@ void MediaSessionWebOS::MediaSessionPositionChanged(
                               base::NumberToString16(duration_.InSecondsF()));
 }
 
+void MediaSessionWebOS::RequestMediaSession(const std::string& request_id) {
+  VLOG(0) << __func__ << " request_id=" << request_id;
+
+  if (!session_id_.empty()) {
+    // Previous session is active. Deactivate it.
+    UnregisterMediaSession();
+  }
+
+  if (request_id.empty()) {
+    NEVA_LOGF(ERROR) << " Session id is not received";
+    return;
+  }
+
+  if (!RegisterMediaSession(request_id)) {
+    NEVA_LOGF(ERROR) << " Register session failed for " << request_id;
+    return;
+  }
+
+  if (!ActivateMediaSession(request_id)) {
+    NEVA_LOGF(ERROR) << " Activate session failed for " << request_id;
+    return;
+  }
+
+  session_id_ = request_id;
+}
+
 bool MediaSessionWebOS::RegisterMediaSession(const std::string& session_id) {
   if (session_id.empty()) {
     NEVA_LOGF(ERROR) << " Invalid session id";
@@ -214,12 +238,12 @@ bool MediaSessionWebOS::RegisterMediaSession(const std::string& session_id) {
       payload, &subscribe_key_,
       BIND_POST_TASK_TO_CURRENT_LOOP(&MediaSessionWebOS::ReceiveMediaKeyEvent));
 
-  registered_ = true;
+  registration_requested_ = true;
   return true;
 }
 
 void MediaSessionWebOS::UnregisterMediaSession() {
-  if (!registered_) {
+  if (!registration_requested_) {
     NEVA_LOGF(ERROR) << " Session is already unregistered";
     return;
   }
@@ -231,6 +255,9 @@ void MediaSessionWebOS::UnregisterMediaSession() {
 
   if (playback_state_ != PlaybackState::kStopped)
     SetPlaybackStatusInternal(PlaybackState::kStopped);
+
+  if (is_muted_)
+    SetMediaMuteStatusInternal(false);
 
   base::Value::Dict root_dict;
   root_dict.Set(kMediaId, session_id_);
@@ -252,7 +279,7 @@ void MediaSessionWebOS::UnregisterMediaSession() {
 
   luna_service_client_->Unsubscribe(subscribe_key_);
 
-  registered_ = false;
+  registration_requested_ = false;
   session_id_ = std::string();
   duration_ = base::TimeDelta();
 }
@@ -350,6 +377,39 @@ void MediaSessionWebOS::SetPlaybackStatusInternal(
           base::LunaServiceClient::URIType::MEDIACONTROLLER,
           kSetMediaPlayStatus),
       payload,
+      BIND_POST_TASK_TO_CURRENT_LOOP(
+          &MediaSessionWebOS::CheckReplyStatusMessage));
+}
+
+void MediaSessionWebOS::SetMediaMuteStatusInternal(bool is_muted) {
+  if (session_id_.empty()) {
+    LOG(ERROR) << __func__ << " No active session.";
+    return;
+  }
+
+  if (is_muted_ == is_muted)
+    return;
+
+  is_muted_ = is_muted;
+  std::string mute_state = is_muted_ ? std::string(kMuteStatusMuted)
+                                     : std::string(kMuteStatusUnmuted);
+
+  base::Value::Dict mute_state_dict;
+  mute_state_dict.Set(kMediaId, session_id_);
+  mute_state_dict.Set(kMediaMuteStatus, mute_state);
+
+  std::string mute_state_payload;
+  if (!base::JSONWriter::Write(mute_state_dict, &mute_state_payload)) {
+    LOG(ERROR) << __func__ << " Failed to write Play Position payload";
+    return;
+  }
+
+  NEVA_VLOGTF(1) << " mute_state_payload: " << mute_state_payload;
+  luna_service_client_->CallAsync(
+      base::LunaServiceClient::GetServiceURI(
+          base::LunaServiceClient::URIType::MEDIACONTROLLER,
+          kSetMediaMuteStatus),
+      mute_state_payload,
       BIND_POST_TASK_TO_CURRENT_LOOP(
           &MediaSessionWebOS::CheckReplyStatusMessage));
 }
@@ -482,7 +542,14 @@ void MediaSessionWebOS::HandleMediaKeyEvent(const std::string* key_event) {
       {kPlayEvent, MediaSessionWebOS::MediaKeyEvent::kPlay},
       {kPauseEvent, MediaSessionWebOS::MediaKeyEvent::kPause},
       {kNextEvent, MediaSessionWebOS::MediaKeyEvent::kNext},
-      {kPreviousEvent, MediaSessionWebOS::MediaKeyEvent::kPrevious}};
+      {kPreviousEvent, MediaSessionWebOS::MediaKeyEvent::kPrevious},
+      {kSeekToEvent, MediaSessionWebOS::MediaKeyEvent::kSeekTo},
+      {kToggleMicEvent, MediaSessionWebOS::MediaKeyEvent::kToggleMic},
+      {kToggleCameraEvent, MediaSessionWebOS::MediaKeyEvent::kToggleCamera},
+      {kHangUpEvent, MediaSessionWebOS::MediaKeyEvent::kHangUp},
+      {kMuteEvent, MediaSessionWebOS::MediaKeyEvent::kMute},
+      {kUnmuteEvent, MediaSessionWebOS::MediaKeyEvent::kUnmute},
+      {kSkipAdEvent, MediaSessionWebOS::MediaKeyEvent::kSkipAd}};
 
   auto get_event_type = [&](const std::string* key) {
     std::map<std::string, MediaKeyEvent>::iterator it;
@@ -507,6 +574,27 @@ void MediaSessionWebOS::HandleMediaKeyEvent(const std::string* key_event) {
       case MediaSessionWebOS::MediaKeyEvent::kPrevious:
         media_session_->PreviousTrack();
         break;
+      case MediaSessionWebOS::MediaKeyEvent::kSeekTo:
+        // TODO: Call media_session_->SeekTo() with value;
+        break;
+      case MediaSessionWebOS::MediaKeyEvent::kToggleMic:
+        media_session_->ToggleMicrophone();
+        break;
+      case MediaSessionWebOS::MediaKeyEvent::kToggleCamera:
+        media_session_->ToggleCamera();
+        break;
+      case MediaSessionWebOS::MediaKeyEvent::kHangUp:
+        media_session_->HangUp();
+        break;
+      case MediaSessionWebOS::MediaKeyEvent::kMute:
+        media_session_->SetMute(true);
+        break;
+      case MediaSessionWebOS::MediaKeyEvent::kUnmute:
+        media_session_->SetMute(false);
+        break;
+      case MediaSessionWebOS::MediaKeyEvent::kSkipAd:
+        media_session_->SkipAd();
+        break;
       default:
         NOTREACHED() << " key_event: " << key_event << " Not Handled !!!";
         break;
@@ -522,8 +610,6 @@ MediaSessionWebOS::ConvertIntoWebOSPlaybackState(
       return PlaybackState::kPaused;
     case media_session::mojom::MediaPlaybackState::kPlaying:
       return PlaybackState::kPlaying;
-    case media_session::mojom::MediaPlaybackState::kStopped:
-      return PlaybackState::kStopped;
     default:
       return PlaybackState::kUnknown;
   }

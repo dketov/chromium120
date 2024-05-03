@@ -62,11 +62,11 @@ void MediaSessionServiceImpl::FlushForTesting() {
   client_.FlushForTesting();
 }
 
-#if defined(OS_WEBOS) && defined(USE_GST_MEDIA)
+#if defined(OS_WEBOS)
 void MediaSessionServiceImpl::ClearPositionState() {
   position_.reset();
 }
-#endif
+#endif  // defined(OS_WEBOS)
 
 void MediaSessionServiceImpl::SetClient(
     mojo::PendingRemote<blink::mojom::MediaSessionClient> client) {

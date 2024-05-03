@@ -39,11 +39,11 @@ base::TimeTicks MediaPosition::last_updated_time() const {
   return last_updated_time_;
 }
 
-#if defined (OS_WEBOS) && defined (USE_GST_MEDIA)
+#if defined (OS_WEBOS)
 base::TimeDelta MediaPosition::get_position() const {
   return position_;
 }
-#endif
+#endif  // defined (OS_WEBOS)
 
 base::TimeDelta MediaPosition::GetPosition() const {
   return GetPositionAtTime(base::TimeTicks::Now());

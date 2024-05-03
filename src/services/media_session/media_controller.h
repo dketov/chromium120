@@ -78,10 +78,6 @@ class MediaController : public mojom::MediaController,
                            std::vector<MediaImage>>& images) override;
   void MediaSessionPositionChanged(
       const absl::optional<media_session::MediaPosition>& position) override;
-#if defined(OS_WEBOS)
-  void MediaSessionRequestChanged(
-      const absl::optional<base::UnguessableToken>& request_id) override {}
-#endif
 
   void SetMediaSession(AudioFocusRequest* session);
   void ClearMediaSession();

@@ -3454,7 +3454,7 @@ source_set("browser") {
     deps += [ "//ui/compositor" ]
   }
 
-  if (is_webos && use_gst_media) {
+  if (is_webos) {
     sources += [
       "media/session/webos/media_session_webos.cc",
       "media/session/webos/media_session_webos.h",

@@ -135,6 +135,24 @@ class SyncTokenClientImpl : public media::VideoFrame::SyncTokenClient {
   gpu::gles2::GLES2Interface* gl_;
 };
 
+// Determine whether we should update MediaPosition in `delegate_`.
+bool MediaPositionNeedsUpdate(
+    const media_session::MediaPosition& old_position,
+    const media_session::MediaPosition& new_position) {
+  if (old_position.playback_rate() != new_position.playback_rate() ||
+      old_position.duration() != new_position.duration() ||
+      old_position.end_of_media() != new_position.end_of_media()) {
+    return true;
+  }
+
+  if (new_position.GetPosition().is_max())
+    return !old_position.GetPosition().is_max();
+
+  const auto drift =
+      (old_position.get_position() - new_position.get_position()).magnitude();
+  return drift > base::Milliseconds(100);
+}
+
 }  // namespace
 
 namespace blink {
@@ -332,6 +350,8 @@ void WebMediaPlayerNeva::UpdatePlayingState(bool is_playing) {
 
   if (delegate_) {
     if (is_playing) {
+      delegate_->DidMediaMetadataChange(delegate_id_, delegate_has_audio_,
+                                        HasVideo(), GetMediaContentType());
       client_->DidPlayerStartPlaying();
       delegate_->DidPlay(delegate_id_);
     } else {
@@ -542,17 +562,11 @@ void WebMediaPlayerNeva::SetVolume(double volume) {
   volume_ = volume;
   player_api_->SetVolume(volume_);
 
-  // TODO(M108): Need to pass proper audio/video codec info
-  client_->DidMediaMetadataChange(
-      HasAudio(), HasVideo(), media::AudioCodec::kUnknown,
-      media::VideoCodec::kUnknown,
-      media::DurationToMediaContentType(base::Seconds(Duration())),
-      /* is_encrypted_media */ false);
+  client_->DidPlayerMutedStatusChange(volume == 0.0);
 
-  if (delegate_) {
-    delegate_->DidMediaMetadataChange(
-        delegate_id_, HasAudio(), HasVideo(),
-        media::DurationToMediaContentType(base::Seconds(Duration())));
+  if (delegate_has_audio_ != HasUnmutedAudio()) {
+    delegate_has_audio_ = HasUnmutedAudio();
+    DidMediaMetadataChange();
   }
 }
 
@@ -570,18 +584,24 @@ void WebMediaPlayerNeva::SetWasPlayedWithUserActivation(
 }
 
 void WebMediaPlayerNeva::OnTimeUpdate() {
-  media_session::MediaPosition new_position(
-      Paused() ? 0.0 : playback_rate_, duration_, base::Seconds(CurrentTime()),
-      IsEnded());
+  base::TimeDelta current_time = base::Seconds(CurrentTime());
+  if (current_time > duration_)
+    current_time = duration_;
 
-  if (media_position_state_ == new_position)
+  const double effective_playback_rate =
+      Paused() || ready_state_ < kReadyStateHaveFutureData ? 0.0
+                                                          : playback_rate_;
+
+  media_session::MediaPosition new_position(effective_playback_rate, duration_,
+                                            current_time, IsEnded());
+
+  if (!MediaPositionNeedsUpdate(media_position_state_, new_position))
     return;
 
+  NEVA_VLOGTF(2) << "(" << new_position.ToString() << ")";
   media_position_state_ = new_position;
-
-  if (client_)
-    client_->DidPlayerMediaPositionStateChange(
-        playback_rate_, duration_, base::Seconds(CurrentTime()), IsEnded());
+  client_->DidPlayerMediaPositionStateChange(effective_playback_rate, duration_,
+                                             current_time, IsEnded());
 }
 
 void WebMediaPlayerNeva::SetPreload(Preload preload) {
@@ -852,21 +872,11 @@ void WebMediaPlayerNeva::OnMediaMetadataChanged(base::TimeDelta duration,
     OnVideoSizeChanged(coded_size, natural_size);
   }
 
+  delegate_has_audio_ = HasUnmutedAudio();
   if (need_to_signal_duration_changed)
     client_->DurationChanged();
 
-  // TODO(M108): Need to pass proper audio/video codec info
-  client_->DidMediaMetadataChange(
-      HasAudio(), HasVideo(), media::AudioCodec::kUnknown,
-      media::VideoCodec::kUnknown,
-      media::DurationToMediaContentType(base::Seconds(Duration())),
-      /* is_encrypted_media */ false);
-
-  if (delegate_) {
-    delegate_->DidMediaMetadataChange(
-        delegate_id_, HasAudio(), HasVideo(),
-        media::DurationToMediaContentType(base::Seconds(Duration())));
-  }
+  DidMediaMetadataChange();
 }
 
 void WebMediaPlayerNeva::OnLoadComplete() {
@@ -1326,6 +1336,29 @@ bool WebMediaPlayerNeva::IsHLSStream() const {
 void WebMediaPlayerNeva::OnMediaSourceOpened(WebMediaSource* web_media_source) {
   NEVA_DCHECK(main_task_runner_->BelongsToCurrentThread());
   client_->MediaSourceOpened(web_media_source);
+}
+
+bool WebMediaPlayerNeva::HasUnmutedAudio() const {
+  // Pretend that the media has no audio if it never played unmuted. This is to
+  // avoid any action related to audible media such as taking audio focus or
+  // showing a media notification. To preserve a consistent experience, it does
+  // not apply if a media was audible so the system states do not flicker
+  // depending on whether the user muted the player.
+  return HasAudio() && !client_->WasAlwaysMuted();
+}
+
+void WebMediaPlayerNeva::DidMediaMetadataChange() {
+  media::MediaContentType content_type = GetMediaContentType();
+  client_->DidMediaMetadataChange(
+      delegate_has_audio_, HasVideo(), media::AudioCodec::kUnknown,
+      media::VideoCodec::kUnknown, content_type, false);
+
+  delegate_->DidMediaMetadataChange(delegate_id_, delegate_has_audio_,
+                                    HasVideo(), content_type);
+}
+
+media::MediaContentType WebMediaPlayerNeva::GetMediaContentType() const {
+  return media::DurationToMediaContentType(duration_);
 }
 
 void WebMediaPlayerNeva::OnVideoWindowCreated(const ui::VideoWindowInfo& info) {
