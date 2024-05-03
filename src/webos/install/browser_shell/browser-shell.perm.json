@@ -18,11 +18,11 @@
     "system",
     "memorymanager.query"
   ],
-  "com.webos.chromium.audio-*": [
+  "com.webos.chromium.audio*": [
     "audio.query",
     "audio.operation"
   ],
-  "com.webos.chromium.camera-*": [
+  "com.webos.chromium.camera*": [
     "camera.query",
     "camera.operation"
   ],

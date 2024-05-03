@@ -29,7 +29,7 @@ namespace media {
 
 namespace {
 
-const char kWebOSChromiumAudio[] = "com.webos.chromium.audio-webruntime";
+const char kWebOSChromiumAudio[] = "com.webos.chromium.audio";
 
 const char kQuery[] = "query";
 const char kInput[] = "input";

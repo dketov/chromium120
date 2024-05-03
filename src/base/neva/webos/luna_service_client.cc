@@ -245,7 +245,9 @@ void LunaServiceClient::Initialize(const std::string& identifier,
 }
 
 bool LunaServiceClient::RegisterApplicationService(const std::string& appid) {
-  std::string name = appid + '-' + std::to_string(getpid());
+  auto token = base::UnguessableToken::Create();
+  std::string name = appid + '-' + token.ToString();
+
   AutoLSError error;
   if (!LSRegisterApplicationService(name.c_str(), appid.c_str(), &handle_,
                                     &error)) {
@@ -258,7 +260,7 @@ bool LunaServiceClient::RegisterApplicationService(const std::string& appid) {
 bool LunaServiceClient::RegisterService(const std::string& appid) {
   std::string name = appid;
   if (!name.empty() && *name.rbegin() != '.' && *name.rbegin() != '-')
-    name += ".";
+    name += "-";
 
   // Some clients may have connection with empty identifier.
   // So append random number only for non empty identifier.

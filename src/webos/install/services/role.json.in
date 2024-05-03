@@ -7,7 +7,7 @@
                 "com.webos.app.neva.*",
                 "com.webos.chromium.memory.*",
                 "com.palm.chromiumwebprocess.mediaplayer*",
-                "com.webos.media.client.*",
+                "com.webos.media.client*",
                 "com.palm.chrome.media-*",
                 "com.webos.pipeline.*",
                 "com.webos.rm.client.*",
@@ -35,7 +35,7 @@
             "outbound":["*"]
         },
         {
-            "service":"com.webos.media.client.*",
+            "service":"com.webos.media.client*",
             "inbound":["*"],
             "outbound":["*"]
         },

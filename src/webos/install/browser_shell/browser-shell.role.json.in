@@ -6,8 +6,8 @@
         "com.webos.app.enactbrowser",
         "com.webos.app.test.browsershell*",
         "com.webos.settingsservice.client*",
-        "com.webos.chromium.audio-*",
-        "com.webos.chromium.camera-*",
+        "com.webos.chromium.audio*",
+        "com.webos.chromium.camera*",
         "com.webos.rm.client.*"
     ],
     "permissions": [
@@ -38,13 +38,13 @@
             ]
         },
         {
-            "service":"com.webos.chromium.audio-*",
+            "service":"com.webos.chromium.audio*",
             "outbound":[
                 "com.webos.service.audio"
             ]
         },
         {
-            "service":"com.webos.chromium.camera-*",
+            "service":"com.webos.chromium.camera*",
             "outbound":[
                 "com.webos.service.camera2"
             ]

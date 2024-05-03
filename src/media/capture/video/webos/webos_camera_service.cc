@@ -30,7 +30,7 @@ namespace media {
 
 namespace {
 
-const char kWebOSChromiumCamera[] = "com.webos.chromium.camera-webruntime";
+const char kWebOSChromiumCamera[] = "com.webos.chromium.camera";
 
 void SigHandlerForCameraService(int signum) {
   VLOG(1) << __func__ << ", signal handler : signum(" << signum << ")";

@@ -3,8 +3,8 @@
     "type": "privileged",
     "allowedNames": [
         "com.webos.app.enactbrowser",
-        "com.webos.chromium.audio-*",
-        "com.webos.chromium.camera-*",
+        "com.webos.chromium.audio*",
+        "com.webos.chromium.camera*",
         "com.webos.chromium.memory.*",
         "com.webos.rm.client.*"
     ],
@@ -18,13 +18,13 @@
             ]
         },
         {
-            "service":"com.webos.chromium.audio-*",
+            "service":"com.webos.chromium.audio*",
             "outbound":[
                 "com.webos.service.audio"
             ]
         },
         {
-            "service":"com.webos.chromium.camera-*",
+            "service":"com.webos.chromium.camera*",
             "outbound":[
                 "com.webos.service.camera2"
             ]
