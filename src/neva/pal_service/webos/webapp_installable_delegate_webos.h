@@ -23,8 +23,12 @@
 
 #include "base/files/file_path.h"
 #include "base/memory/weak_ptr.h"
+#include "base/values.h"
+#include "neva/app_runtime/public/app_runtime_constants.h"
 #include "neva/pal_service/luna/luna_client.h"
 #include "neva/pal_service/public/webapp_installable_delegate.h"
+#include "third_party/skia/include/core/SkBitmap.h"
+#include "url/gurl.h"
 
 namespace pal {
 namespace webos {
@@ -38,11 +42,19 @@ class WebAppInstallableDelegateWebOS : public WebAppInstallableDelegate {
   WebAppInstallableDelegateWebOS& operator=(
       const WebAppInstallableDelegateWebOS&) = delete;
 
-  bool SaveArtifacts(const WebAppInfo* app_info) override;
-  bool IsWebAppInstalled(const WebAppInfo* app_info) override;
+  bool SaveArtifacts(const WebAppInfo* app_info,
+                     bool isUpdate = false) override;
+  void IsWebAppForUrlInstalled(const GURL& url,
+                               ResultCallback callback) override;
+  bool ShouldAppForURLBeUpdated(const GURL& app_start_url,
+                                ResultCallback callback) override;
+  void IsInfoChanged(std::unique_ptr<WebAppInfo> app_info,
+                     ResultWithVersionCallback callback) override;
+  void UpdateApp() override;
 
  protected:
-  std::string GenerateAppId(const WebAppInfo* app_info) override;
+  std::string GenerateAppId(const GURL& app_start_url) override;
+  std::string GenerateAppVersion(const std::string& app_start_url);
 
  private:
   struct Icon {
@@ -53,28 +65,40 @@ class WebAppInstallableDelegateWebOS : public WebAppInstallableDelegate {
       SPLASH,
     };
 
-    Icon(Type type, const SkBitmap* bitmap);
+    Icon(Type type, const SkBitmap* bitmap, int64_t timestamp = 0);
 
     Type type_;
     const SkBitmap* bitmap_;
     std::string appinfo_key_;
     std::string file_name_;
+
+    static const std::map<Icon::Type, std::string> icon_types;
   };
 
-  static std::unique_ptr<luna::Client> InitLunaClient();
-
-  void RegisterInstalledApp(const std::string& id);
-  void OnScanApp(pal::luna::Client::ResponseStatus status,
-                 unsigned token,
-                 const std::string& json);
+  void CallAppInstall();
+  void OnGetAppInfoStatus(ResultCallback callback,
+                          pal::luna::Client::ResponseStatus status,
+                          unsigned token,
+                          const std::string& json);
+  void OnGetAppInfoPath(std::unique_ptr<WebAppInfo> fresh_app_info,
+                        ResultWithVersionCallback callback,
+                        pal::luna::Client::ResponseStatus status,
+                        unsigned token,
+                        const std::string& json);
+  void OnInstallApp(pal::luna::Client::ResponseStatus status,
+                    unsigned token,
+                    const std::string& json);
   bool WriteIcons(const base::FilePath& app_dir,
                   const std::vector<Icon>& icons);
-  std::vector<Icon> SelectIcons(
-      const std::map<WebAppInfo::SquareSizePx, SkBitmap>& icons);
   bool WriteIconToFile(const base::FilePath& file_path, const SkBitmap* bitmap);
-  base::FilePath GetAppDir(const WebAppInfo* app_info);
+  std::vector<Icon> SelectIcons(const WebAppInfo* app_info);
+  bool AreWebosIconsDifferent(const std::vector<Icon>& new_icons,
+                              const base::Value::Dict& appinfo_json,
+                              const base::FilePath& app_dir);
 
-  std::unique_ptr<luna::Client> luna_client_;
+  std::string app_id_;
+  std::string app_dir_;
+  bool haveUpdate;
   base::WeakPtrFactory<WebAppInstallableDelegateWebOS> weak_ptr_factory_;
 };
 

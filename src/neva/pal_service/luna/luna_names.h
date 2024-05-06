@@ -32,6 +32,9 @@ extern const char kApplicationManager[];
 extern const char kServiceMemoryManager[];
 extern const char kNotification[];
 extern const char kServiceBus[];
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+extern const char kAppInstallService[];
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
 
 }  // namespace service_uri
 

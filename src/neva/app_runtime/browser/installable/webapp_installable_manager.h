@@ -39,6 +39,8 @@ class WebAppInstallableManager {
   using InstallWebAppCallback = base::OnceCallback<void(bool success)>;
   void InstallWebApp(content::WebContents* web_contents,
                      InstallWebAppCallback callback);
+  void MaybeUpdate(content::WebContents* web_contents);
+  void UpdateApp();
 
  private:
   void OnCheckInstallability(CheckInstallabilityCallback callback,
@@ -46,6 +48,13 @@ class WebAppInstallableManager {
                              const GURL& manifest_url,
                              bool valid_manifest_for_web_app,
                              webapps::InstallableStatusCode is_installable);
+  void OnIsWebAppForUrlInstallability(bool is_installable,
+                                      CheckInstallabilityCallback callback,
+                                      bool is_installed);
+  void OnWebAppForUrlisUpdate(
+      content::WebContents* web_contents,
+      std::unique_ptr<web_app::WebAppInstallInfo> web_app_info,
+      bool is_installed);
   void OnIconsDownloaded(
       InstallWebAppCallback callback,
       std::unique_ptr<web_app::WebAppInstallInfo> web_app_info,
@@ -56,9 +65,32 @@ class WebAppInstallableManager {
                         InstallWebAppCallback callback,
                         const GURL& manifest_url,
                         blink::mojom::ManifestPtr manifest);
-  pal::WebAppInstallableDelegate::WebAppInfo ConvertAppInfo(
+  std::unique_ptr<pal::WebAppInstallableDelegate::WebAppInfo> ConvertAppInfo(
       const web_app::WebAppInstallInfo* web_app_info);
+  void OnManifestForUpdate(content::WebContents* web_contents,
+                           blink::mojom::ManifestPtr opt_manifest,
+                           const GURL& manifest_url,
+                           bool valid_manifest_for_web_app,
+                           webapps::InstallableStatusCode is_installable);
+  void OnShouldAppForURLBeUpdated(
+      content::WebContents* web_contents,
+      std::unique_ptr<web_app::WebAppInstallInfo> web_app_info,
+      bool should_update);
+  void OnIconsDownloadedForUpdate(
+      std::unique_ptr<web_app::WebAppInstallInfo> web_app_info,
+      web_app::IconsDownloadedResult result,
+      web_app::IconsMap icons_map,
+      web_app::DownloadedIconsHttpResults icons_http_results);
+  void OnIsInfoChanged(
+      std::unique_ptr<pal::WebAppInstallableDelegate::WebAppInfo>
+          new_delegate_info,
+      bool value,
+      const std::string& version);
 
+  // TODO This flag is necessary to prevent the plant
+  // from being called again when the first one has not yet
+  // finished its work
+  bool is_processing_install_ = false;
   std::unique_ptr<web_app::WebAppDataRetriever> data_retriever_;
   std::unique_ptr<pal::WebAppInstallableDelegate> pal_installable_delegate_;
   base::WeakPtrFactory<WebAppInstallableManager> weak_factory_;

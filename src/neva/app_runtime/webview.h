@@ -48,6 +48,9 @@ class WebAppInjectionManager;
 class WebViewControllerDelegate;
 class WebViewDelegate;
 class WebViewProfile;
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+class WebViewGuestInstallableManager;
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
 
 class WebView : public AppRuntimeWebContentsDelegate,
                 public content::WebContentsObserver {
@@ -309,6 +312,14 @@ class WebView : public AppRuntimeWebContentsDelegate,
   SSLCertErrorPolicy ssl_cert_error_policy_ = SSL_CERT_ERROR_POLICY_DEFAULT;
   WebViewProfile* profile_ = nullptr;
   std::map<WebView::Attribute, bool> webview_preferences_list_;
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+  std::unique_ptr<neva_app_runtime::WebViewGuestInstallableManager>
+      installable_manager_;
+  bool is_pwa_ = false;
+  // PWA initial load. Used to check if an update
+  // is available only when the application is started
+  bool pwa_is_starting_ = true;
+#endif
   base::WeakPtrFactory<WebView> weak_factory_{this};
 };
 

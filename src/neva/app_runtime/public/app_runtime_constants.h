@@ -127,6 +127,14 @@ enum class DropPeerConnectionReason {
   kDropPeerConnectionReasonLast = kDropPeerConnectionReasonUnknown
 };
 
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+constexpr char kPwaAppNamePrefix[] = "pwa.";
+constexpr char kPwaSchemaName[] = "pwa://";
+constexpr char kPwaInitVersion[] = "1.0.0";
+constexpr int kPwaMaxVersionNumber = 999999999;
+constexpr int kPwaUpdateTimeout = 4000;
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
+
 }  // namespace neva_app_runtime
 
 #endif  // NEVA_APP_RUNTIME_PUBLIC_APP_RUNTIME_CONSTANTS_H_
