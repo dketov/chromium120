@@ -98,6 +98,13 @@
 #include "neva/extensions/browser/web_contents_map.h"
 #endif  // defined(USE_NEVA_CHROME_EXTENSIONS)
 
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+#include "base/check.h"
+#include "content/public/browser/navigation_handle.h"
+#include "content/public/browser/navigation_throttle.h"
+#include "neva/pal_service/pal_platform_factory.h"
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
+
 namespace neva_app_runtime {
 
 namespace {
@@ -159,7 +166,13 @@ absl::optional<storage::QuotaSettings> GetConfiguredQuotaSettings(
 
 }  // namespace
 
-AppRuntimeContentBrowserClient::AppRuntimeContentBrowserClient() {}
+AppRuntimeContentBrowserClient::AppRuntimeContentBrowserClient()
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+    : pal_browsernavigation_delegate_(
+          pal::PlatformFactory::Get()->CreateWebAppBrowserNavigationDelegate())
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
+{
+}
 
 AppRuntimeContentBrowserClient::~AppRuntimeContentBrowserClient() {}
 
@@ -637,15 +650,6 @@ void AppRuntimeContentBrowserClient::OverrideURLLoaderFactoryParams(
     network::mojom::URLLoaderFactoryParams* factory_params) {
   extensions::URLLoaderFactoryManager::OverrideURLLoaderFactoryParams(
       browser_context, origin, is_for_isolated_world, factory_params);
-}
-
-std::vector<std::unique_ptr<content::NavigationThrottle>>
-AppRuntimeContentBrowserClient::CreateThrottlesForNavigation(
-    content::NavigationHandle* navigation_handle) {
-  std::vector<std::unique_ptr<content::NavigationThrottle>> throttles;
-  throttles.push_back(std::make_unique<extensions::ExtensionNavigationThrottle>(
-      navigation_handle));
-  return throttles;
 }
 
 void AppRuntimeContentBrowserClient::
@@ -1146,5 +1150,90 @@ AppRuntimeContentBrowserClient::CreateURLLoaderThrottles(
   std::vector<std::unique_ptr<blink::URLLoaderThrottle>> result;
   return result;
 }
+
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+class PwaNavigationThrottle : public NavigationThrottle {
+ public:
+  explicit PwaNavigationThrottle(NavigationHandle* navigation_handle,
+                                 const GURL& url,
+                                 AppRuntimeContentBrowserClient* browser_client)
+      : NavigationThrottle(navigation_handle),
+        pwa_url_(url),
+        browser_client_(browser_client) {
+    CHECK(browser_client_);
+  }
+  ~PwaNavigationThrottle() override = default;
+
+  ThrottleCheckResult WillStartRequest() override {
+    if (url::IsSameOriginWith(navigation_handle()->GetURL(), pwa_url_))
+      return PROCEED;
+    std::string navigation_url = navigation_handle()->GetURL().spec();
+    browser_client_->OpenUrlInBrowser(navigation_url);
+
+    return CANCEL_AND_IGNORE;
+  }
+
+  const char* GetNameForLogging() override { return "PwaNavigationThrottle"; }
+
+  static std::unique_ptr<NavigationThrottle> CreateThrottleForNavigation(
+      NavigationHandle* navigation_handle,
+      const GURL& url,
+      AppRuntimeContentBrowserClient* browser_client) {
+    return std::make_unique<PwaNavigationThrottle>(navigation_handle, url,
+                                                   browser_client);
+  }
+
+  PwaNavigationThrottle(const PwaNavigationThrottle&) = delete;
+  PwaNavigationThrottle& operator=(const PwaNavigationThrottle&) = delete;
+
+ private:
+  GURL pwa_url_;
+  AppRuntimeContentBrowserClient* browser_client_;
+};
+
+void AppRuntimeContentBrowserClient::SetPwaAppOrigin(int child_process_id,
+                                                     const GURL& url) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  pwa_origins_.emplace(child_process_id, url);
+}
+
+void AppRuntimeContentBrowserClient::RemovePwaAppOrigin(int child_process_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  pwa_origins_.erase(child_process_id);
+}
+
+void AppRuntimeContentBrowserClient::OpenUrlInBrowser(const std::string& url) {
+  if (pal_browsernavigation_delegate_)
+    pal_browsernavigation_delegate_->OpenUrlInBrowser(url);
+}
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
+
+///@name USE_NEVA_CHROME_EXTENSIONS | ENABLE_PWA_MANAGER_WEBAPI
+///@{
+std::vector<std::unique_ptr<content::NavigationThrottle>>
+AppRuntimeContentBrowserClient::CreateThrottlesForNavigation(
+    content::NavigationHandle* navigation_handle) {
+  auto throttles =
+      ContentBrowserClient::CreateThrottlesForNavigation(navigation_handle);
+
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+  int pid = navigation_handle->GetWebContents()
+                ->GetPrimaryMainFrame()
+                ->GetProcess()
+                ->GetID();
+  if (pwa_origins_.count(pid)) {
+    throttles.push_back(PwaNavigationThrottle::CreateThrottleForNavigation(
+        navigation_handle, pwa_origins_[pid], this));
+    return throttles;
+  }
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
+
+#if defined(USE_NEVA_CHROME_EXTENSIONS)
+  throttles.push_back(std::make_unique<extensions::ExtensionNavigationThrottle>(
+      navigation_handle));
+#endif  // defined(USE_NEVA_CHROME_EXTENSIONS)
+  return throttles;
+}
+///@}
 
 }  // namespace neva_app_runtime

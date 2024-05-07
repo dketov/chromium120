@@ -165,6 +165,8 @@ WebView::~WebView() {
 #if defined(ENABLE_PWA_MANAGER_WEBAPI)
   if (is_pwa_)
     installable_manager_->UpdateApp();
+  GetAppRuntimeContentBrowserClient()->RemovePwaAppOrigin(
+      web_contents_->GetPrimaryMainFrame()->GetProcess()->GetID());
 #endif  // ENABLE_PWA_MANAGER_WEBAPI
   web_contents_->SetDelegate(nullptr);
 }
@@ -250,7 +252,11 @@ std::string WebView::UserAgent() const {
 
 void WebView::LoadUrl(const GURL& url) {
   TRACE_EVENT1("neva", "WebView::LoadUrl", "url", url.spec());
-
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+  if (is_pwa_)
+    GetAppRuntimeContentBrowserClient()->SetPwaAppOrigin(
+        web_contents_->GetPrimaryMainFrame()->GetProcess()->GetID(), url);
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
   content::NavigationController::LoadURLParams params(url);
   params.transition_type = ui::PageTransitionFromInt(
       ui::PAGE_TRANSITION_TYPED | ui::PAGE_TRANSITION_FROM_API);
