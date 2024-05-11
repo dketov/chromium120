@@ -57,6 +57,7 @@
 #include "neva/app_runtime/public/mojom/app_runtime_webview.mojom.h"
 #include "neva/app_runtime/public/webview_controller_delegate.h"
 #include "neva/app_runtime/webapp_injection_manager.h"
+#include "neva/browser_shell/common/browser_shell_switches.h"
 #include "neva/logging.h"
 #include "neva/user_agent/common/user_agent.h"
 #include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
@@ -79,6 +80,7 @@
 namespace neva_app_runtime {
 namespace {
 
+const char kIdentifier[] = "identifier";
 const char kInitialize[] = "initialize";
 const char kShellLaunchArgs[] = "launch-args";
 const char kLaunchParams[] = "launchParams";
@@ -95,11 +97,18 @@ class BrowserShellWebViewControllerDelegate : public WebViewControllerDelegate {
                           const std::vector<std::string>& arguments) override {
     if (name == kInitialize) {
       return GetLaunchArgs();
+    } else if (name == kIdentifier) {
+      return GetIdentifier();
     }
     return std::string();
   }
 
  private:
+  static std::string GetIdentifier() {
+    base::CommandLine* cmd = base::CommandLine::ForCurrentProcess();
+    return cmd->GetSwitchValueASCII(switches::kShellAppId);
+  }
+
   static std::string GetLaunchArgs() {
     base::CommandLine* cmd = base::CommandLine::ForCurrentProcess();
     std::string launch_value = cmd->GetSwitchValueASCII(kShellLaunchArgs);

@@ -1,6 +1,7 @@
 {
-  "com.webos.app.enactbrowser": [
+  "com.webos.app.enactbrowser*": [
     "application.operation",
+    "application.launcher",
     "applications",
     "settings.read",
     "signals.all"

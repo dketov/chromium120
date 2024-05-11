@@ -3,7 +3,7 @@
     "trustLevel":"oem",
     "type": "privileged",
     "allowedNames": [
-        "com.webos.app.enactbrowser",
+        "com.webos.app.enactbrowser*",
         "com.webos.app.test.browsershell*",
         "com.webos.settingsservice.client*",
         "com.webos.chromium.audio*",
@@ -12,7 +12,7 @@
     ],
     "permissions": [
         {
-            "service":"com.webos.app.enactbrowser",
+            "service":"com.webos.app.enactbrowser*",
             "inbound":["*"],
             "outbound":["*"]
         },

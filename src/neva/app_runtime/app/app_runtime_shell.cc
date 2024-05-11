@@ -83,6 +83,7 @@ ShellWindow* Shell::CreateMainWindow(std::string url,
   page_contents_params.injections.emplace("v8/userpermission", "{}");
   page_contents_params.injections.emplace("v8/mediacapture", "{}");
   page_contents_params.injections.emplace("v8/popupblocker", "{}");
+  page_contents_params.injections.emplace("v8/webosservicebridge", "{}");
   for (const auto& item : injections)
     page_contents_params.injections.emplace(item, "{}");
   page_contents_params.inspectable = enable_dev_tools_;
