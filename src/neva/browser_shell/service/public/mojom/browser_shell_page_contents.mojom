@@ -48,6 +48,7 @@ struct WindowInfo {
   string name;
   string window_open_disposition;
   bool user_gesture;
+  bool popup_blocked;
 };
 
 struct OpenURLInfo {

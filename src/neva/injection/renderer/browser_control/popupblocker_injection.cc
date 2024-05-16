@@ -31,6 +31,7 @@ namespace {
 const char kPopupBlockerObjectName[] = "popupblocker";
 
 const char kSetEnabledMethodName[] = "setEnabled";
+const char kGetEnabledMethodName[] = "getEnabled";
 const char kGetURLsMethodName[] = "getURLs";
 const char kAddMethodName[] = "addURL";
 const char kDeletesMethodName[] = "deleteURLs";
@@ -127,6 +128,21 @@ bool PopupBlockerInjection::SetEnabled(gin::Arguments* args) {
   return result;
 }
 
+bool PopupBlockerInjection::GetEnabled(gin::Arguments* args) {
+  v8::Local<v8::Function> local_func;
+  if (!args->GetNext(&local_func)) {
+    LOG(ERROR) << __func__ << ", wrong argument";
+    return false;
+  }
+
+  auto callback_ptr = std::make_unique<v8::Persistent<v8::Function>>(
+      args->isolate(), local_func);
+  remote_popupblocker_->GetEnabled(
+      base::BindOnce(&PopupBlockerInjection::OnGetEnabledRespond,
+                     base::Unretained(this), std::move(callback_ptr)));
+  return true;
+}
+
 bool PopupBlockerInjection::GetURLs(gin::Arguments* args) {
   v8::Local<v8::Function> local_func;
   if (!args->GetNext(&local_func)) {
@@ -194,10 +210,36 @@ gin::ObjectTemplateBuilder PopupBlockerInjection::GetObjectTemplateBuilder(
   return gin::Wrappable<PopupBlockerInjection>::GetObjectTemplateBuilder(
              isolate)
       .SetMethod(kSetEnabledMethodName, &PopupBlockerInjection::SetEnabled)
+      .SetMethod(kGetEnabledMethodName, &PopupBlockerInjection::GetEnabled)
       .SetMethod(kGetURLsMethodName, &PopupBlockerInjection::GetURLs)
       .SetMethod(kAddMethodName, &PopupBlockerInjection::AddURL)
       .SetMethod(kDeletesMethodName, &PopupBlockerInjection::DeleteURLs)
       .SetMethod(kUpdateMethodName, &PopupBlockerInjection::updateURL);
+}
+
+void PopupBlockerInjection::OnGetEnabledRespond(
+    std::unique_ptr<v8::Persistent<v8::Function>> callback,
+    bool is_enabled) {
+  v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::HandleScope handle_scope(isolate);
+  v8::Local<v8::Object> wrapper;
+  if (!GetWrapper(isolate).ToLocal(&wrapper)) {
+    LOG(ERROR) << __func__ << "(): can not get wrapper";
+    return;
+  }
+
+  v8::Local<v8::Context> context;
+  if (!wrapper->GetCreationContext().ToLocal(&context)) {
+    return;
+  }
+  v8::Context::Scope context_scope(context);
+  v8::Local<v8::Function> local_callback = callback->Get(isolate);
+
+  const int argc = 1;
+  v8::Local<v8::Value> result;
+  if (gin::TryConvertToV8(isolate, is_enabled, &result)) {
+    local_callback->Call(context, wrapper, argc, &result);
+  }
 }
 
 void PopupBlockerInjection::OnGetURLsRespond(

@@ -67,7 +67,8 @@ struct NewWindowInfo {
   int32_t initial_height;
   std::string name;
   std::string window_open_disposition;
-  bool user_gesture;
+  bool user_gesture = false;
+  bool popup_blocked = false;
 };
 
 struct OpenURLInfo {

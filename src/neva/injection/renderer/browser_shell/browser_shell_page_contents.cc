@@ -487,6 +487,11 @@ void BrowserShellPageContents::OnNewWindowOpen(
             v8::Boolean::New(isolate, window_info->user_gesture))
       .Check();
 
+  window_info_v8
+      ->Set(context, gin::StringToV8(isolate, "popupBlocked"),
+            v8::Boolean::New(isolate, window_info->popup_blocked))
+      .Check();
+
   mojo::Remote<browser_shell::mojom::PageContents> remote_new_contents;
   auto pending_receiver_new_contents =
       remote_new_contents.BindNewPipeAndPassReceiver();

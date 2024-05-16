@@ -46,6 +46,7 @@ class PopupBlockerInjection : public gin::Wrappable<PopupBlockerInjection> {
   ~PopupBlockerInjection() override;
 
   bool SetEnabled(gin::Arguments* args);
+  bool GetEnabled(gin::Arguments* args);
   bool GetURLs(gin::Arguments* args);
   bool AddURL(gin::Arguments* args);
   bool DeleteURLs(gin::Arguments* args);
@@ -57,6 +58,9 @@ class PopupBlockerInjection : public gin::Wrappable<PopupBlockerInjection> {
 
   gin::ObjectTemplateBuilder GetObjectTemplateBuilder(
       v8::Isolate* isolate) final;
+  void OnGetEnabledRespond(
+      std::unique_ptr<v8::Persistent<v8::Function>> callback,
+      bool is_enabled);
   void OnGetURLsRespond(std::unique_ptr<v8::Persistent<v8::Function>> callback,
                         const std::vector<std::string>& url_list);
   void OnDeleteURLsRespond(

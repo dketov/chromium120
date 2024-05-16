@@ -109,31 +109,6 @@ bool BrowserShellContentBrowserClient::IsNevaDynamicProxyEnabled() {
   return true;
 }
 
-bool BrowserShellContentBrowserClient::CanCreateWindow(
-    content::RenderFrameHost* opener,
-    const GURL& opener_url,
-    const GURL& opener_top_level_frame_url,
-    const url::Origin& source_origin,
-    content::mojom::WindowContainerType container_type,
-    const GURL& target_url,
-    const content::Referrer& referrer,
-    const std::string& frame_name,
-    WindowOpenDisposition disposition,
-    const blink::mojom::WindowFeatures& features,
-    bool user_gesture,
-    bool opener_suppressed,
-    bool* no_javascript_access) {
-  *no_javascript_access = false;
-
-  if (browser::PopupBlockerServiceImpl::GetInstance()->IsBlocked(
-          opener_top_level_frame_url, user_gesture, disposition)) {
-    LOG(INFO) << __func__ << "Pop up window is blocked for this site: "
-              << opener_url.spec().c_str();
-    return false;
-  }
-  return true;
-}
-
 #if defined(USE_NEVA_BROWSER_SERVICE)
 std::vector<std::unique_ptr<blink::URLLoaderThrottle>>
 BrowserShellContentBrowserClient::CreateURLLoaderThrottles(

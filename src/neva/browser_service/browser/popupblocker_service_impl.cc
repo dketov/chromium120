@@ -55,12 +55,15 @@ void PopupBlockerServiceImpl::SetEnabled(bool popup_state,
 
   popup_blocker_enabled_ = popup_state;
   if (popup_blocker_enabled_) {
-    url_list_table_.reset(new URLDatabase(kPopUpURLTableName));
     FillListFromDB();
   } else {
     url_list_.clear();
   }
   std::move(callback).Run(true);
+}
+
+void PopupBlockerServiceImpl::GetEnabled(GetEnabledCallback callback) {
+  std::move(callback).Run(popup_blocker_enabled_);
 }
 
 bool PopupBlockerServiceImpl::IsBlocked(
@@ -113,7 +116,7 @@ void PopupBlockerServiceImpl::AddURL(const std::string& url,
     std::move(callback).Run(false);
     return;
   }
-  if (!url_list_table_->InsertURL(domain)) {
+  if (!url_list_table_.InsertURL(domain)) {
     LOG(ERROR) << __func__ << "Unable to Add URL in DB !";
     std::move(callback).Run(false);
     return;
@@ -131,7 +134,7 @@ void PopupBlockerServiceImpl::DeleteURLs(const std::vector<std::string>& urls,
     return;
   }
 
-  if (!url_list_table_->DeleteURLs(urls)) {
+  if (!url_list_table_.DeleteURLs(urls)) {
     LOG(ERROR) << __func__ << "Unable to Remove URLs from DB";
     std::move(callback).Run(false);
     return;
@@ -167,7 +170,7 @@ void PopupBlockerServiceImpl::updateURL(const std::string& old_url,
     std::move(callback).Run(false);
     return;
   }
-  if (!url_list_table_->ModifyURL(old_url_domain, new_url_domain)) {
+  if (!url_list_table_.ModifyURL(old_url_domain, new_url_domain)) {
     LOG(ERROR) << __func__ << "Unable to update URL in DB";
     std::move(callback).Run(false);
     return;
@@ -178,13 +181,16 @@ void PopupBlockerServiceImpl::updateURL(const std::string& old_url,
   std::move(callback).Run(true);
 }
 
-PopupBlockerServiceImpl::PopupBlockerServiceImpl() {}
+PopupBlockerServiceImpl::PopupBlockerServiceImpl()
+    : url_list_table_(kPopUpURLTableName) {
+  FillListFromDB();
+}
 
 PopupBlockerServiceImpl::~PopupBlockerServiceImpl() {}
 
 void PopupBlockerServiceImpl::FillListFromDB() {
   std::vector<std::string> url_list;
-  url_list_table_->GetAllURLs(url_list);
+  url_list_table_.GetAllURLs(url_list);
   url_list_.clear();
   if (url_list.empty()) {
     LOG(WARNING) << __func__ << "Can not load url list from from DB";

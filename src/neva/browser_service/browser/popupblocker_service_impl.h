@@ -47,6 +47,8 @@ class PopupBlockerServiceImpl : public mojom::PopupBlockerService {
   // mojom::PopupBlockerService
   // Set the popup blocker feature state On/Off
   void SetEnabled(bool popup_state, SetEnabledCallback callback) override;
+  // Get the state of Popup Blocker feature
+  void GetEnabled(GetEnabledCallback callback) override;
   // Get the list of exception URLs from the DB
   void GetURLs(GetURLsCallback callback) override;
   // Add an exception URL in to the "popup_blocker_urls" table of the DB.
@@ -73,9 +75,9 @@ class PopupBlockerServiceImpl : public mojom::PopupBlockerService {
   std::string GetDomain(const std::string& url) const;
   bool IsURLFound(const std::string& url) const;
 
-  bool popup_blocker_enabled_ = false;
+  bool popup_blocker_enabled_ = true;
   std::unordered_set<std::string> url_list_;
-  std::unique_ptr<URLDatabase> url_list_table_;
+  URLDatabase url_list_table_;
 
   mojo::ReceiverSet<mojom::PopupBlockerService> receivers_;
 };

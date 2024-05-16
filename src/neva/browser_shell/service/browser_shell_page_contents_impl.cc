@@ -406,6 +406,7 @@ void PageContentsImpl::OnNewWindowOpen(
     new_window_info->window_open_disposition =
         window_info.window_open_disposition;
     new_window_info->user_gesture = window_info.user_gesture;
+    new_window_info->popup_blocked = window_info.popup_blocked;
     remote_client_->OnNewWindowOpen(id, std::move(new_window_info));
   }
 }

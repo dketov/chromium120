@@ -71,6 +71,7 @@
 
 #if defined(USE_NEVA_BROWSER_SERVICE)
 #include "components/permissions/permission_request_manager.h"
+#include "neva/browser_service/browser_service.h"
 #endif  // USE_NEVA_BROWSER_SERVICE
 
 #if defined(USE_NEVA_MEDIA)
@@ -966,6 +967,20 @@ void PageContents::AddNewContents(
   if (was_blocked)
     *was_blocked = false;
 
+  if (source) {
+    auto* opener_rfh = source->GetPrimaryMainFrame();
+    const GURL& opener_url =
+        opener_rfh ? opener_rfh->GetLastCommittedURL() : GURL();
+
+    if (browser::PopupBlockerServiceImpl::GetInstance()->IsBlocked(
+            opener_url, user_gesture, disposition)) {
+      LOG(INFO) << __func__
+                << " Pop up window is blocked for this site: " << opener_url;
+      window_info.popup_blocked = true;
+    } else {
+      window_info.popup_blocked = false;
+    }
+  }
   delegate_->OnNewWindowOpen(
       std::unique_ptr<PageContents>(
           new PageContents(std::move(new_contents), params)),

@@ -17,8 +17,11 @@
 module browser.mojom;
 
 interface PopupBlockerService {
-  // Enables the Popup Blocker featre, true/false
+  // Enables the Popup Blocker feature, true/false
   [Sync] SetEnabled(bool type) => (bool result);
+
+  // Get the state of Popup Blocker feature
+  [Sync] GetEnabled() => (bool result);
 
   // Get the list of URLs from popup blocker DB
   GetURLs() => (array<string> result);
