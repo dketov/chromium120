@@ -72,6 +72,10 @@ install_run_script("browser_shell_run_script") {
     injections += [ "v8/chrome_extensions" ]
   }
 
+  if (enable_pwa_manager_webapi) {
+    injections += [ "v8/installablemanager" ]
+  }
+
   outputs = [ "$image_path/$browser_shell_dir/run_browser_shell" ]
 }
 

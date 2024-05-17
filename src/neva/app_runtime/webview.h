@@ -29,6 +29,10 @@
 #include "third_party/blink/public/mojom/peerconnection/peer_connection_tracker.mojom-shared.h"
 #include "ui/gfx/geometry/size.h"
 
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+#include "neva/app_runtime/browser/installable/webapp_installable_manager.h"
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
+
 namespace content {
 class WebContents;
 }  // namespace content
@@ -48,9 +52,6 @@ class WebAppInjectionManager;
 class WebViewControllerDelegate;
 class WebViewDelegate;
 class WebViewProfile;
-#if defined(ENABLE_PWA_MANAGER_WEBAPI)
-class WebViewGuestInstallableManager;
-#endif  // ENABLE_PWA_MANAGER_WEBAPI
 
 class WebView : public AppRuntimeWebContentsDelegate,
                 public content::WebContentsObserver {
@@ -313,8 +314,7 @@ class WebView : public AppRuntimeWebContentsDelegate,
   WebViewProfile* profile_ = nullptr;
   std::map<WebView::Attribute, bool> webview_preferences_list_;
 #if defined(ENABLE_PWA_MANAGER_WEBAPI)
-  std::unique_ptr<neva_app_runtime::WebViewGuestInstallableManager>
-      installable_manager_;
+  WebAppInstallableManager installable_manager_;
   bool is_pwa_ = false;
   // PWA initial load. Used to check if an update
   // is available only when the application is started

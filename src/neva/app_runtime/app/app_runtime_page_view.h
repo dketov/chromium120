@@ -32,6 +32,9 @@ namespace neva_app_runtime {
 
 class PageContents;
 class ShellWindow;
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+class InstallableManager;
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
 
 class PageView {
  public:
@@ -87,6 +90,10 @@ class PageView {
   std::unique_ptr<PageContents> page_contents_;
   std::map<PageView*, std::unique_ptr<PageView>> child_page_views_;
   std::map<views::View*, PageView*> map_view_to_page_view_;
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+  std::unique_ptr<neva_app_runtime::InstallableManager>
+      installable_manager_;
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
 };
 
 }  // namespace neva_app_runtime

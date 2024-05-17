@@ -2448,6 +2448,13 @@ void RenderProcessHostImpl::RegisterMojoInterfaces() {
       base::BindRepeating(&RenderProcessHostImpl::BindWebDatabaseHostImpl,
                           instance_weak_factory_.GetWeakPtr()));
 
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+  AddUIThreadInterface(
+      registry.get(),
+      base::BindRepeating(&RenderProcessHostImpl::BindInstallableManager,
+                          instance_weak_factory_.GetWeakPtr()));
+#endif  // defined(ENABLE_PWA_MANAGER_WEBAPI)
+
   AddUIThreadInterface(
       registry.get(),
       base::BindRepeating(
@@ -2600,6 +2607,19 @@ void RenderProcessHostImpl::RegisterMojoInterfaces() {
       GetIOThreadTaskRunner({}), GetID(), instance_weak_factory_.GetWeakPtr(),
       std::move(registry), std::move(child_host_pending_receiver_));
 }
+
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+void RenderProcessHostImpl::BindInstallableManager(
+    mojo::PendingReceiver<neva_app_runtime::mojom::InstallableManager>
+        receiver) {
+  RenderFrameHost* render_frame_host =
+      RenderFrameHost::FromID(*(render_frame_host_id_set_.rbegin()));
+  if (render_frame_host) {
+    neva_app_runtime::InstallableManager::BindInstallableManager(
+        std::move(receiver), render_frame_host);
+  }
+}
+#endif  // defined(ENABLE_PWA_MANAGER_WEBAPI)
 
 void RenderProcessHostImpl::CreateEmbeddedFrameSinkProvider(
     mojo::PendingReceiver<blink::mojom::EmbeddedFrameSinkProvider> receiver) {

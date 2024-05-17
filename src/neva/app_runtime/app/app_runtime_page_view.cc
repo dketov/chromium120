@@ -22,6 +22,11 @@
 #include "neva/app_runtime/app/app_runtime_shell_environment.h"
 #include "neva/logging.h"
 #include "ui/views/controls/webview/webview.h"
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+#include "components/webapps/browser/installable/installable_manager.h"
+#include "extensions/shell/neva/installable_manager.h"
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
+
 
 namespace neva_app_runtime {
 
@@ -80,6 +85,18 @@ std::unique_ptr<PageContents> PageView::SetPageContents(
       web_view_->SetBrowserContext(
           page_contents_->GetWebContents()->GetBrowserContext());
       web_view_->SetWebContents(page_contents_->GetWebContents());
+
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+      if (!installable_manager_) {
+        installable_manager_ =
+            std::make_unique<neva_app_runtime::InstallableManager>(
+                page_contents_->GetWebContents());
+        webapps::InstallableManager::CreateForWebContents(
+            page_contents_->GetWebContents());
+        neva_app_runtime::InstallableManager::CreateForWebContents(
+            page_contents_->GetWebContents());
+      }
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
     }
   } else {
     web_view_->SetBrowserContext(nullptr);

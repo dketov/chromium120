@@ -88,7 +88,6 @@ void GetPluginsCallback(const std::vector<content::WebPluginInfo>& plugins) {}
 
 #if defined(ENABLE_PWA_MANAGER_WEBAPI)
 #include "components/webapps/browser/installable/installable_manager.h"
-#include "extensions/shell/neva/web_view_guest_installable_manager.h"
 #include "neva/injection/renderer/grit/injection_resources.h"
 #include "ui/base/resource/resource_bundle.h"
 #endif  // ENABLE_PWA_MANAGER_WEBAPI
@@ -166,7 +165,8 @@ WebView::~WebView() {
   SetCorsCorbDisabled(false);
 #if defined(ENABLE_PWA_MANAGER_WEBAPI)
   if (is_pwa_)
-    installable_manager_->UpdateApp();
+    installable_manager_.UpdateApp();
+
   GetAppRuntimeContentBrowserClient()->RemovePwaAppOrigin(
       web_contents_->GetPrimaryMainFrame()->GetProcess()->GetID());
 #endif  // ENABLE_PWA_MANAGER_WEBAPI
@@ -222,11 +222,6 @@ void WebView::CreateWebContents() {
       web_contents_.get());
 
 #if defined(ENABLE_PWA_MANAGER_WEBAPI)
-  // TODO: check if we can use webapps::InstallableManager::...() directly,
-  // maybe guest variant is only for mojo interface.
-  installable_manager_ =
-      std::make_unique<neva_app_runtime::WebViewGuestInstallableManager>(
-          web_contents_.get());
   webapps::InstallableManager::CreateForWebContents(web_contents_.get());
 #endif  // ENABLE_PWA_MANAGER_WEBAPI
 }
@@ -1232,7 +1227,7 @@ void WebView::DidFinishLoad(content::RenderFrameHost* render_frame_host,
   // case in PrimaryPageChanged WebContents did not navigate to the correct URL.
   // So for now use Finish.
   if (validated_url.SchemeIsHTTPOrHTTPS() && pwa_is_starting_) {
-    installable_manager_->MaybeUpdate();
+    installable_manager_.MaybeUpdate(web_contents_.get());
     pwa_is_starting_ = false;
   }
 

@@ -20,7 +20,8 @@
 #include "content/public/renderer/render_frame.h"
 #include "gin/arguments.h"
 #include "gin/handle.h"
-#include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
+#include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
+#include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/public/web/blink.h"
 #include "third_party/blink/public/web/web_local_frame.h"
 
@@ -101,10 +102,8 @@ void InstallableManagerInjection::Uninstall(blink::WebLocalFrame* frame) {
 InstallableManagerInjection::InstallableManagerInjection(
     blink::WebLocalFrame* web_local_frame)
     : weak_factory_(this) {
-  auto* render_frame = content::RenderFrame::FromWebFrame(web_local_frame);
-  if (render_frame)
-    render_frame->GetRemoteAssociatedInterfaces()->GetInterface(
-        &installable_manager_);
+  blink::Platform::Current()->GetBrowserInterfaceBroker()->GetInterface(
+      installable_manager_.BindNewPipeAndPassReceiver());
 }
 
 InstallableManagerInjection::~InstallableManagerInjection() = default;

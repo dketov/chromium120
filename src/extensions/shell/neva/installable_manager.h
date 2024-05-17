@@ -14,49 +14,44 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef EXTENSIONS_SHELL_NEVA_WEB_VIEW_GUEST_INSTALLABLE_MANAGER_H_
-#define EXTENSIONS_SHELL_NEVA_WEB_VIEW_GUEST_INSTALLABLE_MANAGER_H_
+#ifndef EXTENSIONS_SHELL_NEVA_INSTALLABLE_MANAGER_H_
+#define EXTENSIONS_SHELL_NEVA_INSTALLABLE_MANAGER_H_
 
-#include "content/public/browser/render_frame_host_receiver_set.h"
-#include "content/public/browser/web_contents_observer.h"
 #include "content/public/browser/web_contents_user_data.h"
+#include "mojo/public/cpp/bindings/receiver_set.h"
 #include "neva/app_runtime/browser/installable/webapp_installable_manager.h"
 #include "neva/app_runtime/public/mojom/installable_manager.mojom.h"
 
 namespace neva_app_runtime {
 
-class WebViewGuestInstallableManager
-    : public content::WebContentsObserver,
-      public content::WebContentsUserData<WebViewGuestInstallableManager>,
+class InstallableManager
+    : public content::WebContentsUserData<InstallableManager>,
       public mojom::InstallableManager {
  public:
-  WebViewGuestInstallableManager(content::WebContents* web_contents);
-  ~WebViewGuestInstallableManager() override;
+  InstallableManager(content::WebContents* web_contents);
+  ~InstallableManager() override;
 
   static void BindInstallableManager(
-      mojo::PendingAssociatedReceiver<mojom::InstallableManager> receiver,
+      mojo::PendingReceiver<mojom::InstallableManager> receiver,
       content::RenderFrameHost* rfh);
 
   // mojom::InstallableManager
   void GetInfo(GetInfoCallback callback) override;
   void InstallApp(InstallAppCallback callback) override;
 
-  void MaybeUpdate();
-  void UpdateApp();
-
  private:
   void OnGetInfo(GetInfoCallback callback, bool installable, bool installed);
   void OnInstallApp(InstallAppCallback callback, bool success);
 
   content::WebContents* web_contents_;
-  content::RenderFrameHostReceiverSet<mojom::InstallableManager> receivers_;
+  mojo::ReceiverSet<mojom::InstallableManager> receivers_;
   WebAppInstallableManager installable_manager_;
-  base::WeakPtrFactory<WebViewGuestInstallableManager> weak_factory_;
+  base::WeakPtrFactory<InstallableManager> weak_factory_;
 
-  friend class content::WebContentsUserData<WebViewGuestInstallableManager>;
+  friend class content::WebContentsUserData<InstallableManager>;
   WEB_CONTENTS_USER_DATA_KEY_DECL();
 };
 
 }  // namespace neva_app_runtime
 
-#endif  // EXTENSIONS_SHELL_NEVA_WEB_VIEW_GUEST_INSTALLABLE_MANAGER_H_
+#endif  // EXTENSIONS_SHELL_NEVA_INSTALLABLE_MANAGER_H_

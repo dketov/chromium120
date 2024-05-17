@@ -29,6 +29,11 @@
 #include "storage/browser/quota/quota_settings.h"
 #include "third_party/blink/public/mojom/badging/badging.mojom.h"
 
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+#include <memory>
+#include "neva/pal_service/public/webapp_browsernavigation_delegate.h"
+#endif  // ENABLE_PWA_MANAGER_WEBAPI
+
 namespace content {
 class BrowserContext;
 class LoginDelegate;
@@ -37,11 +42,6 @@ class RenderFrameHost;
 class PlatformNotificationService;
 struct GlobalRequestID;
 }  // namespace content
-
-#if defined(ENABLE_PWA_MANAGER_WEBAPI)
-#include <memory>
-#include "neva/pal_service/public/webapp_browsernavigation_delegate.h"
-#endif  // ENABLE_PWA_MANAGER_WEBAPI
 
 namespace pal {
 class ExternalProtocolHandlerDelegate;

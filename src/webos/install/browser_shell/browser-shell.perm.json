@@ -29,5 +29,9 @@
   ],
   "com.webos.rm.client.*": [
     "media"
+  ],
+  "com.webos.chromium.installablemanager*": [
+    "applicationinstall.management",
+    "application.operation"
   ]
 }

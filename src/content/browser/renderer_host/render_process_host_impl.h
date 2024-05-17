@@ -101,6 +101,12 @@
 #include "media/fuchsia_media_codec_provider_impl.h"
 #endif
 
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+#include "extensions/shell/neva/installable_manager.h"
+#include "neva/app_runtime/public/mojom/installable_manager.mojom.h"
+#include "neva/injection/renderer/installable_manager/installable_manager_injection.h"
+#endif  // defined(ENABLE_PWA_MANAGER_WEBAPI)
+
 namespace base {
 class CommandLine;
 class PersistentMemoryAllocator;
@@ -931,6 +937,10 @@ class CONTENT_EXPORT RenderProcessHostImpl
           receiver);
   void BindWebDatabaseHostImpl(
       mojo::PendingReceiver<blink::mojom::WebDatabaseHost> receiver);
+#if defined(ENABLE_PWA_MANAGER_WEBAPI)
+  void BindInstallableManager(
+      mojo::PendingReceiver<neva_app_runtime::mojom::InstallableManager> receiver);
+#endif  // defined(ENABLE_PWA_MANAGER_WEBAPI)
   void BindAecDumpManager(
       mojo::PendingReceiver<blink::mojom::AecDumpManager> receiver);
   void CreateMediaLogRecordHost(

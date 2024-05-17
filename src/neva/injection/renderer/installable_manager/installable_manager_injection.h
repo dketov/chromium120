@@ -19,7 +19,7 @@
 
 #include "gin/object_template_builder.h"
 #include "gin/wrappable.h"
-#include "mojo/public/cpp/bindings/associated_remote.h"
+#include "mojo/public/cpp/bindings/remote.h"
 #include "neva/app_runtime/public/mojom/installable_manager.mojom.h"
 #include "v8/include/v8.h"
 
@@ -60,7 +60,7 @@ class InstallableManagerInjection
   void OnInstallApp(std::unique_ptr<v8::Persistent<v8::Function>> callback,
                     bool success);
 
-  mojo::AssociatedRemote<neva_app_runtime::mojom::InstallableManager>
+  mojo::Remote<neva_app_runtime::mojom::InstallableManager>
       installable_manager_;
   base::WeakPtrFactory<InstallableManagerInjection> weak_factory_;
 };
