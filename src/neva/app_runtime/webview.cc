@@ -89,6 +89,8 @@ void GetPluginsCallback(const std::vector<content::WebPluginInfo>& plugins) {}
 #if defined(ENABLE_PWA_MANAGER_WEBAPI)
 #include "components/webapps/browser/installable/installable_manager.h"
 #include "extensions/shell/neva/web_view_guest_installable_manager.h"
+#include "neva/injection/renderer/grit/injection_resources.h"
+#include "ui/base/resource/resource_bundle.h"
 #endif  // ENABLE_PWA_MANAGER_WEBAPI
 
 namespace {
@@ -1232,6 +1234,14 @@ void WebView::DidFinishLoad(content::RenderFrameHost* render_frame_host,
   if (validated_url.SchemeIsHTTPOrHTTPS() && pwa_is_starting_) {
     installable_manager_->MaybeUpdate();
     pwa_is_starting_ = false;
+  }
+
+  bool is_main_frame = render_frame_host && !render_frame_host->GetParent();
+  if (is_pwa_ && !validated_url.IsAboutBlank() && is_main_frame) {
+    const std::string objects_js =
+        ui::ResourceBundle::GetSharedInstance().LoadDataResourceString(
+            IDR_PWA_NAVIGATEBUTTON_JS);
+    RunJavaScript(objects_js);
   }
 #endif  // ENABLE_PWA_MANAGER_WEBAPI
   // Async notification is required for webOS WAM app exit logic which

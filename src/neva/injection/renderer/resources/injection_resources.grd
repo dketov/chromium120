@@ -16,6 +16,7 @@
       <include name="IDR_WEBOSSERVICEBRIDGE_ROLLBACK_JS" file="webosservicebridge_rollback.js" type="BINDATA" />
       <include name="IDR_WEBOSSYSTEM_INJECTION_JS" file="webossystem_injection.js" type="BINDATA" />
       <include name="IDR_WEBOSSYSTEM_ROLLBACK_JS" file="webossystem_rollback.js" type="BINDATA" />
+      <include name="IDR_PWA_NAVIGATEBUTTON_JS" file="pwa_navigate_button.js" type="BINDATA" />
     </includes>
   </release>
 </grit>
