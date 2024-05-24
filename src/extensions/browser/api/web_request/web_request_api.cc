@@ -292,14 +292,23 @@ void WebRequestAPI::Shutdown() {
       ->OnBrowserContextShutdown(browser_context_);
 }
 
+#if !defined(USE_NEVA_APPRUNTIME)
 static base::LazyInstance<
     BrowserContextKeyedAPIFactory<WebRequestAPI>>::DestructorAtExit g_factory =
     LAZY_INSTANCE_INITIALIZER;
+#endif
 
 // static
 BrowserContextKeyedAPIFactory<WebRequestAPI>*
 WebRequestAPI::GetFactoryInstance() {
+#if defined(USE_NEVA_APPRUNTIME)
+  static base::NoDestructor<
+      extensions::BrowserContextKeyedAPIFactory<WebRequestAPI>>
+      g_webrequest_api_factory;
+  return g_webrequest_api_factory.get();
+#else
   return g_factory.Pointer();
+#endif
 }
 
 void WebRequestAPI::OnListenerRemoved(const EventListenerInfo& details) {
