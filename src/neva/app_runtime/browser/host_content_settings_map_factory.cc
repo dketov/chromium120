@@ -36,7 +36,8 @@ HostContentSettingsMap* HostContentSettingsMapFactory::GetForBrowserContext(
 
 // static
 HostContentSettingsMapFactory* HostContentSettingsMapFactory::GetInstance() {
-  return base::Singleton<HostContentSettingsMapFactory>::get();
+  static base::NoDestructor<HostContentSettingsMapFactory> instance;
+  return instance.get();
 }
 
 scoped_refptr<RefcountedKeyedService>
