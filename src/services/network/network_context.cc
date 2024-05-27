@@ -2982,10 +2982,15 @@ NetworkContext::MakeSessionCleanupCookieStore() {
   const bool enable_exclusive_access = false;
 #endif  // BUILDFLAG(IS_WIN)
   scoped_refptr<net::SQLitePersistentCookieStore> sqlite_store(
-      new net::SQLitePersistentCookieStore(
-          cookie_path, client_task_runner, background_task_runner,
-          params_->restore_old_session_cookies, crypto_delegate_.get(),
-          enable_exclusive_access));
+      new net::SQLitePersistentCookieStore(cookie_path, client_task_runner,
+                                           background_task_runner,
+                                           params_->restore_old_session_cookies,
+#if defined(USE_NEVA_APPRUNTIME)
+                                           crypto_delegate_,
+#else
+                                            crypto_delegate_.get(),
+#endif
+                                           enable_exclusive_access));
 
   return base::MakeRefCounted<SessionCleanupCookieStore>(sqlite_store,
                                                          crypto_delegate_);

@@ -17,6 +17,10 @@
 #include "net/cookies/cookie_monster.h"
 #include "net/log/net_log_with_source.h"
 
+#if defined(USE_NEVA_APPRUNTIME)
+#include "components/cookie_config/cookie_store_util_neva.h"
+#endif
+
 namespace base {
 class FilePath;
 class SequencedTaskRunner;
@@ -54,7 +58,12 @@ class COMPONENT_EXPORT(NET_EXTRAS) SQLitePersistentCookieStore
       const scoped_refptr<base::SequencedTaskRunner>& client_task_runner,
       const scoped_refptr<base::SequencedTaskRunner>& background_task_runner,
       bool restore_old_session_cookies,
+#if defined(USE_NEVA_APPRUNTIME)
+      const scoped_refptr<cookie_config::CookieNevaCryptoDelegate>&
+          crypto_delegate,
+#else
       CookieCryptoDelegate* crypto_delegate,
+#endif
       bool enable_exclusive_access);
 
   SQLitePersistentCookieStore(const SQLitePersistentCookieStore&) = delete;

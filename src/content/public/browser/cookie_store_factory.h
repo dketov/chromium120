@@ -14,6 +14,10 @@
 #include "base/memory/ref_counted.h"
 #include "content/common/content_export.h"
 
+#if defined(USE_NEVA_APPRUNTIME)
+#include "components/cookie_config/cookie_store_util_neva.h"
+#endif
+
 namespace base {
 class SequencedTaskRunner;
 }
@@ -52,8 +56,11 @@ struct CONTENT_EXPORT CookieStoreConfig {
   // Used to provide encryption hooks for the cookie store. The
   // CookieCryptoDelegate must outlive any cookie store created with this
   // config.
+#if defined(USE_NEVA_APPRUNTIME)
+  const scoped_refptr<cookie_config::CookieNevaCryptoDelegate> crypto_delegate;
+#else
   raw_ptr<net::CookieCryptoDelegate> crypto_delegate;
-
+#endif
   // Callbacks for data load events will be performed on |client_task_runner|.
   // If nullptr, uses the task runner for BrowserThread::IO.
   //

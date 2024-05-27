@@ -268,7 +268,12 @@ class SQLitePersistentCookieStore::Backend
           scoped_refptr<base::SequencedTaskRunner> client_task_runner,
           scoped_refptr<base::SequencedTaskRunner> background_task_runner,
           bool restore_old_session_cookies,
+#if defined(USE_NEVA_APPRUNTIME)
+          const scoped_refptr<cookie_config::CookieNevaCryptoDelegate>&
+              crypto_delegate,
+#else
           CookieCryptoDelegate* crypto_delegate,
+#endif
           bool enable_exclusive_access)
       : SQLitePersistentStoreBackendBase(path,
                                          /* histogram_tag = */ "Cookie",
@@ -278,7 +283,8 @@ class SQLitePersistentCookieStore::Backend
                                          std::move(client_task_runner),
                                          enable_exclusive_access),
         restore_old_session_cookies_(restore_old_session_cookies),
-        crypto_(crypto_delegate) {}
+        crypto_(crypto_delegate) {
+  }
 
   Backend(const Backend&) = delete;
   Backend& operator=(const Backend&) = delete;
@@ -413,7 +419,11 @@ class SQLitePersistentCookieStore::Backend
   bool restore_old_session_cookies_;
 
   // Not owned.
+#if defined(USE_NEVA_APPRUNTIME)
+  const scoped_refptr<cookie_config::CookieNevaCryptoDelegate> crypto_;
+#else
   raw_ptr<CookieCryptoDelegate, DanglingUntriaged> crypto_;
+#endif
 };
 
 namespace {
@@ -1411,14 +1421,20 @@ SQLitePersistentCookieStore::SQLitePersistentCookieStore(
     const scoped_refptr<base::SequencedTaskRunner>& client_task_runner,
     const scoped_refptr<base::SequencedTaskRunner>& background_task_runner,
     bool restore_old_session_cookies,
+#if defined(USE_NEVA_APPRUNTIME)
+    const scoped_refptr<cookie_config::CookieNevaCryptoDelegate>&
+        crypto_delegate,
+#else
     CookieCryptoDelegate* crypto_delegate,
+#endif
     bool enable_exclusive_access)
     : backend_(base::MakeRefCounted<Backend>(path,
                                              client_task_runner,
                                              background_task_runner,
                                              restore_old_session_cookies,
                                              crypto_delegate,
-                                             enable_exclusive_access)) {}
+                                             enable_exclusive_access)) {
+}
 
 void SQLitePersistentCookieStore::DeleteAllInList(
     const std::list<CookieOrigin>& cookies) {
