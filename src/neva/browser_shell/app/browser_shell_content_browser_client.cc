@@ -90,6 +90,14 @@ void BrowserShellContentBrowserClient::ExposeInterfacesToRenderer(
       };
   registry->AddInterface(base::BindRepeating(popupblocker_service),
                          content::GetUIThreadTaskRunner({}));
+
+  auto sitefilter_service =
+      [](mojo::PendingReceiver<browser::mojom::SiteFilterService> receiver) {
+         browser::BrowserService::GetBrowserService()->BindSiteFilterService(
+             std::move(receiver));
+      };
+  registry->AddInterface(base::BindRepeating(sitefilter_service),
+                           content::GetUIThreadTaskRunner({}));
 }
 
 void BrowserShellContentBrowserClient::SiteInstanceGotProcess(

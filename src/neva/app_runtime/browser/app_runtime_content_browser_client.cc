@@ -66,6 +66,7 @@
 #include "neva/app_runtime/public/app_runtime_switches.h"
 #include "neva/app_runtime/public/proxy_settings.h"
 #include "neva/app_runtime/webview.h"
+#include "neva/browser_service/browser/sitefilter_navigation_throttle.h"
 #include "neva/pal_service/pal_platform_factory.h"
 #include "neva/pal_service/public/external_protocol_handler_delegate.h"
 #include "neva/pal_service/public/notification_manager_delegate.h"
@@ -1232,6 +1233,10 @@ AppRuntimeContentBrowserClient::CreateThrottlesForNavigation(
   throttles.push_back(std::make_unique<extensions::ExtensionNavigationThrottle>(
       navigation_handle));
 #endif  // defined(USE_NEVA_CHROME_EXTENSIONS)
+
+  throttles.push_back(std::make_unique<neva::SiteFilterNavigationThrottle>(
+      navigation_handle));
+
   return throttles;
 }
 ///@}

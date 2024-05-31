@@ -33,6 +33,7 @@ std::set<std::string> allowed_injections = {
     std::string(injections::webapi::kUserPermission),
     std::string(injections::webapi::kMediaCapture),
     std::string(injections::webapi::kPopupBlocker),
+    std::string(injections::webapi::kSiteFilter),
 #endif
 #if defined(ENABLE_WEBOS_SYSTEM_WEBAPI)
     std::string(injections::webapi::kWebOSSystem),
