@@ -154,7 +154,7 @@ CHROME_FLAGS=" \
   --shell-fullscreen=true\
   --shell-web-apis="@@INJECTIONS@@"\
   --ozone-platform=wayland\
-  --load-extension=/usr/palm/applications/com.webos.app.enactbrowser/pdf.js\
+  --load-extension="@@BUILTIN_NEVA_EXTENSIONS@@"\
 "
 
 CHROME_FLAGS="${CHROME_FLAGS} ${CHROME_LS2_NAME_FLAG}"

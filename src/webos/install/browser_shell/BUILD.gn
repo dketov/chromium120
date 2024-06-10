@@ -76,6 +76,10 @@ install_run_script("browser_shell_run_script") {
     injections += [ "v8/installablemanager" ]
   }
 
+  builtin_neva_extensions = [
+    "$enact_browser_dir/pdf.js"
+  ]
+
   outputs = [ "$image_path/$browser_shell_dir/run_browser_shell" ]
 }
 

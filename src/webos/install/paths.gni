@@ -33,6 +33,9 @@ declare_args() {
   browser_dir = "/usr/palm/applications/com.webos.app.browser"
   browser_exe = "$app_shell_dir/chrome"
 
+  enact_browser_app = "com.webos.app.enactbrowser"
+  enact_browser_dir = "/usr/palm/applications/$enact_browser_app"
+
   chromedriver_app = "chromedriver"
   chromedriver_dir = "/usr/bin/$chromedriver_app"
   chromedriver_exe = "$chromedriver_dir/chromedriver"
@@ -75,6 +78,13 @@ template("install_run_script") {
     sources = invoker.sources
     outputs = invoker.outputs
     injections_string = string_join(",", invoker.injections)
-      args = [ "@@INJECTIONS@@=${injections_string}" ] + rebase_path(sources) + rebase_path(outputs)
+    builtin_neva_extensions_string = string_join(",", invoker.builtin_neva_extensions)
+
+    subst_string = "@@INJECTIONS@@=${injections_string}:@@BUILTIN_NEVA_EXTENSIONS@@=${builtin_neva_extensions_string}"
+
+    args = [ subst_string,
+             rebase_path(sources[0]),
+             rebase_path(outputs[0])
+    ]
   }
 }
