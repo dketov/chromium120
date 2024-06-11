@@ -38,10 +38,8 @@ base::Value::Dict CookieStoreOriginFiltered(
 }  // namespace
 
 SessionCleanupCookieStore::SessionCleanupCookieStore(
-    const scoped_refptr<net::SQLitePersistentCookieStore>& cookie_store,
-    const scoped_refptr<cookie_config::CookieNevaCryptoDelegate>&
-        crypto_delegate)
-    : persistent_store_(cookie_store), crypto_delegate_(crypto_delegate) {}
+    const scoped_refptr<net::SQLitePersistentCookieStore>& cookie_store)
+    : persistent_store_(cookie_store) {}
 
 SessionCleanupCookieStore::~SessionCleanupCookieStore() {
   net_log_.AddEventWithStringParams(

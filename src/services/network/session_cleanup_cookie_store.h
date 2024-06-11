@@ -38,9 +38,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) SessionCleanupCookieStore
 
   // Wraps the passed-in |cookie_store|.
   explicit SessionCleanupCookieStore(
-      const scoped_refptr<net::SQLitePersistentCookieStore>& cookie_store,
-      const scoped_refptr<cookie_config::CookieNevaCryptoDelegate>&
-          crypto_delegate);
+      const scoped_refptr<net::SQLitePersistentCookieStore>& cookie_store);
 
   SessionCleanupCookieStore(const SessionCleanupCookieStore&) = delete;
   SessionCleanupCookieStore& operator=(const SessionCleanupCookieStore&) =
@@ -82,8 +80,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) SessionCleanupCookieStore
   bool force_keep_session_state_ = false;
 
   net::NetLogWithSource net_log_;
-
-  const scoped_refptr<cookie_config::CookieNevaCryptoDelegate> crypto_delegate_;
 };
 
 }  // namespace network

@@ -1801,6 +1801,51 @@ IN_PROC_BROWSER_TEST_F(NetworkServiceBoundedNetLogBrowserTest,
   // final checks are performed in TearDownInProcessBrowserTestFixture().
 }
 
+// This test verifies that when a cookie encryption provider is set when
+// creating a network context, then it results in a call to the GetEncryptor
+// method on the CookieEncryptionProvider.
+IN_PROC_BROWSER_TEST_F(NetworkServiceCookieEncryptionBrowserTest,
+                       CookieEncryptionProvider) {
+  const auto data_path =
+      shell()->web_contents()->GetBrowserContext()->GetPath();
+  auto context_params = network::mojom::NetworkContextParams::New();
+  context_params->file_paths = network::mojom::NetworkContextFilePaths::New();
+  context_params->file_paths->data_directory =
+      data_path.Append(FILE_PATH_LITERAL("TestContext"));
+  context_params->file_paths->cookie_database_name =
+      base::FilePath(FILE_PATH_LITERAL("Cookies"));
+  context_params->cert_verifier_params = GetCertVerifierParams(
+      cert_verifier::mojom::CertVerifierCreationParams::New());
+  context_params->enable_encrypted_cookies = true;
+
+  testing::StrictMock<TestCookieEncryptionProvider> provider;
+  context_params->cookie_encryption_provider = provider.BindRemote();
+
+  mojo::Remote<network::mojom::NetworkContext> network_context;
+  content::CreateNetworkContextInNetworkService(
+      network_context.BindNewPipeAndPassReceiver(), std::move(context_params));
+
+  EXPECT_CALL(provider, GetEncryptor)
+      .WillOnce(
+          [](network::mojom::CookieEncryptionProvider::GetEncryptorCallback
+                 callback) {
+            std::move(callback).Run(
+                os_crypt_async::GetTestEncryptorForTesting());
+          });
+
+  // Cookie here needs to be non-session to be written to the Cookies file.
+  GURL test_url = embedded_test_server()->GetURL(
+      "foo.com", "/cookies/set_persistent_cookie.html");
+
+  // This artificial delay verifies https://crbug.com/1511730 is fixed.
+  mojo::Remote<network::mojom::CookieManager> cookie_manager;
+  network_context->GetCookieManager(
+      cookie_manager.BindNewPipeAndPassReceiver());
+  cookie_manager->SetPreCommitCallbackDelayForTesting(base::Seconds(3));
+
+  ASSERT_EQ(net::OK, LoadBasicRequest(network_context.get(), test_url));
+}
+
 }  // namespace
 
 }  // namespace content

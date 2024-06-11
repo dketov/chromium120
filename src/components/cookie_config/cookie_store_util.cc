@@ -4,7 +4,6 @@
 
 #include "components/cookie_config/cookie_store_util.h"
 
-#include "base/lazy_instance.h"
 #include "build/build_config.h"
 #include "components/os_crypt/sync/os_crypt.h"
 #include "net/extras/sqlite/cookie_crypto_delegate.h"
@@ -54,20 +53,15 @@ bool CookieOSCryptoDelegate::DecryptString(const std::string& ciphertext,
   return OSCrypt::DecryptString(ciphertext, plaintext);
 }
 
-// Using a LazyInstance is safe here because this class is stateless and
-// requires 0 initialization.
-base::LazyInstance<CookieOSCryptoDelegate>::DestructorAtExit
-    g_cookie_crypto_delegate = LAZY_INSTANCE_INITIALIZER;
-
 }  // namespace
 
-net::CookieCryptoDelegate* GetCookieCryptoDelegate() {
-  return g_cookie_crypto_delegate.Pointer();
+std::unique_ptr<net::CookieCryptoDelegate> GetCookieCryptoDelegate() {
+  return std::make_unique<CookieOSCryptoDelegate>();
 }
 #else   // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) ||
         // BUILDFLAG(IS_CHROMEOS)
-net::CookieCryptoDelegate* GetCookieCryptoDelegate() {
-  return NULL;
+std::unique_ptr<net::CookieCryptoDelegate> GetCookieCryptoDelegate() {
+  return nullptr;
 }
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) ||
         // BUILDFLAG(IS_CHROMEOS)

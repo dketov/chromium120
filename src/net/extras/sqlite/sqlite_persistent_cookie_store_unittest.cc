@@ -19,6 +19,7 @@
 #include "base/functional/callback.h"
 #include "base/location.h"
 #include "base/memory/ref_counted.h"
+#include "base/memory/weak_ptr.h"
 #include "base/run_loop.h"
 #include "base/strings/stringprintf.h"
 #include "base/synchronization/waitable_event.h"
@@ -70,9 +71,17 @@ class CookieCryptor : public CookieCryptoDelegate {
 
   bool should_encrypt_ = true;
 
+  // Obtain a closure that can be called to trigger an initialize. If this
+  // instance has already been destructed then the returned base::OnceClosure
+  // does nothing. This allows tests to pass ownership to the CookieCryptor
+  // while still retaining a weak reference to the Init function.
+  base::OnceClosure GetInitClosure(base::OnceClosure callback);
+
  private:
   std::unique_ptr<crypto::SymmetricKey> key_;
   crypto::Encryptor encryptor_;
+
+  base::WeakPtrFactory<CookieCryptor> weak_ptr_factory_{this};
 };
 
 CookieCryptor::CookieCryptor()
@@ -84,6 +93,12 @@ CookieCryptor::CookieCryptor()
           256)) {
   std::string iv("the iv: 16 bytes");
   encryptor_.Init(key_.get(), crypto::Encryptor::CBC, iv);
+}
+
+base::OnceClosure CookieCryptor::GetInitClosure(base::OnceClosure callback) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  return base::BindOnce(&CookieCryptor::Init, weak_ptr_factory_.GetWeakPtr(),
+                        std::move(callback));
 }
 
 bool CookieCryptor::ShouldEncrypt() {
@@ -158,7 +173,8 @@ class SQLitePersistentCookieStoreTest : public TestWithTaskEnvironment {
         use_current_thread ? base::SingleThreadTaskRunner::GetCurrentDefault()
                            : client_task_runner_,
         background_task_runner_, restore_old_session_cookies,
-        cookie_crypto_delegate_.get(), enable_exclusive_access);
+        crypt_cookies ? std::make_unique<CookieCryptor>() : nullptr,
+        enable_exclusive_access);
   }
 
   void CreateAndLoad(bool crypt_cookies,
@@ -1267,8 +1283,8 @@ TEST_F(SQLitePersistentCookieStoreTest, KeyInconsistency) {
   // destroyed store's ops will happen on same runners as the previous
   // instances, so they should complete before the new PersistentCookieStore
   // starts looking at the state on disk.
-  Create(false, false, true /* want current thread to invoke cookie monster */,
-         false);
+  Create(/*crypt_cookies=*/true, false,
+         true /* want current thread to invoke cookie monster */, false);
   cookie_monster =
       std::make_unique<CookieMonster>(store_.get(), /*net_log=*/nullptr);
   ResultSavingCookieCallback<bool> cookie_scheme_callback2;

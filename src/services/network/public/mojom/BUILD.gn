@@ -1358,6 +1358,7 @@ mojom("mojom") {
   sources = [
     "cert_verifier_service.mojom",
     "clear_data_filter.mojom",
+    "cookie_encryption_provider.mojom",
     "cors_origin_pattern.mojom",
     "default_credentials.mojom",
     "dhcp_wpad_url_client.mojom",
@@ -1403,6 +1404,7 @@ mojom("mojom") {
     ":mojom_structured_headers",
     ":url_loader_base",
     ":websocket_mojom",
+    "//components/os_crypt/async/common:common_mojom",
     "//mojo/public/mojom/base",
     "//neva/pal_service/public/mojom",
     "//sandbox/policy/mojom",

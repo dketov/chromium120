@@ -145,8 +145,7 @@ IN_PROC_BROWSER_TEST_P(ChromeNetworkServiceBrowserTest, PRE_EncryptedCookies) {
 #endif
 IN_PROC_BROWSER_TEST_P(ChromeNetworkServiceBrowserTest,
                        MAYBE_EncryptedCookies) {
-  net::CookieCryptoDelegate* crypto_delegate =
-      cookie_config::GetCookieCryptoDelegate();
+  auto crypto_delegate = cookie_config::GetCookieCryptoDelegate();
   std::string ciphertext;
   crypto_delegate->EncryptString(kCookieValue, &ciphertext);
   // These checks are only valid if crypto is enabled on the platform.
