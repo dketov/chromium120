@@ -780,8 +780,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
 
   const raw_ptr<NetworkService> network_service_;
 
-  scoped_refptr<cookie_config::CookieNevaCryptoDelegate> crypto_delegate_;
-
   mojo::Remote<mojom::NetworkContextClient> client_;
 
   std::unique_ptr<ResourceScheduler> resource_scheduler_;

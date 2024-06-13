@@ -138,4 +138,10 @@ void SessionCleanupCookieStore::OnLoad(
   std::move(loaded_callback).Run(std::move(cookies));
 }
 
+#if defined(USE_NEVA_APPRUNTIME)
+net::CookieCryptoDelegate* SessionCleanupCookieStore::GetCookieCryptoDelegate() {
+  return persistent_store_->GetCookieCryptoDelegate();
+}
+#endif
+
 }  // namespace network

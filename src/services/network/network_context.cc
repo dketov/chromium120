@@ -3063,8 +3063,15 @@ NetworkContext::MakeSessionCleanupCookieStore() {
 
   if (params_->enable_encrypted_cookies) {
     if (params_->cookie_encryption_provider) {
+#if defined(USE_NEVA_APPRUNTIME)
+      crypto_delegate = std::make_unique<cookie_config::CookieNevaCryptoDelegate>(
+          background_task_runner);
+      static_cast<cookie_config::CookieNevaCryptoDelegate*>(crypto_delegate.get())
+          ->SetDefaultCryptoDelegate(cookie_config::GetCookieCryptoDelegate());
+#else
       crypto_delegate = std::make_unique<CookieOSCryptAsyncDelegate>(
           std::move(params_->cookie_encryption_provider));
+#endif
     } else {
       crypto_delegate = cookie_config::GetCookieCryptoDelegate();
     }
@@ -3267,10 +3274,15 @@ void NetworkContext::CreateTrustedUrlLoaderFactoryForNetworkService(
 
 void NetworkContext::SetOSCrypt(
     mojo::PendingRemote<pal::mojom::OSCrypt> os_crypt) {
-  if (!crypto_delegate_ || crypto_delegate_->HasOSCrypt()) {
+#if defined(USE_NEVA_APPRUNTIME)
+  cookie_config::CookieNevaCryptoDelegate* crypto_delegate =
+      static_cast<cookie_config::CookieNevaCryptoDelegate*>(
+          cookie_manager_->GetCookieCryptoDelegate());
+  if (!crypto_delegate || crypto_delegate->HasOSCrypt()) {
     return;
   }
-  crypto_delegate_->SetOSCrypt(std::move(os_crypt));
+  crypto_delegate->SetOSCrypt(std::move(os_crypt));
+#endif
 }
 
 void NetworkContext::SetSharedDictionaryCacheMaxSize(uint64_t cache_max_size) {

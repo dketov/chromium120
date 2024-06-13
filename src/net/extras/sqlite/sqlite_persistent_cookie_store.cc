@@ -312,6 +312,12 @@ class SQLitePersistentCookieStore::Backend
   // Post background delete of all cookies that match |cookies|.
   void DeleteAllInList(const std::list<CookieOrigin>& cookies);
 
+#if defined(USE_NEVA_APPRUNTIME)
+  CookieCryptoDelegate* GetCookieCryptoDelegate() {
+    return crypto_.get();
+  }
+#endif
+
  private:
   // You should call Close() before destructing this object.
   ~Backend() override {
@@ -1485,6 +1491,10 @@ void SQLitePersistentCookieStore::Flush(base::OnceClosure callback) {
 
 size_t SQLitePersistentCookieStore::GetQueueLengthForTesting() {
   return backend_->GetQueueLengthForTesting();
+}
+
+CookieCryptoDelegate* SQLitePersistentCookieStore::GetCookieCryptoDelegate() {
+  return backend_->GetCookieCryptoDelegate();
 }
 
 SQLitePersistentCookieStore::~SQLitePersistentCookieStore() {

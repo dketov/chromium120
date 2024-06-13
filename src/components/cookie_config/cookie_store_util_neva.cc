@@ -24,6 +24,8 @@ CookieNevaCryptoDelegate::CookieNevaCryptoDelegate(
     const scoped_refptr<base::SequencedTaskRunner>& task_runner)
     : task_runner_(task_runner) {}
 
+CookieNevaCryptoDelegate::~CookieNevaCryptoDelegate() {}
+
 bool CookieNevaCryptoDelegate::HasOSCrypt() {
   return os_crypt_.is_bound() && os_crypt_.is_connected();
 }
@@ -38,8 +40,8 @@ void CookieNevaCryptoDelegate::SetOSCrypt(
 }
 
 void CookieNevaCryptoDelegate::SetDefaultCryptoDelegate(
-    net::CookieCryptoDelegate* default_delegate) {
-  default_delegate_ = default_delegate;
+    std::unique_ptr<net::CookieCryptoDelegate> default_delegate) {
+  default_delegate_ = std::move(default_delegate);
 }
 
 bool CookieNevaCryptoDelegate::ShouldEncrypt() {

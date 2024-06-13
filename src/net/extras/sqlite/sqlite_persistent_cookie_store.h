@@ -81,6 +81,10 @@ class COMPONENT_EXPORT(NET_EXTRAS) SQLitePersistentCookieStore
   // non-racey. Also requires the client thread to be current.
   size_t GetQueueLengthForTesting();
 
+#if defined(USE_NEVA_APPRUNTIME)
+  CookieCryptoDelegate* GetCookieCryptoDelegate();
+#endif
+
  private:
   ~SQLitePersistentCookieStore() override;
   void CompleteLoad(LoadedCallback callback,

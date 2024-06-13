@@ -345,6 +345,12 @@ void CookieManager::SetTrackingProtectionEnabledFor3pcd(bool enable) {
   cookie_settings_.set_tracking_protection_enabled_for_3pcd(enable);
 }
 
+#if defined(USE_NEVA_APPRUNTIME)
+net::CookieCryptoDelegate* CookieManager::GetCookieCryptoDelegate() {
+  return session_cleanup_cookie_store_->GetCookieCryptoDelegate();
+}
+#endif
+
 void CookieManager::OnSettingsWillChange() {
   if (settings_will_change_callback_) {
     settings_will_change_callback_.Run();

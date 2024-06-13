@@ -60,6 +60,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) SessionCleanupCookieStore
   // |delete_cookie_predicate| returns true for.
   void DeleteSessionCookies(DeleteCookiePredicate delete_cookie_predicate);
 
+#if defined(USE_NEVA_APPRUNTIME)
+  net::CookieCryptoDelegate* GetCookieCryptoDelegate();
+#endif
+
  protected:
   ~SessionCleanupCookieStore() override;
 

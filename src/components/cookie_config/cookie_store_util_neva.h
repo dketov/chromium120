@@ -19,7 +19,6 @@
 
 #include <memory>
 
-#include "base/memory/ref_counted.h"
 #include "base/task/sequenced_task_runner.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
@@ -29,18 +28,18 @@
 namespace cookie_config {
 
 class CookieNevaCryptoDelegate
-    : public base::RefCountedThreadSafe<CookieNevaCryptoDelegate>,
-      public net::CookieCryptoDelegate {
+    : public net::CookieCryptoDelegate {
  public:
   explicit CookieNevaCryptoDelegate(
       const scoped_refptr<base::SequencedTaskRunner>& task_runner);
 
   CookieNevaCryptoDelegate(const CookieNevaCryptoDelegate&) = delete;
   CookieNevaCryptoDelegate& operator=(const CookieNevaCryptoDelegate&) = delete;
+  ~CookieNevaCryptoDelegate() override;
 
   bool HasOSCrypt();
   void SetOSCrypt(mojo::PendingRemote<pal::mojom::OSCrypt> os_crypt);
-  void SetDefaultCryptoDelegate(net::CookieCryptoDelegate*);
+  void SetDefaultCryptoDelegate(std::unique_ptr<net::CookieCryptoDelegate> delegate);
 
   // net::CookieCryptoDelegate
   bool ShouldEncrypt() override;
@@ -53,7 +52,7 @@ class CookieNevaCryptoDelegate
   void OnConnectionError(uint32_t custom_reason,
                          const std::string& description);
 
-  net::CookieCryptoDelegate* default_delegate_ = nullptr;
+  std::unique_ptr<net::CookieCryptoDelegate> default_delegate_;
 
   scoped_refptr<base::SequencedTaskRunner> task_runner_;
   mojo::Remote<pal::mojom::OSCrypt> os_crypt_;
