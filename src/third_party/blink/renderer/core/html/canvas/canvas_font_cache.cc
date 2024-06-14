@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/core/html/canvas/canvas_font_cache.h"
 
+#include "base/metrics/field_trial_params.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/renderer/core/css/parser/css_parser.h"
 #include "third_party/blink/renderer/core/css/resolver/style_resolver.h"
@@ -49,25 +50,56 @@ const ComputedStyle* CreateDefaultFontStyle(const Document& document) {
 CanvasFontCache::CanvasFontCache(Document& document)
     : document_(&document),
       default_font_style_(CreateDefaultFontStyle(document)),
-      pruning_scheduled_(false) {}
+      pruning_scheduled_(false) {
+  VLOG(1) << "CanvasFontCache limits: max=" << MaxFonts()
+          << " hard=" << VisibleHardMaxFonts()
+          << " hidden=" << HiddenHardMaxFonts();
+}
 
 CanvasFontCache::~CanvasFontCache() {
 }
 
+BASE_FEATURE(kCanvasFontCacheCustomLimits,
+             "CanvasFontCacheCustomLimits",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+constexpr base::FeatureParam<int> kCanvasFontCacheMaxFontsParam{
+    &kCanvasFontCacheCustomLimits, "max-fonts", CanvasFontCacheMaxFonts};
+constexpr base::FeatureParam<int> kCanvasFontCacheHardMaxFontsParam{
+    &kCanvasFontCacheCustomLimits, "hard-max-fonts",
+    CanvasFontCacheHardMaxFonts};
+constexpr base::FeatureParam<int> kCanvasFontCacheHiddenMaxFontsParam{
+    &kCanvasFontCacheCustomLimits, "hidden-max-fonts",
+    CanvasFontCacheHardMaxFonts};
+
 unsigned CanvasFontCache::MaxFonts() {
+  if (base::FeatureList::IsEnabled(kCanvasFontCacheCustomLimits)) {
+    return kCanvasFontCacheMaxFontsParam.Get();
+  }
   return MemoryPressureListenerRegistry::
                  IsLowEndDeviceOrPartialLowEndModeEnabledIncludingCanvasFontCache()
              ? CanvasFontCacheMaxFontsLowEnd
              : CanvasFontCacheMaxFonts;
 }
 
+unsigned CanvasFontCache::VisibleHardMaxFonts() {
+  if (base::FeatureList::IsEnabled(kCanvasFontCacheCustomLimits)) {
+    return kCanvasFontCacheHardMaxFontsParam.Get();
+  }
+  return MemoryPressureListenerRegistry::
+                 IsLowEndDeviceOrPartialLowEndModeEnabledIncludingCanvasFontCache()
+             ? CanvasFontCacheHardMaxFontsLowEnd
+             : CanvasFontCacheHardMaxFonts;
+}
+
+unsigned CanvasFontCache::HiddenHardMaxFonts() {
+  if (base::FeatureList::IsEnabled(kCanvasFontCacheCustomLimits)) {
+    return kCanvasFontCacheHiddenMaxFontsParam.Get();
+  }
+  return CanvasFontCacheHiddenMaxFonts;
+}
+
 unsigned CanvasFontCache::HardMaxFonts() {
-  return document_->hidden()
-             ? CanvasFontCacheHiddenMaxFonts
-             : (MemoryPressureListenerRegistry::
-                        IsLowEndDeviceOrPartialLowEndModeEnabledIncludingCanvasFontCache()
-                    ? CanvasFontCacheHardMaxFontsLowEnd
-                    : CanvasFontCacheHardMaxFonts);
+  return document_->hidden() ? HiddenHardMaxFonts() : VisibleHardMaxFonts();
 }
 
 bool CanvasFontCache::GetFontUsingDefaultStyle(HTMLCanvasElement& element,
