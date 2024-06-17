@@ -57,7 +57,6 @@
 #include "extensions/shell/browser/shell_navigation_ui_data.h"
 #include "extensions/shell/browser/shell_speech_recognition_manager_delegate.h"
 #include "extensions/shell/common/version.h"  // Generated file.
-#include "neva/browser_service/browser/cookiemanager_service_impl.h"
 #include "neva/browser_service/browser/popupblocker_service_impl.h"
 #include "neva/browser_service/browser/userpermission_service_impl.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
@@ -764,15 +763,6 @@ void ShellContentBrowserClient::BindBadgeServiceForFrame(
 #endif  // defined(USE_NEVA_APPRUNTIME)
 
 #if defined(USE_NEVA_BROWSER_SERVICE)
-void ShellContentBrowserClient::OverrideWebkitPrefs(
-    content::WebContents* web_contents,
-    WebPreferences* prefs) {
-  prefs->cookie_enabled =
-      browser::CookieManagerServiceImpl::Get()->IsCookieEnabled();
-  if (override_web_preferences_callback_)
-    override_web_preferences_callback_.Run(prefs);
-}
-
 std::vector<std::unique_ptr<blink::URLLoaderThrottle>>
 ShellContentBrowserClient::CreateURLLoaderThrottles(
     const network::ResourceRequest& request,

@@ -199,13 +199,6 @@ class ShellContentBrowserClient : public content::ContentBrowserClient {
   blink::UserAgentMetadata GetUserAgentMetadata() override;
 #endif  // defined(USE_NEVA_APPRUNTIME)
 #if defined(USE_NEVA_BROWSER_SERVICE)
-  void OverrideWebkitPrefs(content::WebContents* web_contents,
-                           blink::web_pref::WebPreferences* prefs) override;
-  void set_override_web_preferences_callback(
-      base::RepeatingCallback<void(blink::web_pref::WebPreferences*)>
-          callback) {
-    override_web_preferences_callback_ = std::move(callback);
-  }
 
   std::vector<std::unique_ptr<blink::URLLoaderThrottle>>
   CreateURLLoaderThrottles(
@@ -247,11 +240,6 @@ class ShellContentBrowserClient : public content::ContentBrowserClient {
   // Owned by content::BrowserMainLoop.
   raw_ptr<ShellBrowserMainParts, AcrossTasksDanglingUntriaged>
       browser_main_parts_;
-
-#if defined(USE_NEVA_BROWSER_SERVICE)
-  base::RepeatingCallback<void(blink::web_pref::WebPreferences*)>
-      override_web_preferences_callback_;
-#endif
 
   // Owned by ShellBrowserMainParts.
   raw_ptr<ShellBrowserMainDelegate, DanglingUntriaged> browser_main_delegate_;
