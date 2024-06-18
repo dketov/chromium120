@@ -5,6 +5,8 @@
 #ifndef BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_PARTITION_ALLOC_BASE_STRINGS_SAFE_SPRINTF_H_
 #define BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_PARTITION_ALLOC_BASE_STRINGS_SAFE_SPRINTF_H_
 
+#include <cstddef>
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -184,7 +186,7 @@ struct Arg {
   //
   // Warning: don't just do Arg(NULL) here because in some libcs, NULL is an
   // alias for nullptr!
-  Arg(nullptr_t p) : type(INT) {
+  Arg(std::nullptr_t p) : type(INT) {
     integer.i = 0;
     // Internally, SafeSprintf expects to represent nulls as integers whose
     // width is equal to sizeof(NULL), which is not necessarily equal to

@@ -38,7 +38,7 @@ declare_args() {
   # The default linker everywhere else.
   # NEVA: disable use_lld for webOS built with GCC and ld.gold.
   # RP: enable use_lld for webOS default_toolchain
-  use_lld = is_clang && current_os != "zos" && (!is_webos || current_toolchain == default_toolchain)
+  use_lld = is_clang && current_os != "zos"
 
   # If true, optimize for size.
   # Default to favoring speed over size for platforms not listed below.

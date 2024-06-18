@@ -520,7 +520,7 @@ config("compiler") {
 
   # Linux-specific compiler flags setup.
   # ------------------------------------
-  if (use_gold) {
+  if (use_gold && !use_lld) {
     ldflags += [ "-fuse-ld=gold" ]
     if (!is_android) {
       # On Android, this isn't needed.  gcc in the NDK knows to look next to
@@ -1052,21 +1052,22 @@ config("compiler") {
   }
 
   # webOS specific config for clang build
-  if (is_clang && is_webos && !use_custom_libcxx) {
-    if (!clang_use_stdlib) {
-      ldflags += [ "-lc++"]
-    } else {
-      ldflags += [ "-stdlib=libstdc++" ]
-    }
+  if (current_toolchain == default_toolchain) {
+    if (is_clang && is_webos && !use_custom_libcxx) {
+      if (!clang_use_stdlib) {
+        ldflags += [ "-lc++"]
+      } else {
+        ldflags += [ "-stdlib=libstdc++" ]
+      }
 
-    if (target_cpu == "x64") {
-      ldflags += [ "-Wl,-dynamic-linker,/lib/ld-linux-x86-64.so.2"]
-    }
-    if (target_cpu == "arm") {
-      ldflags += [ "-Wl,-dynamic-linker,/lib/ld-linux-armhf.so.3"]
+      if (target_cpu == "x64") {
+        ldflags += [ "-Wl,-dynamic-linker,/lib/ld-linux-x86-64.so.2"]
+      }
+      if (target_cpu == "arm") {
+        ldflags += [ "-Wl,-dynamic-linker,/lib/ld-linux-armhf.so.3"]
+      }
     }
   }
-
   # Normally, this would be defined in the `runtime_library` config but NaCl
   # saigo libc++ does not use the custom hermetic libc++. Unfortunately, there
   # isn't really a better config to add this define for the define to
