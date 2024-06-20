@@ -245,7 +245,7 @@ AppRuntimeBrowserContext::AppRuntimeBrowserContext(const std::string& partition,
       path_(InitPath(partition)),
       notifier_client_(std::make_unique<NotifierClient>(this)) {
 #if defined(USE_LOCAL_STORAGE_TRACKER)
-  local_storage_tracker_ = content::LocalStorageTracker::Create().release();
+  local_storage_tracker_ = content::LocalStorageTracker::GetInstance();
   local_storage_tracker_->Initialize(GetPath());
 #endif
 

@@ -41,7 +41,7 @@ class LocalStorageTracker {
   LocalStorageTracker& operator=(const LocalStorageTracker&) = delete;
   virtual ~LocalStorageTracker() = default;
 
-  static std::unique_ptr<LocalStorageTracker> Create();
+  static LocalStorageTracker* GetInstance();
   virtual void Initialize(const base::FilePath& data_file_path) = 0;
   virtual void OnAccessOrigin(const std::string& app_id,
                               const GURL& origin,

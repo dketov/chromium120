@@ -36,7 +36,7 @@ class LocalStorageTrackerMojoImpl : local_storage::mojom::LocalStorageTracker {
                const std::string& url,
                SaveUrlCallback callback) override {
     std::move(callback).Run();
-    auto lst = content::LocalStorageTracker::Create().release();
+    auto lst = content::LocalStorageTracker::GetInstance();
     if (lst) {
       VLOG(1) << "LocalStorageTracker  SaveUrl appID=" << application_id
               << " url=" << url;

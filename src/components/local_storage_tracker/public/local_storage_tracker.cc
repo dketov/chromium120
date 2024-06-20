@@ -46,17 +46,15 @@ LocalStorageTrackerFakeImpl* LocalStorageTrackerFakeImpl::GetInstance() {
   return base::Singleton<LocalStorageTrackerFakeImpl>::get();
 }
 
-std::unique_ptr<LocalStorageTracker> LocalStorageTracker::Create() {
+LocalStorageTracker* LocalStorageTracker::GetInstance() {
   if (local_storage_tracker::IsFeatureEnabled()) {
     VLOG(1) << "Local Storage Tracker feature is enabled - using "
                "LocalStorageTrackerImpl";
-    return std::unique_ptr<LocalStorageTrackerImpl>(
-        LocalStorageTrackerImpl::GetInstance());
+    return LocalStorageTrackerImpl::GetInstance();
   } else {
     VLOG(1) << "Local Storage Tracker feature is disabled - using "
                "LocalStorageTrackerFakeImpl";
-    return std::unique_ptr<LocalStorageTrackerFakeImpl>(
-        LocalStorageTrackerFakeImpl::GetInstance());
+    return LocalStorageTrackerFakeImpl::GetInstance();
   }
 }
 

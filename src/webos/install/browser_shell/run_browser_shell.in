@@ -132,7 +132,6 @@ CHROME_FLAGS=" \
   --disable-translate\
   --enable-blink-features=${ENABLE_BLINK_FEATURES}\
   --enable-file-cookies\
-  --local-storage-tracker\
   --enable-neva-ime\
   --enable-neva-user-agent-client-hints\
   --enable-notification-for-unsupported-features\
