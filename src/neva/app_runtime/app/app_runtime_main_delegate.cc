@@ -28,6 +28,7 @@
 #include "content/public/common/content_switches.h"
 #include "neva/app_runtime/browser/app_runtime_browser_switches.h"
 #include "neva/app_runtime/browser/app_runtime_content_browser_client.h"
+#include "neva/app_runtime/chrome_version.h"
 #include "neva/app_runtime/common/app_runtime_file_access_controller.h"
 #include "neva/app_runtime/public/app_runtime_switches.h"
 #include "neva/app_runtime/renderer/app_runtime_content_renderer_client.h"
@@ -133,6 +134,13 @@ absl::optional<int> AppRuntimeMainDelegate::BasicStartupComplete() {
   logging::SetLogItems(true /* enable_process_id */,
                        true /* enable_thread_id */, enable_timestamp,
                        enable_tickcount);
+
+  std::string process_type =
+      command_line->GetSwitchValueASCII(switches::kProcessType);
+  if (process_type.empty()) {
+    LOG(WARNING) << "This is Chrome version " << CHROME_VERSION_STRING
+                 << " (not a warning)";
+  }
 
   // The idea was seamlessly taken from //chrome/app/chrome_main_delegate.cc
   if (command_line->HasSwitch(kGitRevision)) {

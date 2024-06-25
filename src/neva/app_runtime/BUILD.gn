@@ -16,6 +16,7 @@
 
 import("//build/config/locales.gni")
 import("//build/config/ui.gni")
+import("//build/util/process_version.gni")
 import("//neva/app_runtime/app_runtime_locales.gni")
 import("//neva/neva.gni")
 import("//tools/grit/repack.gni")
@@ -380,6 +381,9 @@ static_library("app_runtime") {
   defines = [
     "WEBVIEW_IMPLEMENTATION",
   ]
+
+  # for version header
+  deps += [ ":version_header" ]
 }
 
 grit("app_runtime_inspector_resources_grit") {
@@ -512,4 +516,12 @@ repack("app_runtime_resources") {
   sources += [ "$root_gen_dir/content/browser/devtools/devtools_resources.pak" ]
   deps += [ "//content/browser/devtools:devtools_resources" ]
   output = "$root_out_dir/app_runtime_content.pak"
+}
+
+process_version("version_header") {
+  sources = [
+    "//chrome/VERSION"
+  ]
+  template_file = "common/chrome_version.h.in"
+  output = "$target_gen_dir/chrome_version.h"
 }
