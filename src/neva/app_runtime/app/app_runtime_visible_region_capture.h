@@ -59,6 +59,7 @@ class VisibleRegionCapture {
   ImageFormat image_format_;
   int image_quality_;
   bool is_transparent_;
+  base::WeakPtrFactory<VisibleRegionCapture> weak_ptr_factory_{this};
 };
 
 }  // namespace neva_app_runtime

@@ -48,7 +48,7 @@ VisibleRegionCapture::VisibleRegionCapture(ReplyCallback callback,
     view->CopyFromSurface(
         gfx::Rect(), gfx::Size(),
         base::BindOnce(&VisibleRegionCapture::OnBitmapCaptured,
-                       base::Unretained(this)));
+                       weak_ptr_factory_.GetWeakPtr()));
     return;
   }
   std::move(callback_).Run(std::string());
@@ -91,14 +91,14 @@ void VisibleRegionCapture::EncodeBitmapOnWorkerThread(
   content::GetUIThreadTaskRunner({})->PostTask(
       FROM_HERE,
       base::BindOnce(&VisibleRegionCapture::OnBitmapEncodedOnUIThread,
-                     base::Unretained(this), success, std::move(base64_data)));
+                     weak_ptr_factory_.GetWeakPtr(), success, std::move(base64_data)));
 }
 
 void VisibleRegionCapture::OnBitmapCaptured(const SkBitmap& bitmap) {
   base::ThreadPool::PostTask(
       FROM_HERE, {base::TaskPriority::USER_VISIBLE},
       base::BindOnce(&VisibleRegionCapture::EncodeBitmapOnWorkerThread,
-                     base::Unretained(this),
+                     weak_ptr_factory_.GetWeakPtr(),
                      bitmap));
 }
 
