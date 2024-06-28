@@ -317,8 +317,10 @@ void WaylandWindowWebos::SetContentsBounds() {
   // with requested size for windows from compositor.
   // Therefore, here we set the screen size for full screen mode.
   display::Screen* screen = display::Screen::GetScreen();
-  if (!screen)
+  if (!screen) {
     NOTREACHED() << "Unable to retrieve valid display::Screen";
+    return;
+  }
   SetBoundsInPixels(screen->GetPrimaryDisplay().bounds());
 }
 
