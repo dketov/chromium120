@@ -216,7 +216,7 @@ PageContents::~PageContents() {
   if (web_contents_.get())
     web_contents_->SetDelegate(nullptr);
 
-  ShellEnvironment::GetInstance()->Release(this).release();
+  ShellEnvironment::GetInstance()->Release(this).reset();
 }
 
 void PageContents::Activate() {

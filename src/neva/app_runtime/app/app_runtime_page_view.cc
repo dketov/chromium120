@@ -50,7 +50,7 @@ PageView::~PageView() {
   }
 
   DeleteAllChildViews();
-  ShellEnvironment::GetInstance()->Release(this).release();
+  ShellEnvironment::GetInstance()->Release(this).reset();
 }
 
 void PageView::SetDelegate(PageViewDelegate* delegate) {
