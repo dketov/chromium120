@@ -169,6 +169,9 @@ WebView::~WebView() {
 
   GetAppRuntimeContentBrowserClient()->RemovePwaAppOrigin(
       web_contents_->GetPrimaryMainFrame()->GetProcess()->GetID());
+
+  GetAppRuntimeContentBrowserClient()->RemoveExternalLinkPermitList(
+      web_contents_->GetPrimaryMainFrame()->GetProcess()->GetID());
 #endif  // ENABLE_PWA_MANAGER_WEBAPI
   web_contents_->SetDelegate(nullptr);
 }
@@ -1229,6 +1232,16 @@ void WebView::DidFinishLoad(content::RenderFrameHost* render_frame_host,
   if (validated_url.SchemeIsHTTPOrHTTPS() && pwa_is_starting_) {
     installable_manager_.MaybeUpdate(web_contents_.get());
     pwa_is_starting_ = false;
+
+    if (render_frame_host) {
+      const net::HttpResponseHeaders* headers =
+          render_frame_host->GetLastResponseHeaders();
+      if (headers) {
+        GetAppRuntimeContentBrowserClient()->SetPwaExternalLinkPermitList(
+            web_contents_->GetPrimaryMainFrame()->GetProcess()->GetID(),
+            headers);
+      }
+    }
   }
 
   bool is_main_frame = render_frame_host && !render_frame_host->GetParent();

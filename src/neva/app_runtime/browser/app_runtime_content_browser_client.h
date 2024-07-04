@@ -266,6 +266,9 @@ class AppRuntimeContentBrowserClient : public content::ContentBrowserClient {
       int frame_tree_node_id) override;
 
 #if defined(ENABLE_PWA_MANAGER_WEBAPI)
+  void GetPwaExternalLinkPermitList(int child_process_id, std::string &list) const;
+  void SetPwaExternalLinkPermitList(int child_process_id, const net::HttpResponseHeaders* headers);
+  void RemoveExternalLinkPermitList(int child_process_id);
   void SetPwaAppOrigin(int child_process_id, const GURL& url);
   void RemovePwaAppOrigin(int child_process_id);
   void OpenUrlInBrowser(const std::string& url);
@@ -317,6 +320,7 @@ class AppRuntimeContentBrowserClient : public content::ContentBrowserClient {
   std::map<int, GURL> pwa_origins_;
   std::unique_ptr<pal::WebAppBrowserNavigationDelegate>
       pal_browsernavigation_delegate_;
+  std::map<int, std::string> pwa_externalLink_permit_list_;
 #endif  // ENABLE_PWA_MANAGER_WEBAPI
 };
 

@@ -104,6 +104,7 @@
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/navigation_throttle.h"
 #include "neva/pal_service/pal_platform_factory.h"
+#include "third_party/re2/src/re2/re2.h"
 #endif  // ENABLE_PWA_MANAGER_WEBAPI
 
 namespace neva_app_runtime {
@@ -1166,11 +1167,32 @@ class PwaNavigationThrottle : public NavigationThrottle {
   ~PwaNavigationThrottle() override = default;
 
   ThrottleCheckResult WillStartRequest() override {
+    int pid = navigation_handle()
+                  ->GetWebContents()
+                  ->GetPrimaryMainFrame()
+                  ->GetProcess()
+                  ->GetID();
+
+    std::string permit_list;
+    browser_client_->GetPwaExternalLinkPermitList(pid, permit_list);
+
     if (url::IsSameOriginWith(navigation_handle()->GetURL(), pwa_url_))
       return PROCEED;
-    std::string navigation_url = navigation_handle()->GetURL().spec();
-    browser_client_->OpenUrlInBrowser(navigation_url);
 
+    RenderFrameHost* render_frame_host =
+        navigation_handle()->GetParentFrameOrOuterDocument();
+
+    if (render_frame_host)
+      return PROCEED;
+
+    std::string navigation_url = navigation_handle()->GetURL().spec();
+
+    if (!permit_list.empty()) {
+      if (RE2::PartialMatch(navigation_url, permit_list))
+        return PROCEED;
+    }
+
+    browser_client_->OpenUrlInBrowser(navigation_url);
     return CANCEL_AND_IGNORE;
   }
 
@@ -1206,6 +1228,64 @@ void AppRuntimeContentBrowserClient::RemovePwaAppOrigin(int child_process_id) {
 void AppRuntimeContentBrowserClient::OpenUrlInBrowser(const std::string& url) {
   if (pal_browsernavigation_delegate_)
     pal_browsernavigation_delegate_->OpenUrlInBrowser(url);
+}
+
+void AppRuntimeContentBrowserClient::SetPwaExternalLinkPermitList(
+    int child_process_id,
+    const net::HttpResponseHeaders* headers) {
+  if (pwa_externalLink_permit_list_.count(child_process_id))
+    return;
+
+  std::string permit_list_url;
+  size_t iter = 0;
+  std::string name, value;
+  while (headers->EnumerateHeaderLines(&iter, &name, &value)) {
+    if (name == "content-security-policy")
+      break;
+    value = "";
+  }
+
+  if (value.empty())
+    return;
+
+  for (const auto& directive : base::SplitStringPiece(
+           value, ";", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY)) {
+    size_t pos = directive.find_first_of(base::kWhitespaceASCII);
+    if (pos != std::string::npos) {
+      auto name_field = directive.substr(0, pos);
+      if (RE2::PartialMatch(name_field.begin(),
+                            "frame-src|default-src|script-src")) {
+        for (auto& ss : base::SplitString(directive.substr(pos + 1), " ",
+                                          base::TRIM_WHITESPACE,
+                                          base::SPLIT_WANT_NONEMPTY)) {
+          if (!RE2::PartialMatch(ss, "blob|'|data")) {
+            pos = ss.find("*");
+            if (pos != std::string::npos)
+              ss.insert(pos, ".");
+            if (!permit_list_url.empty())
+              permit_list_url += "|";
+            permit_list_url += ss;
+          }
+        }
+      }
+    }
+  }
+  pwa_externalLink_permit_list_.emplace(child_process_id, permit_list_url);
+}
+
+void AppRuntimeContentBrowserClient::GetPwaExternalLinkPermitList(
+    int child_process_id,
+    std::string& list) const {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  list = "";
+  if (pwa_externalLink_permit_list_.count(child_process_id))
+    list = pwa_externalLink_permit_list_.at(child_process_id);
+}
+
+void AppRuntimeContentBrowserClient::RemoveExternalLinkPermitList(
+    int child_process_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  pwa_externalLink_permit_list_.erase(child_process_id);
 }
 #endif  // ENABLE_PWA_MANAGER_WEBAPI
 
