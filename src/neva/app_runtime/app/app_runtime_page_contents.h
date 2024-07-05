@@ -270,7 +270,7 @@ class PageContents : public AppRuntimeWebContentsDelegate,
   // zoom changing subscription
   raw_ptr<content::HostZoomMap> host_zoom_map_ = nullptr;
   base::CallbackListSubscription zoom_changed_subscription_;
-  double zoom_factor_;
+  double zoom_factor_ = 1;
   // data for backup session
   content::SessionStorageNamespaceMap session_storage_namespace_map_;
   content::BrowserContext* last_browser_context_ = nullptr;
