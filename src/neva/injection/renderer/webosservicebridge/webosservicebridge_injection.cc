@@ -296,7 +296,7 @@ void WebOSServiceBridgeInjection::Install(blink::WebLocalFrame* frame) {
       isolate,
       base::BindRepeating(
           &WebOSServiceBridgeInjection::WebOSServiceBridgeConstructorCallback,
-          base::RetainedRef(properties)));
+          base::RetainedRef(std::move(properties))));
   global
       ->Set(context, gin::StringToSymbol(isolate, kWebOSServiceBridge),
             templ->GetFunction(context).ToLocalChecked())

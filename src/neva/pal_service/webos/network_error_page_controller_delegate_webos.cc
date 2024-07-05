@@ -84,7 +84,7 @@ void NetworkErrorPageControllerDelegateWebOS::LaunchNetworkSettings(
   luna_client_->Call(
       luna::GetServiceURI(luna::service_uri::kApplicationManager,
                           kLaunchingMethod),
-      payload,
+      std::move(payload),
       base::BindOnce(
           &NetworkErrorPageControllerDelegateWebOS::OnLaunchNetworkSettings,
           base::Unretained(this)),

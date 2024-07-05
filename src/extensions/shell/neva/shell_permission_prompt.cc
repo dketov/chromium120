@@ -40,7 +40,7 @@ ShellPermissionPrompt::~ShellPermissionPrompt() = default;
 void ShellPermissionPrompt::ShowBubble(const GURL& origin_url,
                                        RequestTypes types) {
   browser::UserPermissionServiceImpl::Get()->ShowPrompt(
-      origin_url, types,
+      origin_url, std::move(types),
       base::BindPostTask(
           base::SequencedTaskRunner::GetCurrentDefault(),
           base::BindRepeating(&ShellPermissionPrompt::OnPromptResponse,

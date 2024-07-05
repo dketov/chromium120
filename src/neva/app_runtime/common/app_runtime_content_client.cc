@@ -87,7 +87,7 @@ void AppRuntimeContentClient::ExposeInterfacesToBrowser(
                 profiling_client;
             profiling_client->BindToInterface(std::move(receiver));
           }),
-      io_task_runner);
+      std::move(io_task_runner));
 }
 
 void AppRuntimeContentClient::AddAdditionalSchemes(Schemes* schemes) {

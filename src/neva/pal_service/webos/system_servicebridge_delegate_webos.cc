@@ -70,22 +70,18 @@ void SystemServiceBridgeDelegateWebOS::Call(std::string uri,
   unsigned token;
   if (luna::IsSubscription(payload)) {
     const bool subscribed = luna_client_->Subscribe(
-        uri,
-        payload,
+        std::move(uri), std::move(payload),
         base::BindRepeating(&SystemServiceBridgeDelegateWebOS::OnSubscription,
                             weak_factory_.GetWeakPtr()),
-        std::string("{}"),
-        &token);
+        std::string("{}"), &token);
     if (subscribed)
       subscription_tokens_.insert(token);
   } else {
     const bool called = luna_client_->Call(
-        uri,
-        payload,
+        std::move(uri), std::move(payload),
         base::BindOnce(&SystemServiceBridgeDelegateWebOS::OnResponse,
                        weak_factory_.GetWeakPtr()),
-        std::string("{}"),
-        &token);
+        std::string("{}"), &token);
     if (called)
       response_tokens_.insert(token);
   }

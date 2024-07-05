@@ -62,7 +62,7 @@ void SequencedNullVideoSink::CallRender() {
   const bool is_new_frame = new_frame != last_frame_;
   last_frame_ = new_frame;
   if (is_new_frame && new_frame_cb_)
-    new_frame_cb_.Run(new_frame);
+    new_frame_cb_.Run(std::move(new_frame));
 
   current_render_time_ += interval_;
 

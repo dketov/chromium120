@@ -41,7 +41,7 @@ bool PathProviderNeva(int key, base::FilePath* result) {
           base::CommandLine::ForCurrentProcess()->GetSwitchValuePath(
               switches::kNevaCertificatesPath);
       if (!certificates_path.empty()) {
-        *result = certificates_path;
+        *result = std::move(certificates_path);
         return true;
       }
       return false;

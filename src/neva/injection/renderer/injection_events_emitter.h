@@ -77,7 +77,7 @@ class InjectionEventsEmitter : public InjectionEventsEmitterBase {
   void DoEmit(const std::string& event, Ts... args) {
     auto it = listeners_.find(event);
     if (it != listeners_.end())
-      InvokeInJS(it->second, args...);
+      InvokeInJS(it->second, std::move(args)...);
   }
 
  private:
@@ -95,7 +95,7 @@ class InjectionEventsEmitter : public InjectionEventsEmitterBase {
             context, v8::MicrotasksScope::kRunMicrotasks);
         v8::Context::Scope context_scope(context);
         std::vector<v8::Local<v8::Value>> argv;
-        UnwrapAndPassArgs(handlers, isolate, context, argv, args...);
+        UnwrapAndPassArgs(handlers, isolate, context, argv, std::move(args)...);
       }
     }
   }
@@ -108,7 +108,7 @@ class InjectionEventsEmitter : public InjectionEventsEmitterBase {
                          TFirst val,
                          Ts... args) {
     argv.push_back(gin::Converter<TFirst>::ToV8(isolate, val));
-    UnwrapAndPassArgs(handlers, isolate, context, argv, args...);
+    UnwrapAndPassArgs(handlers, isolate, context, argv, std::move(args)...);
   }
 
   void UnwrapAndPassArgs(TFuncList& handlers,

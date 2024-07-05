@@ -144,7 +144,7 @@ bool WebRiskDatabase::DeleteThreatEntries(const std::vector<int>& removals) {
     if (statement.Step()) {
       std::string prefix = statement.ColumnString(0);
       WebriskThreatEntry entry;
-      entry.hash_prefix = prefix;
+      entry.hash_prefix = std::move(prefix);
       entries.push_back(entry);
     }
   }

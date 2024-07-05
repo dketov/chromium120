@@ -64,7 +64,7 @@ void LunaClient::CreateToast(const std::string& app_id,
   if (base::JSONWriter::Write(value, &param)) {
     luna_client_->Call(pal::luna::GetServiceURI(
                            pal::luna::service_uri::kNotification, kCreateToast),
-                       param);
+                       std::move(param));
   }
 }
 }  // namespace

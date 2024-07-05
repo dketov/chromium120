@@ -65,7 +65,7 @@ void ProxySettingDelegateWebos::SubscribeProxyInforChange() {
   InitLunaServiceClient();
   luna_service_client_->Subscribe(
       luna::GetServiceURI(luna::service_uri::kSettings, kGetMethodName),
-      proxy_payload,
+      std::move(proxy_payload),
       base::BindRepeating(
           &ProxySettingDelegateWebos::GetProxyInfoFromSettingsServiceCallback,
           weak_factory_.GetWeakPtr()),
@@ -118,7 +118,7 @@ void ProxySettingDelegateWebos::GetProxyInfoFromSettingsServiceCallback(
       ValueOrEmpty(setting_dict->FindString("proxySinglePassword"));
   proxy_settings.bypass_list =
       ValueOrEmpty(setting_dict->FindString("proxyBypassList"));
-  settings_service_proxy_info_ = proxy_settings;
+  settings_service_proxy_info_ = std::move(proxy_settings);
   content_browser_client_->SetProxyServer(settings_service_proxy_info_);
 }
 
@@ -131,19 +131,19 @@ bool ProxySettingDelegateWebos::GetProxyInfoFromSystemEnvironments() {
     return false;
 
   content::ProxySettings proxy_settings;
-  proxy_settings.ip = proxy_single_address;
-  proxy_settings.port = proxy_single_port;
+  proxy_settings.ip = std::move(proxy_single_address);
+  proxy_settings.port = std::move(proxy_single_port);
   proxy_settings.enabled = true;
   std::string scheme;
   if (env->GetVar("PROXY_SCHEME", &scheme))
-    proxy_settings.scheme = scheme;
+    proxy_settings.scheme = std::move(scheme);
   std::string username;
   if (env->GetVar("PROXY_ID", &username))
-    proxy_settings.username = username;
+    proxy_settings.username = std::move(username);
   std::string password;
   if (env->GetVar("PROXY_PW", &password))
-    proxy_settings.password = password;
-  system_enviroments_proxy_info_ = proxy_settings;
+    proxy_settings.password = std::move(password);
+  system_enviroments_proxy_info_ = std::move(proxy_settings);
   return true;
 }
 

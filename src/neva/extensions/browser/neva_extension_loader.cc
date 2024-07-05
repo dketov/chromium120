@@ -126,7 +126,8 @@ void NevaExtensionLoader::ReloadExtension(
   DCHECK_EQ(false, did_schedule_reload_);
   base::AutoReset<bool> reset_did_schedule_reload(&did_schedule_reload_, false);
 
-  extension_registrar_.ReloadExtension(extension_id, LoadErrorBehavior::kQuiet);
+  extension_registrar_.ReloadExtension(std::move(extension_id),
+                                       LoadErrorBehavior::kQuiet);
   // if (did_schedule_reload_)
   //   return;
 }
@@ -135,7 +136,7 @@ void NevaExtensionLoader::FinishExtensionReload(
     const extensions::ExtensionId old_extension_id,
     scoped_refptr<const extensions::Extension> extension) {
   if (extension) {
-    extension_registrar_.AddExtension(extension);
+    extension_registrar_.AddExtension(std::move(extension));
   }
 }
 

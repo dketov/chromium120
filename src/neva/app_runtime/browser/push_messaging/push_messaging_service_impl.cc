@@ -330,7 +330,7 @@ void PushMessagingServiceImpl::OnMessage(const std::string& app_id,
     browser_context_->DeliverPushMessage(
         app_identifier.origin(),
         app_identifier.service_worker_registration_id(), message.message_id,
-        payload,
+        std::move(payload),
         base::BindOnce(&PushMessagingServiceImpl::DeliverMessageCallback,
                        weak_factory_.GetWeakPtr(), app_identifier.app_id(),
                        app_identifier.origin(),

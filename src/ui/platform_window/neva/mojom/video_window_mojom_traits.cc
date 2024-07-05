@@ -31,7 +31,7 @@ bool StructTraits<ui::mojom::VideoWindowInfoDataView,
     return false;
 
   out_info->window_id = window_id;
-  out_info->native_window_id = native_window_id;
+  out_info->native_window_id = std::move(native_window_id);
 
   return true;
 }

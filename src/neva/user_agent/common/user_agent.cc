@@ -69,7 +69,7 @@ blink::UserAgentMetadata GetDefaultUserAgentMetadata() {
   brand_version_list.emplace_back("Chromium",
                                   version_info::GetMajorVersionNumber());
   brand_version_list.emplace_back(" Not;A Brand", "99");
-  metadata.brand_version_list = brand_version_list;
+  metadata.brand_version_list = std::move(brand_version_list);
 
   return metadata;
 }

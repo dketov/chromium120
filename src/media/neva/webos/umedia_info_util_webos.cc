@@ -81,9 +81,9 @@ std::string ExternalSubtitleTrackInfoToJson(
     track["description"] = value.tracks[i].description.c_str();
     tracks.append(track);
   }
-  externalSubtitleTrackInfo["tracks"] = tracks;
+  externalSubtitleTrackInfo["tracks"] = std::move(tracks);
 
-  eventInfo["info"] = externalSubtitleTrackInfo;
+  eventInfo["info"] = std::move(externalSubtitleTrackInfo);
   return writer.write(eventInfo);
 }
 
@@ -100,7 +100,7 @@ std::string ErrorInfoToJson(const std::string& media_id,
   error["errorCode"] = errorCode;
   error["errorText"] = errorText;
 
-  eventInfo["info"] = error;
+  eventInfo["info"] = std::move(error);
 
   return writer.write(eventInfo);
 }
@@ -128,7 +128,7 @@ std::string UserDefinedInfoToJson(const std::string& media_id,
 
   NEVA_VLOGF(1) << "- message: " << message;
 
-  eventInfo["info"] = userDefinedChanged;
+  eventInfo["info"] = std::move(userDefinedChanged);
   res = writer.write(eventInfo);
 
   return res;
@@ -148,7 +148,7 @@ std::string MasterClockInfoToJson(
   setMasterClockResult["port"] = masterClockInfo.port;
   setMasterClockResult["baseTime"] = masterClockInfo.baseTime;
 
-  eventInfo["info"] = setMasterClockResult;
+  eventInfo["info"] = std::move(setMasterClockResult);
   return writer.write(eventInfo);
 }
 
@@ -164,7 +164,7 @@ std::string SlaveClockInfoToJson(
 
   setSlaveClockResult["result"] = slaveClockInfo.result;
 
-  eventInfo["info"] = setSlaveClockResult;
+  eventInfo["info"] = std::move(setSlaveClockResult);
   return writer.write(eventInfo);
 }
 

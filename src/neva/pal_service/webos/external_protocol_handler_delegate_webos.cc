@@ -56,7 +56,7 @@ void ExternalProtocolHandlerDelegateWebOS::LaunchEnactBrowserWithUrl(
     luna_client_->Call(
         pal::luna::GetServiceURI(pal::luna::service_uri::kApplicationManager,
                                  kLaunchingMethod),
-        str_param);
+        std::move(str_param));
   }
 }
 

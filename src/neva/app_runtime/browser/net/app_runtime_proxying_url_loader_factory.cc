@@ -268,7 +268,7 @@ void AppRuntimeProxyingURLLoaderFactory::InProgressRequest::OnReceiveResponse(
     // Set-Cookie if it existed.
     auto saved_headers = current_response_->headers;
     current_response_ = std::move(head);
-    current_response_->headers = saved_headers;
+    current_response_->headers = std::move(saved_headers);
     ContinueToResponseStarted(net::OK);
   } else {
     current_response_ = std::move(head);
@@ -292,7 +292,7 @@ void AppRuntimeProxyingURLLoaderFactory::InProgressRequest::OnReceiveRedirect(
     // called before OnReceiveRedirect, so make sure the saved headers exist
     // before setting them.
     if (saved_headers)
-      current_response_->headers = saved_headers;
+      current_response_->headers = std::move(saved_headers);
     ContinueToBeforeRedirect(redirect_info, net::OK);
   } else {
     current_response_ = std::move(head);
@@ -472,7 +472,7 @@ void AppRuntimeProxyingURLLoaderFactory::InProgressRequest::ContinueToBeforeSend
 
   // Note: In Electron onBeforeSendHeaders is called for all protocols.
   int result = factory_->web_request_listener()->OnBeforeSendHeaders(
-      &info_.value(), request_, continuation, &request_.headers);
+      &info_.value(), request_, std::move(continuation), &request_.headers);
 
   if (result == net::ERR_BLOCKED_BY_CLIENT) {
     // The request was cancelled synchronously. Dispatch an error notification

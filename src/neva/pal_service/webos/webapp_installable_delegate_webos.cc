@@ -92,7 +92,8 @@ bool LunaClient::Call(std::string uri,
   if (!IsInitialized())
     return false;
 
-  return luna_client_->Call(uri, param, std::move(callback));
+  return luna_client_->Call(std::move(uri), std::move(param),
+                            std::move(callback));
 }
 
 std::string LunaClient::GetName() const {
@@ -260,7 +261,8 @@ void WebAppInstallableDelegateWebOS::UpdateApp() {
   std::string service_uri =
       luna::GetServiceURI(luna::service_uri::kAppInstallService, "install");
 
-  LunaClient::GetInstance()->Call(service_uri, call_params_str);
+  LunaClient::GetInstance()->Call(std::move(service_uri),
+                                  std::move(call_params_str));
 }
 
 void WebAppInstallableDelegateWebOS::CallAppInstall() {

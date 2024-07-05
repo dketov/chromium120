@@ -1036,7 +1036,7 @@ std::string UMediaClientImpl::UpdateMediaOption(const std::string& mediaOption,
   http_header["referer"] = referrer_;
   http_header["userAgent"] = user_agent_;
   http_header["cookies"] = cookies_;
-  media_option["option"]["transmission"]["httpHeader"] = http_header;
+  media_option["option"]["transmission"]["httpHeader"] = std::move(http_header);
   media_option["option"]["bufferControl"]["userBufferCtrl"] = false;
   media_option["option"]["appId"] = app_id_;
 

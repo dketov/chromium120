@@ -26,7 +26,7 @@ KeyboardEvdevNeva::KeyboardEvdevNeva(
     : KeyboardEvdev(modifiers,
                     keyboard_layout_engine,
                     callback,
-                    any_keys_are_pressed_callback) {
+                    std::move(any_keys_are_pressed_callback)) {
 #if defined(OS_WEBOS)
   SetAutoRepeatEnabled(false);
 #endif

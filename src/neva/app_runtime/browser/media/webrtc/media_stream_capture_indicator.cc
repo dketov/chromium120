@@ -125,7 +125,7 @@ class MediaStreamCaptureIndicator::UIDelegate : public content::MediaStreamUI {
              const blink::mojom::StreamDevices& devices,
              std::unique_ptr<::MediaStreamUI> ui,
              const std::u16string application_title)
-      : device_usage_(device_usage),
+      : device_usage_(std::move(device_usage)),
         devices_(devices),
         ui_(std::move(ui)),
         application_title_(std::move(application_title)) {
@@ -158,8 +158,10 @@ class MediaStreamCaptureIndicator::UIDelegate : public content::MediaStreamUI {
                                 ui_ ? base::OnceClosure() : stop_callback);
     }
 
-    if (ui_)
-      return ui_->OnStarted(stop_callback, std::move(source_callback));
+    if (ui_) {
+      return ui_->OnStarted(std::move(stop_callback),
+                            std::move(source_callback));
+    }
 
     return 0;
   }

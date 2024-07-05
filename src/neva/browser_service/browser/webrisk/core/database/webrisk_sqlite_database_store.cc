@@ -134,7 +134,7 @@ WebRiskSQLiteDatabaseStore::CreateEntryListFromRawHashes(
   for (int i = 0; i < hash_list.length(); i += kHashPrefixSize) {
     std::string hash_prefix = hash_list.substr(i, kHashPrefixSize);
     WebriskThreatEntry entry;
-    entry.hash_prefix = hash_prefix;
+    entry.hash_prefix = std::move(hash_prefix);
     entries.push_back(entry);
   }
   return entries;

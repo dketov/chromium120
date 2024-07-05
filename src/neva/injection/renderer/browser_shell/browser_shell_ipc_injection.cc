@@ -94,8 +94,7 @@ void BrowserShellIpcInjection::ConstructorCallback(
 
   (*shell_service)->CreateShellIpcEndpoint(std::move(pending_receiver),
                                            channel);
-  auto* shell_ipc = new BrowserShellIpcInjection(isolate,
-                                                 channel,
+  auto* shell_ipc = new BrowserShellIpcInjection(isolate, std::move(channel),
                                                  std::move(remote_endpoint));
   gin::Handle<injections::BrowserShellIpcInjection> handle =
       gin::CreateHandle(isolate, shell_ipc);

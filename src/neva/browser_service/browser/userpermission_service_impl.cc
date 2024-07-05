@@ -30,7 +30,7 @@ void UserPermissionServiceImpl::ShowPrompt(
     const GURL& requesting_url,
     RequestTypes types,
     base::RepeatingCallback<void(Response type)> response_cb) {
-  prompt_response_cb_ = response_cb;
+  prompt_response_cb_ = std::move(response_cb);
 
   std::vector<int32_t> request_types;
   for (permissions::RequestType type : types)

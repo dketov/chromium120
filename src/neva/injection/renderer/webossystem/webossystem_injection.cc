@@ -218,7 +218,8 @@ bool WebOSSystemInjection::SetCursor(gin::Arguments* args) {
       return false;
   }
 
-  std::vector<std::string> arguments = { cursor_arg, x, y };
+  std::vector<std::string> arguments = {std::move(cursor_arg), std::move(x),
+                                        std::move(y)};
   SendCommand("setCursor", arguments);
 
   return true;
@@ -269,7 +270,7 @@ void WebOSSystemInjection::SetInputRegion(gin::Arguments* args) {
   v8::Local<v8::String> json_str;
   if (maybe_json_str.ToLocal(&json_str)) {
     std::string json = gin::V8ToString(args->isolate(), json_str);
-    std::vector<std::string> arguments = { json };
+    std::vector<std::string> arguments = {std::move(json)};
     SendCommand("setInputRegion", arguments);
   }
 }
@@ -320,7 +321,7 @@ void WebOSSystemInjection::SetKeyMask(const std::vector<std::string>& str_array)
   std::string output_js;
   base::JSONWriter::Write(root, &output_js);
 
-  std::vector<std::string> arguments = { output_js };
+  std::vector<std::string> arguments = {std::move(output_js)};
   SendCommand("setKeyMask", arguments);
 }
 

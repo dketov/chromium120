@@ -599,8 +599,8 @@ void WebView::SetAppId(const std::string& app_id) {
   if (!renderer_prefs->application_id.compare(application_id) &&
       !renderer_prefs->display_id.compare(display_id))
     return;
-  renderer_prefs->application_id = application_id;
-  renderer_prefs->display_id = display_id;
+  renderer_prefs->application_id = std::move(application_id);
+  renderer_prefs->display_id = std::move(display_id);
   renderer_prefs->is_enact_browser = false;
 
   web_contents_->SyncRendererPrefs();

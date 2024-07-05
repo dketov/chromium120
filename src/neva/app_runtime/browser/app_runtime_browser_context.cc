@@ -338,7 +338,7 @@ base::FilePath AppRuntimeBrowserContext::InitPath(
   if (cmd_line->HasSwitch(kUserDataDir)) {
     base::FilePath new_path = cmd_line->GetSwitchValuePath(kUserDataDir);
     if (!new_path.empty()) {
-      path = new_path;
+      path = std::move(new_path);
       LOG(INFO) << "kUserDataDir is set.";
     } else {
       LOG(INFO) << "kUserDataDir is empty.";
