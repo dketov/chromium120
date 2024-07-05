@@ -20,11 +20,12 @@
 #include "content/public/browser/storage_partition.h"
 #include "neva/app_runtime/browser/app_runtime_browser_context.h"
 #include "neva/browser_service/browser_service.h"
-#include "neva/browser_service/browser/popupblocker_service_impl.h"
 #include "neva/browser_service/browser/cookiemanager_service_impl.h"
+#include "neva/browser_service/browser/popupblocker_service_impl.h"
 #include "neva/browser_shell/app/browser_shell_browser_main_parts.h"
 
 #if defined(USE_NEVA_BROWSER_SERVICE)
+#include "neva/app_runtime/browser/app_runtime_web_contents_delegate.h"
 #include "neva/browser_service/browser/malware_url_loader_throttle.h"
 #include "neva/browser_service/browser_service.h"
 #include "third_party/blink/public/common/web_preferences/web_preferences.h"
@@ -142,9 +143,9 @@ void BrowserShellContentBrowserClient::OverrideWebkitPrefs(
     blink::web_pref::WebPreferences* prefs) {
   prefs->cookie_enabled =
       browser::CookieManagerServiceImpl::Get()->IsCookieEnabled();
-  if (override_web_preferences_callback_){
-    override_web_preferences_callback_.Run(prefs);
-  }
+  content::WebContentsDelegate* delegate = web_contents->GetDelegate();
+  if (delegate)
+    delegate->OverrideWebkitPrefs(prefs);
 }
 
 #endif

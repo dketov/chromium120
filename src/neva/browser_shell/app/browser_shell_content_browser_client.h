@@ -53,24 +53,12 @@ class BrowserShellContentBrowserClient
 
   void OverrideWebkitPrefs(content::WebContents* web_contents,
                            blink::web_pref::WebPreferences* prefs) override;
-
-  void set_override_web_preferences_callback(
-      base::RepeatingCallback<void(blink::web_pref::WebPreferences*)>
-          callback) {
-    override_web_preferences_callback_ = std::move(callback);
-  }
-
 #endif
 
   void SiteInstanceGotProcess(content::SiteInstance* site_instance) override;
 
   bool IsNevaDynamicProxyEnabled() override;
 
-  private:
-#if defined(USE_NEVA_BROWSER_SERVICE)
-  base::RepeatingCallback<void(blink::web_pref::WebPreferences*)>
-      override_web_preferences_callback_;
-#endif
 };
 
 }  // namespace browser_shell
