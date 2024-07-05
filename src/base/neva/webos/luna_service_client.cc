@@ -67,7 +67,7 @@ std::string LunaServiceClient::GetServiceURI(URIType type,
       {URIType::MEDIACONTROLLER, kURIMediaController},
       {URIType::CAMERA, kURICamera},
   };
-  auto luna_service_uri = [&type]() {
+  auto luna_service_uri = [&type]() -> const auto& {
     std::map<URIType, std::string>::iterator it;
     it = kURIMap.find(type);
     if (it != kURIMap.end())

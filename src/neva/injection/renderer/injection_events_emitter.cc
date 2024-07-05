@@ -46,7 +46,9 @@ void InjectionEventsEmitterBase::GetEventNames(gin::Arguments* args) const {
   std::vector<std::string> names;
   std::transform(listeners_.cbegin(), listeners_.cend(),
                  std::back_inserter(names),
-                 [](TListenersMap::const_reference ref) { return ref.first; });
+                 [](TListenersMap::const_reference ref) -> const auto& {
+                   return ref.first;
+                 });
   args->Return(gin::ConvertToV8(args->isolate(), names));
 }
 
