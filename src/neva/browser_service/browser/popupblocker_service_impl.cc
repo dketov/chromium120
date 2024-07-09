@@ -204,7 +204,7 @@ std::string PopupBlockerServiceImpl::GetDomain(const std::string& url) const {
   if (!(decoded_url.is_valid() && decoded_url.IsStandard()))
     return {};
   std::string domain = decoded_url.host();
-  if (!domain.find(kWwwPrefix)) {
+  if (domain.starts_with(kWwwPrefix)) {
     domain = domain.substr(kWwwPrefix.length());
   }
   return domain;
