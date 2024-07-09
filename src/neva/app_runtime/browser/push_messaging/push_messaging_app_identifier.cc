@@ -249,6 +249,15 @@ size_t PushMessagingAppIdentifier::GetCount(PrefService* pref_service) {
 PushMessagingAppIdentifier::PushMessagingAppIdentifier(
     const PushMessagingAppIdentifier& other) = default;
 
+PushMessagingAppIdentifier& PushMessagingAppIdentifier::operator=(
+    const PushMessagingAppIdentifier& other) = default;
+
+PushMessagingAppIdentifier::PushMessagingAppIdentifier(
+    PushMessagingAppIdentifier&& other) = default;
+
+PushMessagingAppIdentifier& PushMessagingAppIdentifier::operator=(
+    PushMessagingAppIdentifier&& other) = default;
+
 PushMessagingAppIdentifier::PushMessagingAppIdentifier()
     : origin_(GURL::EmptyGURL()), service_worker_registration_id_(-1) {}
 

@@ -117,6 +117,16 @@ class PushMessagingAppIdentifier {
   // Copy constructor
   PushMessagingAppIdentifier(const PushMessagingAppIdentifier& other);
 
+  // Copy assignment operator
+  PushMessagingAppIdentifier& operator=(
+      const PushMessagingAppIdentifier& other);
+
+  // Move constructor
+  PushMessagingAppIdentifier(PushMessagingAppIdentifier&& other);
+
+  // Move assignment operator
+  PushMessagingAppIdentifier& operator=(PushMessagingAppIdentifier&& other);
+
  private:
   friend class PushMessagingAppIdentifierTest;
   friend class PushMessagingBrowserTest;
