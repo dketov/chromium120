@@ -40,7 +40,6 @@ WebOSGAVInjection::WebOSGAVInjection(blink::WebLocalFrame* frame)
     : InjectionBrowserControlBase(frame),
       data_manager_(CallFunction("initialize")) {
   auto* render_frame = content::RenderFrame::FromWebFrame(frame);
-  video_window_factory_ = render_frame->GetFrameVideoWindowFactory();
   if (render_frame)
     video_window_factory_ = render_frame->GetFrameVideoWindowFactory();
 }
