@@ -60,7 +60,7 @@ class DeviceMediaStreamAccessHandler : public MediaAccessHandler,
   void OnMediaStreamRequestResponse(
       content::WebContents* web_contents,
       int64_t request_id,
-      content::MediaStreamRequest request,
+      const content::MediaStreamRequest& request,
       const blink::mojom::StreamDevicesSet& devices,
       blink::mojom::MediaStreamRequestResult result,
       bool blocked_by_permissions_policy,

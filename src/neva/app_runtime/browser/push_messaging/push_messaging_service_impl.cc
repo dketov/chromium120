@@ -209,7 +209,7 @@ void PushMessagingServiceImpl::RemoveExpiredSubscriptions() {
 }
 
 void PushMessagingServiceImpl::UnexpectedChange(
-    PushMessagingAppIdentifier identifier,
+    const PushMessagingAppIdentifier& identifier,
     blink::mojom::PushUnregistrationReason reason,
     base::OnceClosure completed_closure) {
   auto unsubscribe_closure =

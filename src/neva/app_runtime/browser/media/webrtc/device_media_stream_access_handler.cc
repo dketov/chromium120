@@ -237,7 +237,7 @@ void DeviceMediaStreamAccessHandler::RegisterProfilePrefs(
 void DeviceMediaStreamAccessHandler::OnMediaStreamRequestResponse(
     content::WebContents* web_contents,
     int64_t request_id,
-    content::MediaStreamRequest request,
+    const content::MediaStreamRequest& request,
     const blink::mojom::StreamDevicesSet& stream_devices_set,
     blink::mojom::MediaStreamRequestResult result,
     bool blocked_by_permissions_policy,

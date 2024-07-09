@@ -226,7 +226,7 @@ class PushMessagingServiceImpl : public content::PushMessagingService,
   // The subscription given in |identifier| will be unsubscribed (and a
   // `pushsubscriptionchange` event fires if
   // features::kPushSubscriptionChangeEvent is enabled)
-  void UnexpectedChange(PushMessagingAppIdentifier identifier,
+  void UnexpectedChange(const PushMessagingAppIdentifier& identifier,
                         blink::mojom::PushUnregistrationReason reason,
                         base::OnceClosure completed_closure);
   void UnexpectedUnsubscribe(const PushMessagingAppIdentifier& app_identifier,
