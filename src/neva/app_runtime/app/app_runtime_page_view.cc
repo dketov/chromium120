@@ -71,7 +71,7 @@ PageContents* PageView::GetPageContents() const {
 
 std::unique_ptr<PageContents> PageView::SetPageContents(
     std::unique_ptr<PageContents> page_contents) {
-  if (page_contents.get() && page_contents->GetParentPageView()) {
+  if (page_contents && page_contents->GetParentPageView()) {
     LOG(WARNING) << "Provided PageContnets is already set to PageView.";
     return std::unique_ptr<PageContents>();
   }
@@ -79,7 +79,7 @@ std::unique_ptr<PageContents> PageView::SetPageContents(
   auto previous_page_contents = std::move(page_contents_);
   page_contents_ = std::move(page_contents);
 
-  if (page_contents_.get()) {
+  if (page_contents_) {
     page_contents_->SetParentPageView(this);
     if (page_contents_->GetWebContents()) {
       web_view_->SetBrowserContext(
@@ -103,7 +103,7 @@ std::unique_ptr<PageContents> PageView::SetPageContents(
     web_view_->SetWebContents(nullptr);
   }
 
-  if (previous_page_contents.get())
+  if (previous_page_contents)
     previous_page_contents->SetParentPageView(nullptr);
   return previous_page_contents;
 }
@@ -164,7 +164,7 @@ PageView* PageView::GetParentPageView() const {
 }
 
 void PageView::UpdatePageContents() {
-  if (!page_contents_.get())
+  if (!page_contents_)
     return;
 
   if (!page_contents_->GetWebContents())
@@ -216,7 +216,7 @@ views::View* PageView::GetView() const {
 
 void PageView::CloseIfMain() {
   if (parent_shell_window_) {
-    if (page_contents_.get())
+    if (page_contents_)
       page_contents_->Deactivate();
     DeleteAllChildViews();
   }
