@@ -42,7 +42,7 @@ WebOSAudioOutputStream::WebOSAudioOutputStream(
   VLOG(1) << __func__ << " this[" << this << "]";
 
   if (params.latency_tag() == AudioLatency::Type::kRtc) {
-    if (AudioDeviceDescription::IsDefaultDevice(device_id)) {
+    if (AudioDeviceDescription::IsDisplayDefaultDevice(device_id)) {
       if (device_id.size() > 1) {
         std::string display_id = device_id.substr(
             std::string(AudioDeviceDescription::kDefaultDeviceId).size(), 1);

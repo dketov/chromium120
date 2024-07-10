@@ -58,6 +58,9 @@ class MEDIA_EXPORT AudioManagerWebOS : public AudioManagerPulse {
 
   // AudioManagerPulse override.
   void GetAudioDeviceNames(bool input, AudioDeviceNames* device_names) override;
+  AudioParameters GetPreferredOutputStreamParameters(
+      const std::string& output_device_id,
+      const AudioParameters& input_params) override;
 
   std::string RegisterTrack(const std::string& stream_type);
   void UnregisterTrack(const std::string& track_id);

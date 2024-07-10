@@ -105,6 +105,21 @@ void AudioManagerWebOS::GetAudioDeviceNames(bool input_device,
     device_names->push_front(AudioDeviceName::CreateDefault());
 }
 
+AudioParameters AudioManagerWebOS::GetPreferredOutputStreamParameters(
+    const std::string& output_device_id,
+    const AudioParameters& input_params) {
+  AudioParameters params =
+      AudioManagerPulse::GetPreferredOutputStreamParameters(output_device_id,
+                                                            input_params);
+  if (!output_device_id.empty())
+    params.set_device_id(output_device_id);
+
+  VLOG(1) << __func__ << " output_device_id=" << output_device_id
+          << " params=" << params.AsHumanReadableString();
+
+  return params;
+}
+
 std::string AudioManagerWebOS::RegisterTrack(const std::string& stream_type) {
   return audio_service_->RegisterTrack(stream_type);
 }

@@ -337,7 +337,7 @@ void RendererWebAudioDeviceImpl::CreateAudioRendererSink() {
       if (web_frame) {
         auto* render_frame = RenderFrameImpl::FromWebFrame(web_frame);
         if (render_frame) {
-          device_id = media::AudioDeviceDescription::GetDefaultDeviceId(
+          device_id = media::AudioDeviceDescription::GetDisplayDefaultDevice(
               render_frame->GetRendererPreferences().display_id);
           VLOG(1) << __func__ << " defult device_id=[" << device_id << "]";
         }

@@ -373,8 +373,6 @@ AudioOutputStream* AudioManagerBase::MakeAudioOutputStreamProxy(
           // should change dynamically if the system default device changes.
           // See http://crbug.com/750614.
           std::string()
-#elif defined(USE_WEBOS_AUDIO)
-                                                         device_id
 #else
           GetDefaultOutputDeviceID()
 #endif
@@ -462,12 +460,6 @@ AudioOutputStream* AudioManagerBase::MakeAudioOutputStreamProxy(
       });
   if (it != output_dispatchers_.end())
     return (*it)->dispatcher->CreateStreamProxy();
-
-#if defined(USE_WEBOS_AUDIO)
-  if (!output_device_id.empty() &&
-      AudioDeviceDescription::IsDefaultDevice(output_device_id))
-    output_params.set_device_id(output_device_id);
-#endif
 
   const base::TimeDelta kCloseDelay = base::Seconds(kStreamCloseDelaySeconds);
   std::unique_ptr<AudioOutputDispatcher> dispatcher;

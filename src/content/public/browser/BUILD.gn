@@ -583,6 +583,10 @@ source_set("browser_sources") {
     sources += [ "neva/media_state_manager.h" ]
   }
 
+  if (use_webos_audio) {
+    defines = [ "USE_WEBOS_AUDIO=1" ]
+  }
+
   if (enable_plugins) {
     sources += [
       "plugin_service.h",

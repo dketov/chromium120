@@ -412,8 +412,9 @@ blink::WebMediaPlayer* MediaFactory::CreateMediaPlayer(
 #if defined(USE_WEBOS_AUDIO)
   blink::WebString sink_id = input_sink_id;
   if (sink_id.IsNull() || sink_id.IsEmpty()) {
-    std::string device_id = media::AudioDeviceDescription::GetDefaultDeviceId(
-        render_frame_->GetRendererPreferences().display_id);
+    std::string device_id =
+        media::AudioDeviceDescription::GetDisplayDefaultDevice(
+            render_frame_->GetRendererPreferences().display_id);
     VLOG(1) << __func__ << " defult device_id=[" << device_id << "]";
     sink_id = blink::WebString::FromUTF8(device_id);
   }

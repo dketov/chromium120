@@ -57,6 +57,11 @@ bool IsValidDeviceId(const std::string& device_id) {
     return true;
   }
 
+#if defined(USE_WEBOS_AUDIO)
+  if (media::AudioDeviceDescription::IsDisplayDefaultDevice(device_id))
+    return true;
+#endif
+
   if (device_id.length() != hash_size) {
     return false;
   }
