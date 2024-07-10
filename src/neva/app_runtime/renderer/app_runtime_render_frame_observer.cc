@@ -105,6 +105,7 @@ void AppRuntimeRenderFrameObserver::SuspendDOM() {
   dom_suspended_ = true;
   blink::WebLocalFrameImpl* frame = static_cast<blink::WebLocalFrameImpl*>(
       blink::WebLocalFrameImpl::FrameForCurrentContext());
+  CHECK(frame);
   page_pauser_ = std::make_unique<blink::WebScopedPagePauser>(*frame);
 }
 
