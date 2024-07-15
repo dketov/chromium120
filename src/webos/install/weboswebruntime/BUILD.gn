@@ -53,9 +53,6 @@ copy("weboswebruntime") {
   if (use_lttng) {
     deps += [ ":lttng_provider" ]               # for libchromium_lttng_provider.so
   }
-  if (use_neva_chrome_extensions) {
-    deps += [ ":components_locale_settings" ]
-  }
   if (use_perfetto_client_library) {
     deps += [ ":test_trace_processor" ]
   }
@@ -103,63 +100,7 @@ if (use_perfetto_client_library) {
 }
 
 copy("locales") {
-  sources = [
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_am.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_ar.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_bg.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_bn.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_ca.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_cs.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_da.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_de.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_el.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_en-GB.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_en-US.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_es-419.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_es.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_et.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_fa.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_ar-XB.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_en-XA.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_fi.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_fil.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_fr.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_gu.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_he.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_hi.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_hr.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_hu.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_id.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_it.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_ja.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_kn.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_ko.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_lt.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_lv.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_ml.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_mr.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_ms.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_nb.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_nl.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_pl.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_pt-BR.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_pt-PT.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_ro.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_ru.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_sk.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_sl.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_sr.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_sv.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_sw.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_ta.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_te.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_th.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_tr.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_uk.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_vi.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_zh-CN.pak",
-    "$root_gen_dir/third_party/blink/public/strings/blink_strings_zh-TW.pak",
-  ]
+  sources = []
 
   foreach(locale, app_runtime_locales) {
     sources += [ "$root_gen_dir/webos/repack/$locale.pak" ]
@@ -171,16 +112,6 @@ copy("locales") {
     "//third_party/blink/public/strings",
     "//webos:resources",
   ]
-}
-
-copy("components_locale_settings") {
-  sources = []
-  foreach(locale, all_chrome_locales) {
-    sources += [ "${root_gen_dir}/components/strings/components_locale_settings_${locale}.pak" ]
-  }
-
-  outputs = [ "$image_path/$cbe_data_locales_dir/{{source_file_part}}" ]
-  deps = [ "//components/strings:components_locale_settings" ]
 }
 
 copy("headers") {

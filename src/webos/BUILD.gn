@@ -146,7 +146,7 @@ repack_locales("repack") {
 
   deps = [
     ":webos_network_error_strings_grit",
-    "//neva/app_runtime:app_runtime_network_error_strings_grit",
+    "//neva/app_runtime:repack",
   ]
 
   input_locales = app_runtime_locales

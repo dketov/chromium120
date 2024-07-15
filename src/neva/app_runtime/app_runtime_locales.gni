@@ -14,7 +14,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-app_runtime_locales = [
+# extra locales which is not supported by chromium(build/config/locales.gni)
+app_runtime_locales_extra = [
+  "fake-bidi",
+  "ga",
+  "ha",
+  "ku",
+  "ps",
+]
+
+# common locales between app_runtime and chromium(build/config/locales.gni)
+app_runtime_locales_common = [
   "af",
   "am",
   "ar",
@@ -34,13 +44,10 @@ app_runtime_locales = [
   "et",
   "eu",
   "fa",
-  "fake-bidi",
   "fi",
   "fr-CA",
   "fr",
-  "ga",
   "gu",
-  "ha",
   "he",
   "hi",
   "hr",
@@ -53,7 +60,6 @@ app_runtime_locales = [
   "km",
   "kn",
   "ko",
-  "ku",
   "lt",
   "lv",
   "mk",
@@ -66,7 +72,6 @@ app_runtime_locales = [
   "or",
   "pa",
   "pl",
-  "ps",
   "pt-BR",
   "pt-PT",
   "ro",
@@ -91,3 +96,5 @@ app_runtime_locales = [
   "zh-TW",
   "zu",
 ]
+
+app_runtime_locales = app_runtime_locales_common + app_runtime_locales_extra

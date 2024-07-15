@@ -409,22 +409,69 @@ grit("app_runtime_network_error_resources_grit") {
   ]
 }
 
-grit("app_runtime_network_error_strings_grit") {
+grit("app_runtime_network_error_strings") {
   source = "//neva/app_runtime/browser/resources/app_runtime_network_error_strings.grd"
-  output_dir = "$root_gen_dir/neva/app_runtime/"
   outputs = [
     "grit/app_runtime_network_error_strings.h",
   ]
 
   foreach(locale, app_runtime_locales) {
-    outputs += [ "locales/$locale.pak" ]
+    outputs += [ "app_runtime_network_error_strings_$locale.pak" ]
   }
+}
+
+copy("repack") {
+  sources = []
+  foreach(locale, app_runtime_locales_common) {
+    sources += ["${target_gen_dir}/repack_common/$locale.pak"]
+    sources += ["${target_gen_dir}/repack_common/$locale.pak.info"]
+  }
+  foreach(locale, app_runtime_locales_extra) {
+    sources += ["${target_gen_dir}/repack_extra/$locale.pak"]
+    sources += ["${target_gen_dir}/repack_extra/$locale.pak.info"]
+  }
+
+  outputs = [ "${root_gen_dir}/neva/app_runtime/locales/{{source_file_part}}" ]
+  deps = [
+    ":repack_common",
+    ":repack_extra"
+  ]
+}
+
+repack_locales("repack_common") {
+    source_patterns = [
+      "${root_gen_dir}/neva/app_runtime/app_runtime_network_error_strings_",
+      "${root_gen_dir}/components/strings/components_strings_"
+    ]
+    deps = [
+      ":app_runtime_network_error_strings",
+      "//components/strings",
+    ]
+
+    input_locales = app_runtime_locales_common
+    output_locales = app_runtime_locales_common
+
+    output_dir = "${target_gen_dir}/repack_common"
+}
+
+repack_locales("repack_extra") {
+    source_patterns = [
+      "${root_gen_dir}/neva/app_runtime/app_runtime_network_error_strings_",
+    ]
+    deps = [
+      ":app_runtime_network_error_strings",
+    ]
+
+    input_locales = app_runtime_locales_extra
+    output_locales = app_runtime_locales_extra
+
+    output_dir = "${target_gen_dir}/repack_extra"
 }
 
 if (!use_cbe) {
   repack_locales("locales_repack") {
     source_patterns = [ "${root_gen_dir}/neva/app_runtime/locales/" ]
-    deps = [ ":app_runtime_network_error_strings_grit" ]
+    deps = [ ":app_runtime_network_error_strings" ]
 
     output_dir = "$root_out_dir/neva_locales"
     input_locales = app_runtime_locales
@@ -447,7 +494,7 @@ group("resources") {
   public_deps = [
     ":app_runtime_inspector_resources_grit",
     ":app_runtime_network_error_resources_grit",
-    ":app_runtime_network_error_strings_grit",
+    ":app_runtime_network_error_strings",
   ]
 
   if (!use_cbe) {
@@ -474,7 +521,7 @@ repack("app_runtime_resources") {
     "$root_gen_dir/mojo/public/js/mojo_bindings_resources.pak",
     "$root_gen_dir/net/net_resources.pak",
     "$root_gen_dir/neva/app_runtime/app_runtime_inspector_resources.pak",
-    "$root_gen_dir/neva/app_runtime/locales/en-US.pak",
+    "$root_gen_dir/neva/app_runtime/app_runtime_network_error_strings_en-US.pak",
     "$root_gen_dir/neva/app_runtime/network_error_resources.pak",
     "$root_gen_dir/third_party/blink/public/resources/blink_resources.pak",
     "$root_gen_dir/third_party/blink/public/resources/blink_scaled_resources_100_percent.pak",
