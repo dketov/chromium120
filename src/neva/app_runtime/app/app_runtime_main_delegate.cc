@@ -32,6 +32,7 @@
 #include "neva/app_runtime/common/app_runtime_file_access_controller.h"
 #include "neva/app_runtime/public/app_runtime_switches.h"
 #include "neva/app_runtime/renderer/app_runtime_content_renderer_client.h"
+#include "ui/base/l10n/l10n_util.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
 
@@ -174,6 +175,11 @@ void AppRuntimeMainDelegate::InitializeResourceBundle() {
 
   base::PathService::Override(ui::DIR_LOCALES,
                               pak_file.AppendASCII(kLocaleResourcesDirName));
+
+  std::string locale = l10n_util::GetApplicationLocale(std::string());
+  if (locale.compare("en-US") != 0) {
+    ui::ResourceBundle::GetSharedInstance().ReloadLocaleResources(locale);
+  }
 }
 
 content::ContentBrowserClient*

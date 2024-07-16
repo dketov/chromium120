@@ -24,6 +24,7 @@
 #include "components/viz/common/switches.h"
 #include "content/public/common/content_switches.h"
 #include "neva/app_runtime/browser/app_runtime_content_browser_client.h"
+#include "ui/base/l10n/l10n_util.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
 #include "webos/common/webos_resource_delegate.h"
@@ -82,6 +83,11 @@ void WebOSContentMainDelegate::PreSandboxStartup() {
 
   base::PathService::Override(ui::DIR_LOCALES,
                               pak_file.AppendASCII(kLocaleResourcesDirName));
+
+  std::string locale = l10n_util::GetApplicationLocale(std::string());
+  if (locale.compare("en-US") != 0) {
+    ui::ResourceBundle::GetSharedInstance().ReloadLocaleResources(locale);
+  }
 }
 
 content::ContentRendererClient*

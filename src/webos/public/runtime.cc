@@ -78,6 +78,15 @@ void Runtime::SetLocale(std::string locale) {
 
   current_locale_ = locale;
 
+  // Set LANGUAGE environment variable to required locale, so glib could return
+  // it throught function g_get_language_names.
+  // Correct way will be to set locale by std::setlocale function, but it
+  // works only if corresponding locale is installed in linux, that is not
+  // always the case.
+  // This way works as glib does not check if locale in LANGUAGE variable is
+  // actually installed in linux.
+  setenv("LANGUAGE", locale.c_str(), 1);
+
   if (platform_delegate_)
     platform_delegate_->OnLocaleInfoChanged(locale);
 }
