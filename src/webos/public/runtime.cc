@@ -52,7 +52,7 @@ LSHandle* Runtime::GetLSHandle() {
 }
 
 void Runtime::FlushStoreCookie(PowerOffState power_off_state,
-                               std::string timestamp) {
+                               const std::string& timestamp) {
   if (cookie_store_util_delegate_)
     cookie_store_util_delegate_->FlushStoreCookie(power_off_state, timestamp);
 }
@@ -72,7 +72,7 @@ void Runtime::SetNetworkConnected(bool is_connected) {
     platform_delegate_->OnNetworkStateChanged(is_connected);
 }
 
-void Runtime::SetLocale(std::string locale) {
+void Runtime::SetLocale(const std::string& locale) {
   if (current_locale_ == locale)
     return;
 

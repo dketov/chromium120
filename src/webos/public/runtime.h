@@ -49,7 +49,8 @@ class WEBOS_EXPORT Runtime {
   }
 
   LSHandle* GetLSHandle();
-  void FlushStoreCookie(PowerOffState power_off_state, std::string timestamp);
+  void FlushStoreCookie(PowerOffState power_off_state,
+                        const std::string& timestamp);
 
   void OnCursorVisibilityChanged(bool visible);
 
@@ -65,11 +66,13 @@ class WEBOS_EXPORT Runtime {
   }
 
   std::string GetBoardType() { return board_type_; }
-  void SetBoardType(std::string board_type) { board_type_ = board_type; }
+  void SetBoardType(const std::string& board_type) { board_type_ = board_type; }
 
   std::string GetForegroundAppId() { return foreground_appid_; }
-  void SetForegroundAppId(std::string appid) { foreground_appid_ = appid; }
-  void SetLocale(std::string locale);
+  void SetForegroundAppId(const std::string& appid) {
+    foreground_appid_ = appid;
+  }
+  void SetLocale(const std::string& locale);
 
   void SetPlatformFactory(
       std::unique_ptr<neva_app_runtime::PlatformFactory> platform_factory);
