@@ -124,8 +124,8 @@ class PageContentsImpl : public mojom::PageContents,
   void OnPermissionRequest(const std::string& permission, uint64_t id) override;
   void OnVisibleRegionCaptured(const std::string& base64_data) override;
   void OnZoomFactorChanged(double zoom_factor) override;
-  bool RunJSDialog(const std::string& type,
-                   const std::string& message) override;
+  bool RunJSDialog(const std::string& type, const std::string& message,
+                   const std::string& default_prompt_text) override;
   void TitleUpdated(const std::string& title) override;
   void OnDestroying(neva_app_runtime::PageContents* contents) override;
 

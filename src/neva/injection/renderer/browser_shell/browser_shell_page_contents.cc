@@ -655,7 +655,8 @@ void BrowserShellPageContents::DOMReady() {
 }
 
 void BrowserShellPageContents::RunJSDialog(const std::string& type,
-                                           const std::string& message) {
+                                           const std::string& message,
+                                           const std::string& default_prompt_text) {
   if (RunGetListenerCount(events::kDialog) == 0) {
     CloseJSDialog(false, std::string());
     return;
@@ -674,7 +675,7 @@ void BrowserShellPageContents::RunJSDialog(const std::string& type,
   gin::Handle<DialogController> dialog_controller =
       gin::CreateHandle(isolate, new DialogController(this));
 
-  DoEmit(events::kDialog, type, message, dialog_controller.ToV8());
+  DoEmit(events::kDialog, type, message, dialog_controller.ToV8(), default_prompt_text);
 }
 
 void BrowserShellPageContents::LeaveHtmlFullscreen() {

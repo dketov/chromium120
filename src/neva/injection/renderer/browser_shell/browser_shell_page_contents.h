@@ -176,8 +176,8 @@ class BrowserShellPageContents
   void OnRendererResponsive() override;
   void OnPermissionRequest(const std::string& permission, uint64_t id) override;
   void OnZoomFactorChanged(double zoom_factor) override;
-  void RunJSDialog(const std::string& type,
-                   const std::string& message) override;
+  void RunJSDialog(const std::string& type, const std::string& message,
+                   const std::string& default_prompt_text) override;
   void TitleUpdated(const std::string& title) override;
 
   // Override BrowserShellLogin::Delegate

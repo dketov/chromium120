@@ -451,7 +451,8 @@ void PageContentsImpl::OnZoomFactorChanged(double zoom_factor) {
 }
 
 bool PageContentsImpl::RunJSDialog(const std::string& type,
-                                   const std::string& message) {
+                                   const std::string& message,
+                                   const std::string& default_prompt_text) {
   auto* parent_page_view = page_contents_->GetParentPageView();
   if (parent_page_view && parent_page_view->GetParentShellWindow()) {
     // That means that the JS Dialog request is done by main application page.
@@ -464,7 +465,7 @@ bool PageContentsImpl::RunJSDialog(const std::string& type,
   if (!remote_client_.is_bound())
     return false;
 
-  remote_client_->RunJSDialog(type, message);
+  remote_client_->RunJSDialog(type, message, default_prompt_text);
   return true;
 }
 

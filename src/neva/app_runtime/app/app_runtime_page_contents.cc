@@ -1173,8 +1173,9 @@ void PageContents::NavigationStateChanged(
 }
 
 bool PageContents::RunJSDialog(const std::string& type,
-                               const std::string& message) {
-  return delegate_->RunJSDialog(type, message);
+                               const std::string& message,
+                               const std::string& default_prompt_text) {
+  return delegate_->RunJSDialog(type, message, default_prompt_text);
 }
 
 }  // namespace neva_app_runtime

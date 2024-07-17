@@ -56,7 +56,8 @@ void JSDialogManager::RunJavaScriptDialog(
     NOTREACHED() << "Unknown JavaScript Dialog Type.";
 
   std::string msg = base::UTF16ToUTF8(message_text);
-  *did_suppress_message = !delegate_->RunJSDialog(type, msg);
+  std::string prompt_text = base::UTF16ToUTF8(default_prompt_text);
+  *did_suppress_message = !delegate_->RunJSDialog(type, msg, prompt_text);
   if (*did_suppress_message)
     callback_.Reset();
 }

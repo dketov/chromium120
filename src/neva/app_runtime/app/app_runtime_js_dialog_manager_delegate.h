@@ -24,7 +24,8 @@ namespace neva_app_runtime {
 class JSDialogManagerDelegate {
  public:
   virtual bool RunJSDialog(const std::string& type,
-                           const std::string& message) = 0;
+                           const std::string& message,
+                           const std::string& default_prompt_text) = 0;
 };
 
 }  // namespace neva_app_runtime

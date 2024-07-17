@@ -219,7 +219,8 @@ class PageContents : public AppRuntimeWebContentsDelegate,
 
   // JSDialogManagerDelegate
   bool RunJSDialog(const std::string& type,
-                   const std::string& message) override;
+                   const std::string& message,
+                   const std::string& default_prompt_text) override;
  private:
   friend PageView;
   static std::unique_ptr<content::WebContents> CreateWebContents(

@@ -122,7 +122,8 @@ void PageContentsDelegate::OnVisibleRegionCaptured(
 void PageContentsDelegate::OnZoomFactorChanged(double zoom_factor) {}
 
 bool PageContentsDelegate::RunJSDialog(const std::string& type,
-                                       const std::string& message) {
+                                       const std::string& message,
+                                       const std::string& default_prompt_text) {
   return false;
 }
 
