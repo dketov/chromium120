@@ -469,9 +469,9 @@ bool PageContentsImpl::RunJSDialog(const std::string& type,
   return true;
 }
 
-void PageContentsImpl::TitleUpdated(const std::string& title) {
+void PageContentsImpl::TitleUpdated(const std::string& title, const std::string& url) {
   if (remote_client_.is_bound())
-    remote_client_->TitleUpdated(title);
+    remote_client_->TitleUpdated(title, url);
 }
 
 void PageContentsImpl::OnDestroying(neva_app_runtime::PageContents* contents) {

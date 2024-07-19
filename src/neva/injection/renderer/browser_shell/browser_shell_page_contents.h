@@ -178,7 +178,7 @@ class BrowserShellPageContents
   void OnZoomFactorChanged(double zoom_factor) override;
   void RunJSDialog(const std::string& type, const std::string& message,
                    const std::string& default_prompt_text) override;
-  void TitleUpdated(const std::string& title) override;
+  void TitleUpdated(const std::string& title, const std::string& url) override;
 
   // Override BrowserShellLogin::Delegate
   void AckAuthChallenge(const std::string& login,

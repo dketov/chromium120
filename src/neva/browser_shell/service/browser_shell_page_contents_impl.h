@@ -126,7 +126,7 @@ class PageContentsImpl : public mojom::PageContents,
   void OnZoomFactorChanged(double zoom_factor) override;
   bool RunJSDialog(const std::string& type, const std::string& message,
                    const std::string& default_prompt_text) override;
-  void TitleUpdated(const std::string& title) override;
+  void TitleUpdated(const std::string& title, const std::string& url) override;
   void OnDestroying(neva_app_runtime::PageContents* contents) override;
 
   bool GetErrorPageHiding() const;

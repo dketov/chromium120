@@ -1168,7 +1168,8 @@ void PageContents::NavigationStateChanged(
     content::InvalidateTypes changed_flags) {
   if (content::INVALIDATE_TYPE_TITLE & changed_flags) {
     const std::string title = base::UTF16ToUTF8(source->GetTitle());
-    delegate_->TitleUpdated(title);
+    const auto& url = source->GetURL().spec();
+    delegate_->TitleUpdated(title, url);
   }
 }
 

@@ -686,8 +686,8 @@ void BrowserShellPageContents::LoadProgressChanged(uint32_t progress) {
   DoEmit(events::kLoadProgressChanged, progress);
 }
 
-void BrowserShellPageContents::TitleUpdated(const std::string& title) {
-  DoEmit(events::kPageTitleUpdated, title);
+void BrowserShellPageContents::TitleUpdated(const std::string& title, const std::string& url) {
+  DoEmit(events::kPageTitleUpdated, title, url);
 }
 
 void BrowserShellPageContents::CloseJSDialog(bool success,

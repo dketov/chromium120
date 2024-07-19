@@ -127,7 +127,7 @@ bool PageContentsDelegate::RunJSDialog(const std::string& type,
   return false;
 }
 
-void PageContentsDelegate::TitleUpdated(const std::string&) {}
+void PageContentsDelegate::TitleUpdated(const std::string&, const std::string&) {}
 
 void PageContentsDelegate::OnDestroying(PageContents*) {}
 

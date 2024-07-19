@@ -120,7 +120,7 @@ class PageContentsDelegate {
   virtual void OnZoomFactorChanged(double zoom_factor);
   virtual bool RunJSDialog(const std::string& type, const std::string& message,
                            const std::string& default_prompt_text);
-  virtual void TitleUpdated(const std::string& title);
+  virtual void TitleUpdated(const std::string& title, const std::string& url);
 
   virtual void OnDestroying(PageContents* contents);
 };

@@ -92,7 +92,7 @@ interface PageContentsClient {
   OnPermissionRequest(string permission, uint64 id);
   OnZoomFactorChanged(double zoom_factor);
   RunJSDialog(string type, string message, string default_prompt_text);
-  TitleUpdated(string title);
+  TitleUpdated(string title, string url);
 };
 
 interface PageContents {
