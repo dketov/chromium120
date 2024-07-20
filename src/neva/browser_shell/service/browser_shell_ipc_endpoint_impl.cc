@@ -38,7 +38,9 @@ const std::string& ShellIpcEndpointImpl::GetChannelName() const {
 
 void ShellIpcEndpointImpl::Handle(const std::string& event,
                                   const std::string& json) {
-  remote_client_->Handle(event, json);
+  if (remote_client_.is_bound()) {
+    remote_client_->Handle(event, json);
+  }
 }
 
 void ShellIpcEndpointImpl::BindClient(BindClientCallback callback) {
