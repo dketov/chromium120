@@ -148,6 +148,13 @@ void BrowserShellContentBrowserClient::OverrideWebkitPrefs(
     delegate->OverrideWebkitPrefs(prefs);
 }
 
+scoped_refptr<network::SharedURLLoaderFactory>
+BrowserShellContentBrowserClient::GetSystemSharedURLLoaderFactory() {
+  return main_parts_->GetDefaultBrowserContext()
+      ->GetDefaultStoragePartition()
+      ->GetURLLoaderFactoryForBrowserProcess();
+}
+
 #endif
 
 }  // namespace browser_shell

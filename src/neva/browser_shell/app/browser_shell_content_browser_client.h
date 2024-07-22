@@ -53,6 +53,9 @@ class BrowserShellContentBrowserClient
 
   void OverrideWebkitPrefs(content::WebContents* web_contents,
                            blink::web_pref::WebPreferences* prefs) override;
+
+  scoped_refptr<network::SharedURLLoaderFactory>
+       GetSystemSharedURLLoaderFactory() override;
 #endif
 
   void SiteInstanceGotProcess(content::SiteInstance* site_instance) override;
