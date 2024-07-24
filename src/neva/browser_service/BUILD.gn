@@ -27,8 +27,8 @@ component("browser_service") {
 
   deps = [
     "//base",
-    "//neva/emulator",
     "//neva/browser_service/browser:browser_service_browser",
+    "//neva/emulator",
   ]
 
   public_deps = [
