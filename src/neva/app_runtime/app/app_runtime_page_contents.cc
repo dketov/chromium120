@@ -775,7 +775,8 @@ void PageContents::DidUpdateFaviconURL(
 void PageContents::DidGetUserInteraction(const blink::WebInputEvent& event) {
   blink::mojom::EventType event_type = event.GetType();
   switch (event_type) {
-    case blink::mojom::EventType::kMouseDown: {
+    case blink::mojom::EventType::kMouseDown:
+    case blink::mojom::EventType::kTouchStart: {
       auto mouse_event = static_cast<const blink::WebMouseEvent&>(event);
       delegate_->OnMouseClickEvent(static_cast<int>(mouse_event.button));
       break;
