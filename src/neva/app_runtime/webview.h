@@ -299,6 +299,7 @@ class WebView : public AppRuntimeWebContentsDelegate,
   std::unique_ptr<blink::web_pref::WebPreferences> web_preferences_;
   std::unique_ptr<WebAppInjectionManager> injection_manager_;
 
+  bool is_being_destroyed_ = false;
   bool should_suppress_dialogs_ = false;
   bool active_on_non_blank_paint_ = false;
   bool full_screen_ = false;

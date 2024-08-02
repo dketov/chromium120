@@ -162,6 +162,7 @@ WebView::WebView(int width, int height, WebViewProfile* profile)
 }
 
 WebView::~WebView() {
+  is_being_destroyed_ = true;
   SetCorsCorbDisabled(false);
 #if defined(ENABLE_PWA_MANAGER_WEBAPI)
   if (is_pwa_)
@@ -1298,6 +1299,10 @@ void WebView::DidStartNavigation(content::NavigationHandle* navigation_handle) {
 
 void WebView::DidFinishNavigation(
     content::NavigationHandle* navigation_handle) {
+  if (is_being_destroyed_) {
+    return;
+  }
+
   TRACE_EVENT0("neva", "WebView::DidFinishNavigation");
   NEVA_DCHECK(navigation_handle);
   if (!navigation_handle)
