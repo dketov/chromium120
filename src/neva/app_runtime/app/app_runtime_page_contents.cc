@@ -439,12 +439,12 @@ void PageContents::CloseJSDialog(bool success, const std::string& response) {
 }
 
 void PageContents::GoBack() {
-  if (web_contents_.get())
+  if (CanGoBack())
     web_contents_->GetController().GoBack();
 }
 
 void PageContents::GoForward() {
-  if (web_contents_.get())
+  if (CanGoForward())
     web_contents_->GetController().GoForward();
 }
 
