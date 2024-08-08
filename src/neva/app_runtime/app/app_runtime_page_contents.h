@@ -19,6 +19,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "base/memory/weak_ptr.h"
@@ -86,9 +87,11 @@ class PageContents : public AppRuntimeWebContentsDelegate,
     Type type = Type::kTab;
     std::string accepted_languages;
     bool pinch_to_zoom_enabled = true;
+    std::optional<uint64_t> site_page_contents_id;
   };
 
   static PageContents* From(content::WebContents* web_contents);
+  static PageContents* From(uint64_t id);
 
   explicit PageContents(const CreateParams& params);
   PageContents(const PageContents&) = delete;
@@ -227,7 +230,8 @@ class PageContents : public AppRuntimeWebContentsDelegate,
       const PageContents::CreateParams& params);
   static std::unique_ptr<content::WebContents> ReCreateWebContents(
       content::BrowserContext* browser_context,
-      const content::SessionStorageNamespaceMap& session_storage_namespace);
+      const content::SessionStorageNamespaceMap& session_storage_namespace,
+      scoped_refptr<content::SiteInstance> site_instance);
 
   PageContents(std::unique_ptr<content::WebContents> new_contents,
                const CreateParams& params);
@@ -276,6 +280,7 @@ class PageContents : public AppRuntimeWebContentsDelegate,
   content::SessionStorageNamespaceMap session_storage_namespace_map_;
   content::BrowserContext* last_browser_context_ = nullptr;
   std::string last_commited_url_;
+  scoped_refptr<content::SiteInstance> site_instance_;
   bool error_page_hiding_;
   std::unique_ptr<VisibleRegionCapture> visible_region_capture_;
   // login request data

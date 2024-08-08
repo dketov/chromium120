@@ -91,6 +91,8 @@ class BrowserShellPageContents
       mojo::Remote<browser_shell::mojom::ShellService>* shell_service,
       gin::Arguments* args);
 
+  static v8::Local<v8::Object> BuildOptions(v8::Isolate* isolate,
+                                            v8::Local<v8::Value> json_value);
   struct CreateParams {
     bool error_page_hiding = false;
     bool is_main_contents = false;

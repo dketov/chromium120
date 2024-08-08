@@ -20,6 +20,7 @@
 #include "base/functional/bind.h"
 #include "base/logging.h"
 #include "gin/arguments.h"
+#include "gin/data_object_builder.h"
 #include "gin/dictionary.h"
 #include "gin/handle.h"
 #include "neva/browser_shell/service/public/mojom/browser_shell_constants.mojom.h"
@@ -121,22 +122,20 @@ void BrowserShellPageContents::ConstructorCallback(
     return;
   }
 
-  CreateParams params;
-  std::string json;
   v8::Local<v8::Context> context = isolate->GetCurrentContext();
   v8::Local<v8::Value> json_value = args->PeekNext();
+  v8::Local<v8::Object> json_obj = BuildOptions(isolate, json_value);
+  v8::MaybeLocal<v8::String> maybe_json_str =
+      v8::JSON::Stringify(context, json_obj);
+  v8::Local<v8::String> json_str;
+  std::string json;
+  if (maybe_json_str.ToLocal(&json_str))
+    json = gin::V8ToString(args->isolate(), json_str);
 
-  if (!json_value.IsEmpty() && json_value->IsObject()) {
-    v8::MaybeLocal<v8::String> maybe_json_str =
-        v8::JSON::Stringify(context, json_value);
-    v8::Local<v8::String> json_str;
-    if (maybe_json_str.ToLocal(&json_str))
-      json = gin::V8ToString(args->isolate(), json_str);
-
-    v8::Local<v8::Object> json_obj = v8::Local<v8::Object>::Cast(json_value);
-    gin::Dictionary json_dict(isolate, json_obj);
-    std::ignore = json_dict.Get("error-page-hiding", &params.error_page_hiding);
-  }
+  CreateParams params;
+  gin::Dictionary json_dict(isolate, json_obj);
+  if (!json_dict.Get("error-page-hiding", &params.error_page_hiding))
+    params.error_page_hiding = false;
 
   mojo::Remote<browser_shell::mojom::PageContents> remote_contents;
   auto pending_receiver = remote_contents.BindNewPipeAndPassReceiver();
@@ -154,6 +153,31 @@ void BrowserShellPageContents::ConstructorCallback(
 
   if (!handle.IsEmpty())
     args->Return(handle.ToV8());
+}
+
+// static
+v8::Local<v8::Object> BrowserShellPageContents::BuildOptions(
+    v8::Isolate* isolate,
+    v8::Local<v8::Value> json_value) {
+  if (json_value.IsEmpty() || !json_value->IsObject())
+    return v8::Object::New(isolate);
+
+  auto options_obj = v8::Local<v8::Object>::Cast(json_value)->Clone();
+  gin::Dictionary options_dict(isolate, options_obj);
+
+  v8::Local<v8::Object> site_page_contents_obj;
+  if (options_dict.Get("site-page-contents", &site_page_contents_obj)) {
+    gin::DataObjectBuilder updated_obj_builder(isolate);
+    BrowserShellPageContents* site_page_contents = nullptr;
+    if (gin::Converter<BrowserShellPageContents*>::FromV8(
+            isolate, site_page_contents_obj, &site_page_contents)) {
+      updated_obj_builder.Set("id", site_page_contents->GetID());
+    }
+
+    options_dict.Set("site-page-contents", updated_obj_builder.Build());
+  }
+
+  return options_obj;
 }
 
 BrowserShellPageContents::BrowserShellPageContents(

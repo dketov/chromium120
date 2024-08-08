@@ -61,27 +61,26 @@ void BrowserShellPageView::ConstructorCallback(
     return;
   }
 
-  CreateParams params;
-  std::string json;
   v8::Local<v8::Context> context = isolate->GetCurrentContext();
   v8::Local<v8::Value> json_value = args->PeekNext();
+  v8::Local<v8::Object> json_obj = BuildOptions(isolate, json_value);
 
-  if (!json_value.IsEmpty() && json_value->IsObject()) {
-    v8::MaybeLocal<v8::String> maybe_json_str =
-        v8::JSON::Stringify(context, json_value);
-    v8::Local<v8::String> json_str;
-    if (maybe_json_str.ToLocal(&json_str))
-      json = gin::V8ToString(args->isolate(), json_str);
+  v8::MaybeLocal<v8::String> maybe_json_str =
+      v8::JSON::Stringify(context, json_obj);
 
-    v8::Local<v8::Object> json_obj = v8::Local<v8::Object>::Cast(json_value);
-    v8::Local<v8::Object> content_params_obj;
-    gin::Dictionary json_dict(isolate, json_obj);
-    std::ignore = json_dict.Get("page-content-params", &content_params_obj);
+  v8::Local<v8::String> json_str;
+  std::string json;
+  if (maybe_json_str.ToLocal(&json_str))
+    json = gin::V8ToString(args->isolate(), json_str);
 
-    if (!content_params_obj.IsEmpty() && content_params_obj->IsObject()) {
-      gin::Dictionary content_params_dict(isolate, content_params_obj);
-      std::ignore = content_params_dict.Get("error-page-hiding",
-                                            &params.error_page_hiding);
+  CreateParams params;
+  v8::Local<v8::Object> content_params_obj;
+  gin::Dictionary json_dict(isolate, json_obj);
+  if (json_dict.Get("page-contents-params", &content_params_obj)) {
+    gin::Dictionary content_params_dict(isolate, content_params_obj);
+    if (!content_params_dict.Get("error-page-hiding",
+                                 &params.error_page_hiding)) {
+      params.error_page_hiding = false;
     }
   }
 
@@ -99,6 +98,25 @@ void BrowserShellPageView::ConstructorCallback(
 
   if (!handle.IsEmpty())
     args->Return(handle.ToV8());
+}
+
+// static
+v8::Local<v8::Object> BrowserShellPageView::BuildOptions(
+    v8::Isolate* isolate,
+    v8::Local<v8::Value> json_value) {
+  if (json_value.IsEmpty() || !json_value->IsObject())
+    return v8::Object::New(isolate);
+
+  auto options_obj = v8::Local<v8::Object>::Cast(json_value)->Clone();
+  gin::Dictionary options_dict(isolate, options_obj);
+  v8::Local<v8::Object> content_params_obj;
+  if (options_dict.Get("page-contents-params", &content_params_obj)) {
+    v8::Local<v8::Object> content_options_obj =
+        BrowserShellPageContents::BuildOptions(isolate, content_params_obj);
+    options_dict.Set("page-contents-params", content_options_obj);
+  }
+
+  return options_obj;
 }
 
 BrowserShellPageView::BrowserShellPageView(

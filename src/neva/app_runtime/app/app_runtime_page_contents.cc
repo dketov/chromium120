@@ -21,6 +21,7 @@
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/json/json_reader.h"
+#include "base/memory/scoped_refptr.h"
 #include "base/json/json_writer.h"
 #include "base/strings/string_piece.h"
 #include "base/strings/string_split.h"
@@ -206,6 +207,11 @@ PageContents* PageContents::From(content::WebContents* web_contents) {
   return ShellEnvironment::GetInstance()->GetPageContentsFrom(web_contents);
 }
 
+// static
+PageContents* PageContents::From(uint64_t id) {
+  return ShellEnvironment::GetInstance()->GetContentsPtr(id);
+}
+
 PageContents::PageContents(const CreateParams& params)
     : PageContents(CreateWebContents(params), params) {}
 
@@ -221,8 +227,9 @@ PageContents::~PageContents() {
 
 void PageContents::Activate() {
   if (!web_contents_) {
-    web_contents_ = ReCreateWebContents(
-        last_browser_context_, session_storage_namespace_map_);
+    web_contents_ = ReCreateWebContents(last_browser_context_,
+                                        session_storage_namespace_map_,
+                                        std::move(site_instance_));
     Initialize();
     SetUserAgentOverride(user_agent_);
     if (parent_page_view_)
@@ -230,6 +237,7 @@ void PageContents::Activate() {
     LoadURL(last_commited_url_);
     last_browser_context_ = nullptr;
     last_commited_url_.clear();
+    site_instance_.reset();
   }
 }
 
@@ -333,6 +341,9 @@ void PageContents::Deactivate() {
       web_contents_->GetController().GetSessionStorageNamespaceMap();
   last_commited_url_ = web_contents_->GetLastCommittedURL().spec();
   last_browser_context_ = web_contents_->GetBrowserContext();
+
+  if (create_params_.site_page_contents_id)
+    site_instance_ = base::WrapRefCounted(web_contents_->GetSiteInstance());
 
   if (parent_page_view_)
     parent_page_view_->ResetPageContents();
@@ -995,20 +1006,35 @@ void PageContents::CloseContents(content::WebContents* source) {
 // static
 std::unique_ptr<content::WebContents> PageContents::CreateWebContents(
     const PageContents::CreateParams& params) {
-  AppRuntimeBrowserContext* browser_context;
-  browser_context =
-      AppRuntimeBrowserContext::From(params.storage_partition_name,
-                                     params.storage_partition_off_the_record);
+  content::BrowserContext* browser_context = AppRuntimeBrowserContext::From(
+      params.storage_partition_name, params.storage_partition_off_the_record);
   content::WebContents::CreateParams contents_params(browser_context, nullptr);
+
+  if (params.site_page_contents_id) {
+    auto* site_page_contents =
+        PageContents::From(*params.site_page_contents_id);
+    if (site_page_contents) {
+      auto* web_contents = site_page_contents->GetWebContents();
+      if (web_contents &&
+          web_contents->GetBrowserContext() == browser_context) {
+        auto* site = web_contents->GetSiteInstance();
+        if (site) {
+          contents_params.site_instance = base::WrapRefCounted(site);
+        }
+      }
+    }
+  }
   return content::WebContents::Create(contents_params);
 }
 
 // static
 std::unique_ptr<content::WebContents> PageContents::ReCreateWebContents(
     content::BrowserContext* browser_context,
-    const content::SessionStorageNamespaceMap& session_storage_namespace_map) {
+    const content::SessionStorageNamespaceMap& session_storage_namespace_map,
+    scoped_refptr<content::SiteInstance> site_instance) {
   NEVA_DCHECK(browser_context != nullptr);
   content::WebContents::CreateParams contents_params(browser_context, nullptr);
+  contents_params.site_instance = std::move(site_instance);
   return content::WebContents::CreateWithSessionStorage(
       contents_params, session_storage_namespace_map);
 }

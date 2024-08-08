@@ -90,6 +90,8 @@ void SetContentParams(neva_app_runtime::PageContents::CreateParams& params,
   params.error_page_hiding = dict.FindBool("error-page-hiding").value_or(false);
   params.zoom_factor = dict.FindDouble("zoom-factor");
   params.type = GetTypeFromDict(dict);
+  params.site_page_contents_id =
+      dict.FindIntByDottedPath("site-page-contents.id");
 }
 
 void CheckTabID(neva_app_runtime::PageContents* page_contents) {
