@@ -35,6 +35,7 @@
 #include "components/user_prefs/user_prefs.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/browser/download_manager.h"
 #include "content/public/browser/resource_context.h"
 #include "content/public/browser/storage_partition.h"
 #include "content/public/common/content_switches.h"
@@ -114,6 +115,10 @@ AppRuntimeBrowserContext::~AppRuntimeBrowserContext() {
   local_state_->CommitPendingWrite();
   local_state_.reset();
 #endif
+
+  // Need to set object of AppRuntimeDownloadManagerDelegate = nullptr to avoid
+  // crashing when BrowserContextImpl destructed
+  this->GetDownloadManager()->SetDelegate(nullptr);
 
   if (off_the_record_) {
     ForEachLoadedStoragePartition(
