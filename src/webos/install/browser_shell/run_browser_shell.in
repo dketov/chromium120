@@ -156,6 +156,11 @@ CHROME_FLAGS=" \
   --load-extension="@@BUILTIN_NEVA_EXTENSIONS@@"\
 "
 
+# Disable GPU rasterization for only emulator
+if [ -n "`dmesg |grep -i hypervisor`" ]; then
+  CHROME_FLAGS="${CHROME_FLAGS} --disable-gpu-rasterization"
+fi
+
 CHROME_FLAGS="${CHROME_FLAGS} ${CHROME_LS2_NAME_FLAG}"
 
 # ensure that wam data directories exist
