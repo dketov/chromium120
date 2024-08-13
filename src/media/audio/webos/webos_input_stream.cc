@@ -43,7 +43,8 @@ WebOSAudioInputStream::WebOSAudioInputStream(
   VLOG(1) << __func__ << " this[" << this << "]";
 
   device_name_ = kDefaultWebCall;
-  if (AudioDeviceDescription::IsDisplayDefaultDevice(device_name)) {
+  if (AudioDeviceDescription::IsDefaultDevice(device_name) ||
+      AudioDeviceDescription::IsDisplayDefaultDevice(device_name)) {
     std::string display_id = device_name.substr(
         std::string(AudioDeviceDescription::kDefaultDeviceId).size(), 1);
     if (!display_id.empty()) {
