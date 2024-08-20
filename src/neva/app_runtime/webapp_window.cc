@@ -220,7 +220,7 @@ void WebAppWindow::OnDisplayMetricsChanged(const display::Display& display,
 
 bool WebAppWindow::HandleEvent(AppRuntimeEvent* app_runtime_event) {
   if (delegate_)
-    return delegate_->HandleEvent(app_runtime_event);
+    return delegate_->HandleAppRuntimeEvent(app_runtime_event);
 
   return false;
 }

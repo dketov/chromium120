@@ -24,7 +24,7 @@ void WebAppWindowDelegate::OnWindowClosing() {}
 
 void WebAppWindowDelegate::CursorVisibilityChanged(bool) {}
 
-bool WebAppWindowDelegate::HandleEvent(AppRuntimeEvent* e) {
+bool WebAppWindowDelegate::HandleAppRuntimeEvent(AppRuntimeEvent* e) {
   return false;
 }
 

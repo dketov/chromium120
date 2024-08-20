@@ -24,12 +24,8 @@ WebAppWindowDelegate::~WebAppWindowDelegate() {}
 
 void WebAppWindowDelegate::WebAppWindowDestroyed() {}
 
-bool WebAppWindowDelegate::event(WebOSEvent* e) {
+bool WebAppWindowDelegate::HandleWebOSEvent(WebOSEvent* e) {
   return false;
-}
-
-bool WebAppWindowDelegate::HandleEvent(WebOSEvent* e) {
-  return event(e);
 }
 
 unsigned WebAppWindowDelegate::CheckKeyFilterTable(unsigned keycode,

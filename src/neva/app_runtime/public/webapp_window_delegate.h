@@ -31,7 +31,7 @@ class APP_RUNTIME_EXPORT WebAppWindowDelegate {
 
   virtual void CursorVisibilityChanged(bool visible);
 
-  virtual bool HandleEvent(AppRuntimeEvent* e);
+  virtual bool HandleAppRuntimeEvent(AppRuntimeEvent* e);
 };
 
 }  // namespace neva_app_runtime

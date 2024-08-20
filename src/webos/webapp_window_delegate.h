@@ -34,10 +34,7 @@ class WEBOS_EXPORT WebAppWindowDelegate
 
   virtual void WebAppWindowDestroyed();
 
-  // DEPRECATED:
-  virtual bool event(WebOSEvent* e);
-
-  virtual bool HandleEvent(WebOSEvent* e);
+  virtual bool HandleWebOSEvent(WebOSEvent* e);
 
   // This is only for wam, so it follows wam's style.
   virtual unsigned CheckKeyFilterTable(unsigned keycode, unsigned* modifier);

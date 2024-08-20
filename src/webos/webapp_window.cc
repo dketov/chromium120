@@ -40,7 +40,7 @@ void WebAppWindow::SetDelegate(WebAppWindowDelegate* webapp_window_delegate) {
 
 bool WebAppWindow::HandleEvent(WebOSEvent* webos_event) {
   if (webapp_window_delegate_)
-    return webapp_window_delegate_->HandleEvent(webos_event);
+    return webapp_window_delegate_->HandleWebOSEvent(webos_event);
 
   return false;
 }
@@ -176,12 +176,14 @@ void WebAppWindow::OnKeyEvent(ui::KeyEvent* event) {
 
   switch (event->type()) {
     case ui::EventType::ET_KEY_PRESSED:
-      if (OnKeyPressed(event->key_code()))
+      if (OnWebOSKeyPressed(event->key_code())) {
         event->StopPropagation();
+      }
       break;
     case ui::EventType::ET_KEY_RELEASED:
-      if (OnKeyReleased(event->key_code()))
+      if (OnWebOSKeyReleased(event->key_code())) {
         event->StopPropagation();
+      }
       break;
     default:
       break;
@@ -211,12 +213,12 @@ void WebAppWindow::CheckKeyFilterTable(unsigned keycode,
   }
 }
 
-bool WebAppWindow::OnKeyPressed(unsigned keycode) {
+bool WebAppWindow::OnWebOSKeyPressed(unsigned keycode) {
   WebOSKeyEvent event(WebOSEvent::Type::KeyPress, keycode);
   return HandleEvent(&event);
 }
 
-bool WebAppWindow::OnKeyReleased(unsigned keycode) {
+bool WebAppWindow::OnWebOSKeyReleased(unsigned keycode) {
   WebOSKeyEvent event(WebOSKeyEvent::Type::KeyRelease, keycode);
   return HandleEvent(&event);
 }

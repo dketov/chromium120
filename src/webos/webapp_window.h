@@ -63,8 +63,8 @@ class WebAppWindow : public neva_app_runtime::WebAppWindow {
 
  private:
   // Handle key events
-  bool OnKeyPressed(unsigned keycode);
-  bool OnKeyReleased(unsigned keycode);
+  bool OnWebOSKeyPressed(unsigned keycode);
+  bool OnWebOSKeyReleased(unsigned keycode);
 
   void CheckKeyFilter(ui::KeyEvent* event);
   void CheckKeyFilterTable(unsigned keycode,
