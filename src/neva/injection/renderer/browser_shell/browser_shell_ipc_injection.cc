@@ -120,6 +120,12 @@ void BrowserShellIpcInjection::Setup(
     mojo::PendingAssociatedReceiver<
         browser_shell::mojom::ShellIpcEndpointClient> receiver) {
   client_receiver_.Bind(std::move(receiver));
+  for (auto& event_index : pending_events_) {
+    if (!event_index.first.empty()) {
+      DoPost(event_index.first, event_index.second);
+    }
+  }
+  pending_events_.clear();
 }
 
 const std::string& BrowserShellIpcInjection::GetChannelName() const {
@@ -128,20 +134,36 @@ const std::string& BrowserShellIpcInjection::GetChannelName() const {
 
 void BrowserShellIpcInjection::Post(gin::Arguments* args) {
   std::string event;
+  std::string json;
+  bool is_do_post;
   if (!args->GetNext(&event))
     return;
 
   v8::Isolate* isolate = args->isolate();
   v8::Local<v8::Context> context = isolate->GetCurrentContext();
   v8::Local<v8::Value> json_value;
+  is_do_post = false;
   if (args->GetNext(&json_value)) {
     v8::MaybeLocal<v8::String> maybe_json_str =
         v8::JSON::Stringify(context, json_value);
     v8::Local<v8::String> json_str;
-    if (maybe_json_str.ToLocal(&json_str))
-      remote_->Post(event, gin::V8ToString(args->isolate(), json_str));
+    if (maybe_json_str.ToLocal(&json_str)) {
+      is_do_post = true;
+      json = gin::V8ToString(args->isolate(), json_str);
+    }
   } else {
-    remote_->Post(event, "{}");
+    is_do_post = true;
+    json = "{}";
+  }
+
+  if (is_do_post) {
+    if (client_receiver_.is_bound()) {
+      DoPost(event, json);
+    } else {
+      std::pair<std::string, std::string> event_item;
+      event_item = std::make_pair(event, json);
+      pending_events_.push_back(event_item);
+    }
   }
 }
 
@@ -163,6 +185,11 @@ void BrowserShellIpcInjection::Handle(const std::string& event,
         DoEmit(event, parsed);
     }
   }
+}
+
+void BrowserShellIpcInjection::DoPost(const std::string& event,
+                                      const std::string& json_data) {
+  remote_->Post(event, json_data);
 }
 
 // static

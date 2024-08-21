@@ -95,13 +95,15 @@ class BrowserShellIpcInjection
   void Handle(const std::string& event, const std::string& json) override;
 
  private:
+  void DoPost(const std::string& event, const std::string& json_data);
+  gin::ObjectTemplateBuilder GetObjectTemplateBuilder(
+      v8::Isolate* isolate) final;
+
   const std::string channel_;
+  std::vector<std::pair<std::string, std::string>> pending_events_;
   mojo::Remote<browser_shell::mojom::ShellIpcEndpoint> remote_;
   mojo::AssociatedReceiver<browser_shell::mojom::ShellIpcEndpointClient>
       client_receiver_;
-
-  gin::ObjectTemplateBuilder GetObjectTemplateBuilder(
-      v8::Isolate* isolate) final;
 };
 
 }  // namespace injections
