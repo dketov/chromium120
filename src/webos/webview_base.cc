@@ -744,7 +744,7 @@ void WebViewBase::DidFirstPaint() {
     CallLoadVisuallyCommitted();
 }
 
-void WebViewBase::DidFirstMeaningfulPaint() {
+void WebViewBase::DidFirstContentfulPaint() {
   VLOG(1) << __func__;
   CallLoadVisuallyCommitted();
 }

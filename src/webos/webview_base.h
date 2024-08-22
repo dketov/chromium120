@@ -249,7 +249,7 @@ class WEBOS_EXPORT WebViewBase
   // WebViewDelegate
   void DidFirstPaint() override;
   void DidLoadingEnd() override;
-  void DidFirstMeaningfulPaint() override;
+  void DidFirstContentfulPaint() override;
   void DidNonFirstMeaningfulPaint() override;
   const neva_app_runtime::WebViewInfo& GetWebViewInfo() const override;
 
