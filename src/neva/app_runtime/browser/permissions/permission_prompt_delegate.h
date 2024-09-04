@@ -44,6 +44,8 @@ class BrowserShellPermissionPromptDelegate
   void AcceptPermission();
   void DenyPermission();
   void ClosingPermission();
+
+  base::WeakPtrFactory<BrowserShellPermissionPromptDelegate> weak_ptr_factory_{this};
 };
 
 class BrowserShellPermissionsClientDelegate

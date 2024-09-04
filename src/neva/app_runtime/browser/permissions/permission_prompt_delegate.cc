@@ -43,7 +43,7 @@ void BrowserShellPermissionPromptDelegate::ShowBubble(const GURL& origin_url,
           base::SequencedTaskRunner::GetCurrentDefault(),
           base::BindRepeating(
               &BrowserShellPermissionPromptDelegate::OnPromptResponse,
-              base::Unretained(this))));
+              weak_ptr_factory_.GetWeakPtr())));
 }
 
 void BrowserShellPermissionPromptDelegate::OnPromptResponse(
