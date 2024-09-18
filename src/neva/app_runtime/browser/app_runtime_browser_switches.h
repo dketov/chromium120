@@ -20,6 +20,7 @@
 // All switches in alphabetical order. The switches should be documented
 // alongside the definition of their values in the .cc file.
 extern const char kAllowFileAccess[];
+extern const char kAllowLoadExtensionsIn[];
 extern const char kDisableModernCookieSameSite[];
 extern const char kDiskCacheSize[];
 extern const char kGitRevision[];

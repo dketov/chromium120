@@ -155,6 +155,7 @@ CHROME_FLAGS=" \
   --ozone-platform=wayland\
   --load-extension="@@BUILTIN_NEVA_EXTENSIONS@@"\
   --disable-features=kSiteIsolationCitadelEnforcement\
+  --allow-load-extensions-in=persist:webcontent,private\
 "
 
 # Disable GPU rasterization for only emulator

@@ -56,6 +56,7 @@
 #include "net/ssl/ssl_private_key.h"
 #include "neva/app_runtime/app/app_runtime_main_delegate.h"
 #include "neva/app_runtime/app/app_runtime_page_contents.h"
+#include "neva/app_runtime/browser/app_runtime_browser_context.h"
 #include "neva/app_runtime/browser/app_runtime_browser_main_parts.h"
 #include "neva/app_runtime/browser/app_runtime_browser_switches.h"
 #include "neva/app_runtime/browser/app_runtime_devtools_manager_delegate.h"
@@ -96,7 +97,6 @@
 #include "extensions/browser/url_loader_factory_manager.h"
 #include "extensions/common/constants.h"
 #include "extensions/common/switches.h"
-#include "neva/app_runtime/browser/app_runtime_browser_context.h"
 #include "neva/extensions/browser/neva_extensions_service_impl.h"
 #include "neva/extensions/browser/web_contents_map.h"
 #endif  // defined(USE_NEVA_CHROME_EXTENSIONS)
@@ -419,8 +419,10 @@ void AppRuntimeContentBrowserClient::AppendExtraCommandLineSwitches(
   if (process_type == switches::kRendererProcess) {
     content::RenderProcessHost* process =
         content::RenderProcessHost::FromID(child_process_id);
-    BrowserContext* browser_context = process->GetBrowserContext();
-    if (extensions::ProcessMap::Get(browser_context)
+    AppRuntimeBrowserContext* browser_context =
+        static_cast<AppRuntimeBrowserContext*>(process->GetBrowserContext());
+    if (browser_context->ExtensionsAreAllowed() &&
+        extensions::ProcessMap::Get(browser_context)
             ->Contains(process->GetID())) {
       command_line->AppendSwitch(extensions::switches::kExtensionProcess);
     }

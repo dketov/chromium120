@@ -66,10 +66,13 @@ class AppRuntimeBrowserContext : public content::BrowserContext {
   content::LocalStorageTracker* GetLocalStorageTracker();
   NotifierSettingsController* GetNotifierSettingsController();
 
+  bool ExtensionsAreAllowed();
   void FlushCookieStore();
 
  private:
-  AppRuntimeBrowserContext(const std::string& partition, bool off_the_record);
+  AppRuntimeBrowserContext(const std::string& partition,
+                           bool off_the_record,
+                           bool allow_to_load_extensions);
   base::FilePath InitPath(const std::string& partition) const;
 
   using BrowserContextMap =
@@ -78,6 +81,7 @@ class AppRuntimeBrowserContext : public content::BrowserContext {
   static BrowserContextMap& off_the_record_browser_context_map();
 
   bool off_the_record_;
+  bool extensions_are_allowed_;
 
   std::unique_ptr<AppRuntimeDownloadManagerDelegate> download_manager_delegate_;
   std::unique_ptr<content::ResourceContext> resource_context_;

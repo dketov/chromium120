@@ -59,6 +59,7 @@
 #include "neva/app_runtime/browser/push_messaging/push_messaging_service_factory.h"
 #include "neva/app_runtime/browser/push_messaging/push_messaging_service_impl.h"
 #include "neva/app_runtime/public/notifier_settings_controller.h"
+#include "neva/browser_shell/service/browser_shell_storage_partition_name.h"
 #include "neva/user_agent/browser/client_hints.h"
 #include "services/network/public/mojom/cookie_manager.mojom.h"
 
@@ -83,9 +84,36 @@
 #endif  // defined(USE_NEVA_CHROME_EXTENSIONS)
 
 namespace neva_app_runtime {
+
+bool IsAllowedToLoadExtensionsIn(const std::string& partition, bool off_the_record) {
+  base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
+  if (cmd_line->HasSwitch(kAllowLoadExtensionsIn)) {
+    std::vector<std::string> allowed_list =
+        base::SplitString(cmd_line->GetSwitchValueASCII(kAllowLoadExtensionsIn),
+                          ",", base::TRIM_WHITESPACE, base::SPLIT_WANT_ALL);
+
+    std::string partition_name;
+    bool off_the_record;
+    for (auto& it : allowed_list) {
+      browser_shell::ParseStoragePartitionName(it, partition_name, off_the_record);
+      if ((partition == partition_name) &&
+          (off_the_record == off_the_record)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  return true;
+}
+
 // static
 AppRuntimeBrowserContext* AppRuntimeBrowserContext::From(std::string partition,
                                                          bool off_the_record) {
+  bool allow_to_load_extensions =
+      IsAllowedToLoadExtensionsIn(partition, off_the_record);
+
   if (partition == "default" && !off_the_record)
     partition = "";
 
@@ -94,7 +122,8 @@ AppRuntimeBrowserContext* AppRuntimeBrowserContext::From(std::string partition,
                                     : browser_context_map();
   AppRuntimeBrowserContext* browser_context = registry[partition].get();
   if (!browser_context) {
-    browser_context = new AppRuntimeBrowserContext(partition, off_the_record);
+    browser_context = new AppRuntimeBrowserContext(partition, off_the_record,
+                                                   allow_to_load_extensions);
     registry[partition] =
         std::unique_ptr<AppRuntimeBrowserContext>(browser_context);
   }
@@ -226,6 +255,10 @@ AppRuntimeBrowserContext::GetLocalStorageTracker() {
 #endif
 }
 
+bool AppRuntimeBrowserContext::ExtensionsAreAllowed() {
+  return extensions_are_allowed_;
+}
+
 void AppRuntimeBrowserContext::FlushCookieStore() {
   GetDefaultStoragePartition()
       ->GetCookieManagerForBrowserProcess()
@@ -244,8 +277,10 @@ AppRuntimeBrowserContext::GetNotifierSettingsController() {
 }
 
 AppRuntimeBrowserContext::AppRuntimeBrowserContext(const std::string& partition,
-                                                   bool off_the_record)
+                                                   bool off_the_record,
+                                                   bool allow_to_load_extensions)
     : off_the_record_(off_the_record),
+      extensions_are_allowed_(allow_to_load_extensions),
       resource_context_(new content::ResourceContext()),
       path_(InitPath(partition)),
       notifier_client_(std::make_unique<NotifierClient>(this)) {
@@ -307,10 +342,13 @@ AppRuntimeBrowserContext::AppRuntimeBrowserContext(const std::string& partition,
   raw_ptr<neva::NevaExtensionSystem> extension_system =
       static_cast<neva::NevaExtensionSystem*>(
           extensions::ExtensionSystem::Get(this));
-  extension_system->InitForRegularProfile(true /* extensions_enabled */);
+  extension_system->InitForRegularProfile(extensions_are_allowed_);
   extension_system->FinishInitialization();
 
-  neva::LoadExtensionsFromCommandLine(extension_system);
+  if (extensions_are_allowed_) {
+    neva::LoadExtensionsFromCommandLine(extension_system);
+  }
+
   // Register new browser context in extension service
   neva::NevaExtensionsServiceFactory::GetService(this);
 #endif  // defined(USE_NEVA_CHROME_EXTENSIONS)

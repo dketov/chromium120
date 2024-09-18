@@ -21,7 +21,9 @@ namespace browser_shell {
 void ParseStoragePartitionName(const std::string& spec,
                                std::string& name,
                                bool& off_the_record) {
-  if (spec.empty()) {
+  if (spec.empty() ||
+      base::StartsWith(spec, "default",
+                       base::CompareCase::SENSITIVE)) {
     name = "";
     off_the_record = false;
   } else if (base::StartsWith(spec, "persist", base::CompareCase::SENSITIVE)) {

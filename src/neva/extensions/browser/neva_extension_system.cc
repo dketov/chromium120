@@ -67,6 +67,9 @@ void NevaExtensionSystem::Shutdown() {
 }
 
 void NevaExtensionSystem::InitForRegularProfile(bool extensions_enabled) {
+  if (!extensions_enabled) {
+    return;
+  }
   service_worker_manager_ =
       std::make_unique<extensions::ServiceWorkerManager>(browser_context_);
   quota_service_ = std::make_unique<extensions::QuotaService>();

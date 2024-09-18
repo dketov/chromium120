@@ -19,6 +19,12 @@
 // Allow file:// access if specified
 const char kAllowFileAccess[] = "allow-file-access";
 
+// List of partitions which allow to load extensions
+// Must be specifyed with OTR prefix for example "persist:webcontent" or
+// "pivate".
+// Default partition may be specifyed as empty space and as "persist:default".
+const char kAllowLoadExtensionsIn[] = "allow-load-extensions-in";
+
 // Disables modern SameSite cookie behavior. This is the opposite of
 // kWebViewEnableModernCookieSameSite flag for android. This disables the
 // same-site-by-default-cookies, cookies-without-same-site-must-be-secure,
