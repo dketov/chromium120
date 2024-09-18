@@ -36,4 +36,5 @@ interface ShellService {
       => (uint64 id, PageContentsCreationInfo info);
   CreateShellIpcEndpoint(pending_receiver<ShellIpcEndpoint> receiver, string channel);
   CreateWebRequest(pending_receiver<WebRequest> receiver, string partition);
+  TouchSession(string partition);
 };

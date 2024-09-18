@@ -67,6 +67,8 @@ class COMPONENT_EXPORT(BROWSER_SHELL_SERVICE) ShellServiceImpl :
       mojo::PendingReceiver<mojom::ShellIpcEndpoint> receiver,
       const std::string& name) override;
 
+  void TouchSession(const std::string& partition) override;
+
   void CreateWebRequest(mojo::PendingReceiver<mojom::WebRequest> receiver,
                         const std::string& partition) override;
 

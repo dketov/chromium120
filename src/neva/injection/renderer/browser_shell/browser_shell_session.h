@@ -48,6 +48,7 @@ class BrowserShellSession : public gin::Wrappable<BrowserShellSession> {
 
   std::string GetPartition() const;
   v8::Local<v8::Object> GetWebRequest(v8::Isolate* isolate);
+  void Touch();
 
   mojo::Remote<browser_shell::mojom::ShellService>* shell_service_;
   std::string partition_;

@@ -30,6 +30,7 @@
 #include "neva/app_runtime/app/app_runtime_shell.h"
 #include "neva/app_runtime/app/app_runtime_shell_environment.h"
 #include "neva/app_runtime/app/app_runtime_shell_window.h"
+#include "neva/app_runtime/browser/app_runtime_browser_context.h"
 #include "neva/browser_shell/service/browser_shell_ipc_endpoint_impl.h"
 #include "neva/browser_shell/service/browser_shell_page_contents_impl.h"
 #include "neva/browser_shell/service/browser_shell_page_view_impl.h"
@@ -222,6 +223,16 @@ void ShellServiceImpl::CreateShellIpcEndpoint(
       channel, &shell_ipc_);
   ipc_endpoint_receivers_.Add(
       std::move(shell_ipc_endpoint_impl), std::move(receiver));
+}
+
+void ShellServiceImpl::TouchSession(const std::string& partition) {
+  std::string partition_name;
+  bool off_the_record;
+  ParseStoragePartitionName(partition, partition_name, off_the_record);
+
+  std::ignore =
+    neva_app_runtime::AppRuntimeBrowserContext::From(
+          partition_name, off_the_record);
 }
 
 void ShellServiceImpl::CreateWebRequest(

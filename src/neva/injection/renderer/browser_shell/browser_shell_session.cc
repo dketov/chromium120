@@ -54,10 +54,16 @@ v8::Local<v8::Object> BrowserShellSession::GetWebRequest(
   return local_webrequest;
 }
 
+void BrowserShellSession::Touch() {
+  (*shell_service_)->TouchSession(partition_);
+}
+
 gin::ObjectTemplateBuilder BrowserShellSession::GetObjectTemplateBuilder(
     v8::Isolate* isolate) {
   return gin::Wrappable<BrowserShellSession>::GetObjectTemplateBuilder(isolate)
-      .SetProperty("webrequest", &BrowserShellSession::GetWebRequest);
+      .SetMethod("touch", &BrowserShellSession::Touch)
+      .SetProperty("webrequest", &BrowserShellSession::GetWebRequest)
+      .SetProperty("name", &BrowserShellSession::GetPartition);
 }
 
 }  // namespace injections
