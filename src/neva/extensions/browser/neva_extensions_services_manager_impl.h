@@ -68,8 +68,7 @@ class NevaExtensionsServicesManagerImpl
   NevaExtensionsServicesManagerImpl();
   ~NevaExtensionsServicesManagerImpl() override;
 
-  std::map<content::BrowserContext*, std::unique_ptr<NevaExtensionsServiceImpl>>
-      services_map_;
+  std::map<content::BrowserContext*, NevaExtensionsServiceImpl*> services_map_;
 
   mojo::ReceiverSet<mojom::NevaExtensionsServicesManager> receivers_;
   mojo::AssociatedRemoteSet<mojom::NevaExtensionsServicesManagerClient>

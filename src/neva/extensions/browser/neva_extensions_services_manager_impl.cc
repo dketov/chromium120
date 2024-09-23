@@ -79,10 +79,10 @@ NevaExtensionsServicesManagerImpl::GetNevaExtensionsServiceFor(
     content::BrowserContext* context) {
   if (auto service = services_map_.find(context);
       service != services_map_.end()) {
-    return service->second.get();
+    return service->second;
   } else {
-    auto item = services_map_.insert(
-        {context, std::make_unique<NevaExtensionsServiceImpl>(context)});
+    auto item =
+        services_map_.insert({context, new NevaExtensionsServiceImpl(context)});
     for (auto& remote : remotes_) {
       std::string partition = context->GetPath().BaseName().value();
       if (!context->IsOffTheRecord()) {
@@ -94,7 +94,7 @@ NevaExtensionsServicesManagerImpl::GetNevaExtensionsServiceFor(
       remote->OnExtensionServiceRegistered(partition);
     }
 
-    return item.first->second.get();
+    return item.first->second;
   }
 }
 
