@@ -163,6 +163,12 @@ AppRuntimeBrowserContext::~AppRuntimeBrowserContext() {
   }
 
   NotifyWillBeDestroyed();
+
+#if defined(USE_NEVA_CHROME_EXTENSIONS)
+  BrowserContextDependencyManager::GetInstance()->DestroyBrowserContextServices(
+      this);
+#endif
+
   ShutdownStoragePartitions();
 }
 
