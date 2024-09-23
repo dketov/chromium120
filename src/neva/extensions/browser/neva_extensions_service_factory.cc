@@ -18,6 +18,7 @@
 
 #include "components/keyed_service/content/browser_context_dependency_manager.h"
 #include "neva/extensions/browser/neva_extensions_service_impl.h"
+#include "neva/extensions/browser/neva_extensions_services_manager_impl.h"
 
 namespace neva {
 
@@ -44,7 +45,8 @@ NevaExtensionsServiceFactory::GetFactoryInstance() {
 
 KeyedService* NevaExtensionsServiceFactory::BuildServiceInstanceFor(
     content::BrowserContext* browser_context) const {
-  return NevaExtensionsServiceImpl::GetInstanceForContext(browser_context);
+  return NevaExtensionsServicesManagerImpl::GetInstance()
+      ->GetNevaExtensionsServiceFor(browser_context);
 }
 
 }  // namespace neva

@@ -25,9 +25,6 @@
 #include "third_party/blink/public/web/web_local_frame.h"
 
 namespace {
-// Access via window.neva
-const char kRootObjectName[] = "neva";
-
 // methods
 const char kAddEventListenerMethodName[] = "addEventListener";
 const char kGetExtensionsInfoMethodName[] = "getExtensionsInfo";
@@ -51,40 +48,10 @@ namespace injections {
 gin::WrapperInfo ChromeExtensionsInjection::kWrapperInfo = {
     gin::kEmbedderNativeGin};
 
-void ChromeExtensionsInjection::Install(blink::WebLocalFrame* frame) {
-  v8::Isolate* isolate = blink::MainThreadIsolate();
-  v8::HandleScope handle_scope(isolate);
-  v8::Local<v8::Context> context = frame->MainWorldScriptContext();
-  if (context.IsEmpty())
-    return;
-
-  v8::Local<v8::Object> global = context->Global();
-  v8::Context::Scope context_scope(context);
-  v8::Local<v8::Value> shell_value =
-      global->Get(context, gin::StringToV8(isolate, kRootObjectName))
-          .ToLocalChecked();
-
-  if (!shell_value.IsEmpty() && shell_value->IsObject())
-    return;
-
-  gin::Handle<ChromeExtensionsInjection> shell = gin::CreateHandle(
-      isolate, new ChromeExtensionsInjection(isolate, global));
-  global
-      ->Set(isolate->GetCurrentContext(),
-            gin::StringToV8(isolate, kRootObjectName), shell.ToV8())
-      .Check();
-}
-
-void ChromeExtensionsInjection::Uninstall(blink::WebLocalFrame* frame) {
-  NOTIMPLEMENTED();
-}
-
 ChromeExtensionsInjection::ChromeExtensionsInjection(
     v8::Isolate* isolate,
-    v8::Local<v8::Object> global) {
-  blink::Platform::Current()->GetBrowserInterfaceBroker()->GetInterface(
-      remote_.BindNewPipeAndPassReceiver());
-
+    mojo::Remote<neva::mojom::NevaExtensionsService> remote)
+    : remote_(std::move(remote)), receiver_(this) {
   remote_->BindClient(receiver_.BindNewPipeAndPassRemote());
 }
 

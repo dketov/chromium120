@@ -14,8 +14,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef NEVA_INJECTION_PUBLIC_RENDERER_CHROME_EXTENSIONS_WEBAPI_H_
-#define NEVA_INJECTION_PUBLIC_RENDERER_CHROME_EXTENSIONS_WEBAPI_H_
+#ifndef NEVA_INJECTION_PUBLIC_RENDERER_CHROME_EXTENSIONS_MANAGER_WEBAPI_H_
+#define NEVA_INJECTION_PUBLIC_RENDERER_CHROME_EXTENSIONS_MANAGER_WEBAPI_H_
 
 #include <string>
 
@@ -27,7 +27,7 @@ class WebLocalFrame;
 
 namespace injections {
 
-class COMPONENT_EXPORT(INJECTION) ChromeExtensionsWebAPI {
+class COMPONENT_EXPORT(INJECTION) ChromeExtensionsManagerWebAPI {
  public:
   static void Install(blink::WebLocalFrame* frame, const std::string&);
   static void Uninstall(blink::WebLocalFrame* frame);
@@ -35,4 +35,4 @@ class COMPONENT_EXPORT(INJECTION) ChromeExtensionsWebAPI {
 
 }  // namespace injections
 
-#endif  // NEVA_INJECTION_PUBLIC_RENDERER_CHROME_EXTENSIONS_WEBAPI_H_
+#endif  // NEVA_INJECTION_PUBLIC_RENDERER_CHROME_EXTENSIONS_MANAGER_WEBAPI_H_

@@ -16,8 +16,6 @@
 
 #include "neva/extensions/browser/neva_extensions_service_impl.h"
 
-#include "base/memory/singleton.h"
-#include "content/public/browser/browser_context.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/web_contents.h"
 #include "extensions/browser/event_router.h"
@@ -25,7 +23,6 @@
 #include "extensions/browser/extension_host.h"
 #include "extensions/browser/extension_registry.h"
 #include "extensions/browser/process_manager.h"
-#include "neva/app_runtime/browser/extensions/tab_helper_impl.h"
 #include "neva/extensions/browser/api/extension_action/extension_action_api.h"
 #include "neva/extensions/browser/extension_tab_util.h"
 #include "neva/extensions/browser/neva_extensions_service_factory.h"
@@ -40,24 +37,11 @@ NevaExtensionsServiceImpl::TabCreationRequest::TabCreationRequest() = default;
 
 NevaExtensionsServiceImpl::TabCreationRequest::~TabCreationRequest() = default;
 
-NevaExtensionsServiceImpl::NevaExtensionsServiceImpl()
-    : tab_helper_(std::make_unique<neva::TabHelperImpl>()), popup_view_id_(0) {}
+NevaExtensionsServiceImpl::NevaExtensionsServiceImpl(
+    content::BrowserContext* browser_context)
+    : browser_context_(browser_context), popup_view_id_(0) {}
 
 NevaExtensionsServiceImpl::~NevaExtensionsServiceImpl() = default;
-
-// static
-NevaExtensionsServiceImpl* NevaExtensionsServiceImpl::GetInstanceForContext(
-    content::BrowserContext* browser_context) {
-  NevaExtensionsServiceImpl* service =
-      base::Singleton<NevaExtensionsServiceImpl>::get();
-  service->AddContext(browser_context);
-  return std::move(service);
-}
-
-void NevaExtensionsServiceImpl::AddContext(
-    content::BrowserContext* browser_context) {
-  browser_contexts_.insert(browser_context);
-}
 
 // static
 void NevaExtensionsServiceImpl::BindForRenderer(
@@ -75,6 +59,11 @@ void NevaExtensionsServiceImpl::BindForRenderer(
 void NevaExtensionsServiceImpl::Bind(
     mojo::PendingReceiver<mojom::NevaExtensionsService> receiver) {
   receivers_.Add(this, std::move(receiver));
+}
+
+void NevaExtensionsServiceImpl::SetTabHelper(
+    std::unique_ptr<TabHelper> tab_helper) {
+  tab_helper_ = std::move(tab_helper);
 }
 
 TabHelper* NevaExtensionsServiceImpl::GetTabHelper() {
@@ -226,23 +215,15 @@ void NevaExtensionsServiceImpl::BindClient(
 void NevaExtensionsServiceImpl::GetExtensionsInfo(
     GetExtensionsInfoCallback callback) {
   std::vector<base::Value> extension_infos;
-  for (content::BrowserContext* context : browser_contexts_) {
-    extensions::ExtensionRegistry* registry =
-        extensions::ExtensionRegistry::Get(context);
-    const extensions::ExtensionSet& extensions = registry->enabled_extensions();
+  extensions::ExtensionRegistry* registry =
+      extensions::ExtensionRegistry::Get(browser_context_);
+  const extensions::ExtensionSet& extensions = registry->enabled_extensions();
 
-    for (auto& extension : extensions) {
-      base::Value::Dict dict;
-      dict.Set("id", extension->id());
-      dict.Set("name", extension->name());
-      base::Value extension_info = base::Value(std::move(dict));
-      // Prevent adding duplicate extensions that are loaded from different 
-      // browser contexts
-      if (std::find(extension_infos.begin(), extension_infos.end(),
-                    extension_info) == extension_infos.end()) {
-        extension_infos.push_back(std::move(extension_info));
-      }
-    }
+  for (auto& extension : extensions) {
+    base::Value::Dict dict;
+    dict.Set("id", extension->id());
+    dict.Set("name", extension->name());
+    extension_infos.push_back(base::Value(std::move(dict)));
   }
 
   std::move(callback).Run(std::move(extension_infos));
@@ -251,27 +232,25 @@ void NevaExtensionsServiceImpl::GetExtensionsInfo(
 void NevaExtensionsServiceImpl::OnExtensionSelected(
     uint64_t tab_id,
     const std::string& extension_id) {
-  content::BrowserContext* context =
-      tab_helper_->GetWebContentsFromId(tab_id)->GetBrowserContext();
-  if (!context->IsOffTheRecord()) {
-    const extensions::Extension* extension =
-        extensions::ExtensionRegistry::Get(context)->GetExtensionById(
-            extension_id,
-            extensions::ExtensionRegistry::IncludeFlag::EVERYTHING);
-    NEVA_DCHECK(extension);
-    extensions::ExtensionAction* extension_action =
-        extensions::ExtensionActionManager::Get(context)->GetExtensionAction(
-            *extension);
-    if (extension_action && extension_action->HasPopup(tab_id)) {
-      LOG(INFO) << __func__ << " Popup creation Requested.";
-      popup_extension_id_ = extension_id;
-      client_->OnExtensionPopupCreationRequested();
-      return;
-    }
-
-    ExtensionActionAPI::Get(context)->DispatchExtensionActionClicked(
-        extension_id, tab_id, tab_helper_->GetWebContentsFromId(tab_id));
+  const extensions::Extension* extension =
+      extensions::ExtensionRegistry::Get(browser_context_)
+          ->GetExtensionById(
+              extension_id,
+              extensions::ExtensionRegistry::IncludeFlag::EVERYTHING);
+  NEVA_DCHECK(extension);
+  extensions::ExtensionAction* extension_action =
+      extensions::ExtensionActionManager::Get(browser_context_)
+          ->GetExtensionAction(*extension);
+  if (extension_action && extension_action->HasPopup(tab_id)) {
+    LOG(INFO) << __func__ << " Popup creation Requested.";
+    popup_extension_id_ = extension_id;
+    client_->OnExtensionPopupCreationRequested();
+    return;
   }
+
+  ExtensionActionAPI::Get(browser_context_)
+      ->DispatchExtensionActionClicked(
+          extension_id, tab_id, tab_helper_->GetWebContentsFromId(tab_id));
 }
 
 void NevaExtensionsServiceImpl::OnExtensionPopupViewCreated(
@@ -282,8 +261,6 @@ void NevaExtensionsServiceImpl::OnExtensionPopupViewCreated(
   std::string extension_id = popup_extension_id_;
   popup_extension_id_ = std::string();
 
-  content::BrowserContext* context =
-      tab_helper_->GetWebContentsFromId(tab_id)->GetBrowserContext();
   views::View* popup_view = tab_helper_->GetViewFromId(popup_view_id);
   // neva_app_runtime::PageView returns only views::View. So we need to cast.
   views::WebView* web_view = static_cast<views::WebView*>(popup_view);
@@ -293,19 +270,21 @@ void NevaExtensionsServiceImpl::OnExtensionPopupViewCreated(
   }
 
   const extensions::Extension* extension =
-      extensions::ExtensionRegistry::Get(context)->GetExtensionById(
-          extension_id, extensions::ExtensionRegistry::IncludeFlag::EVERYTHING);
+      extensions::ExtensionRegistry::Get(browser_context_)
+          ->GetExtensionById(
+              extension_id,
+              extensions::ExtensionRegistry::IncludeFlag::EVERYTHING);
   extensions::ExtensionAction* extension_action =
-      extensions::ExtensionActionManager::Get(context)->GetExtensionAction(
-          *extension);
+      extensions::ExtensionActionManager::Get(browser_context_)
+          ->GetExtensionAction(*extension);
   if (!extension_action) {
     return;
   }
 
   GURL popup_url = extension_action->GetPopupUrl(tab_id);
   scoped_refptr<content::SiteInstance> site_instance =
-      extensions::ProcessManager::Get(context)->GetSiteInstanceForURL(
-          popup_url);
+      extensions::ProcessManager::Get(browser_context_)
+          ->GetSiteInstanceForURL(popup_url);
 
   popup_extension_host_ = std::make_unique<NevaExtensionHost>(
       extension, site_instance.get(), popup_url,

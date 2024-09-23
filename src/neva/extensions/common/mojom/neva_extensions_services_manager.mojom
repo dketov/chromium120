@@ -1,4 +1,4 @@
-// Copyright 2022 LG Electronics, Inc.
+// Copyright 2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,21 +14,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "neva/injection/public/renderer/chrome_extensions_webapi.h"
+module neva.mojom;
 
-#include "neva/injection/renderer/chrome_extensions/chrome_extensions_injection.h"
+import "mojo/public/mojom/base/values.mojom";
+import "neva/extensions/common/mojom/neva_extensions_service.mojom";
 
-namespace injections {
+interface NevaExtensionsServicesManager {
+  RegisterClient(pending_associated_remote<NevaExtensionsServicesManagerClient> remote);
+  BindNewExtensionsServiceByContext(pending_receiver<NevaExtensionsService> receiver, string partition);
+};
 
-// static
-void ChromeExtensionsWebAPI::Install(blink::WebLocalFrame* frame,
-                                     const std::string&) {
-  ChromeExtensionsInjection::Install(frame);
-}
-
-// static
-void ChromeExtensionsWebAPI::Uninstall(blink::WebLocalFrame* frame) {
-  ChromeExtensionsInjection::Uninstall(frame);
-}
-
-}  // namespace injections
+interface NevaExtensionsServicesManagerClient {
+  OnExtensionServiceRegistered(string partition);
+};

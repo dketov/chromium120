@@ -18,7 +18,6 @@
 #define NEVA_EXTENSIONS_BROWSER_NEVA_EXTENSIONS_SERVICE_IMPL_H_
 
 #include "base/atomic_sequence_num.h"
-#include "base/memory/singleton.h"
 #include "components/keyed_service/core/keyed_service.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/receiver_set.h"
@@ -48,20 +47,19 @@ class NevaExtensionsServiceImpl : public KeyedService,
 
   using TabCreatedCB = base::OnceCallback<void(int)>;
 
+  explicit NevaExtensionsServiceImpl(content::BrowserContext* browser_context);
   NevaExtensionsServiceImpl(const NevaExtensionsServiceImpl&) = delete;
   NevaExtensionsServiceImpl& operator=(const NevaExtensionsServiceImpl&) =
       delete;
-
-  static NevaExtensionsServiceImpl* GetInstanceForContext(
-      content::BrowserContext* browser_context);
-
-  void AddContext(content::BrowserContext* browser_context);
+  ~NevaExtensionsServiceImpl() override;
 
   static void BindForRenderer(
       int render_process_id,
       mojo::PendingReceiver<mojom::NevaExtensionsService> receiver);
 
   void Bind(mojo::PendingReceiver<mojom::NevaExtensionsService> receiver);
+
+  void SetTabHelper(std::unique_ptr<TabHelper> tab_helper);
 
   TabHelper* GetTabHelper();
 
@@ -96,11 +94,6 @@ class NevaExtensionsServiceImpl : public KeyedService,
                                views::View* starting_view) override;
 
  private:
-  friend struct base::DefaultSingletonTraits<NevaExtensionsServiceImpl>;
-
-  NevaExtensionsServiceImpl();
-  ~NevaExtensionsServiceImpl() override;
-
   struct TabCreationRequest {
     TabCreationRequest();
     ~TabCreationRequest();
@@ -110,8 +103,7 @@ class NevaExtensionsServiceImpl : public KeyedService,
 
   mojo::ReceiverSet<mojom::NevaExtensionsService> receivers_;
   mojo::Remote<mojom::NevaExtensionsServiceClient> client_;
-  std::set<content::BrowserContext*> browser_contexts_;
-
+  content::BrowserContext* browser_context_;
   std::unique_ptr<TabHelper> tab_helper_;
 
   std::string popup_extension_id_;

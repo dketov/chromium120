@@ -73,6 +73,7 @@
 #include "extensions/browser/browser_context_keyed_service_factories.h"
 #include "extensions/browser/extension_prefs.h"
 #include "extensions/browser/permissions_manager.h"
+#include "neva/app_runtime/browser/extensions/tab_helper_impl.h"
 #include "neva/extensions/browser/browser_context_keyed_service_factories.h"
 #include "neva/extensions/browser/neva_extension_system.h"
 #include "neva/extensions/browser/neva_extensions_browser_client.h"
@@ -336,8 +337,8 @@ AppRuntimeBrowserContext::AppRuntimeBrowserContext(const std::string& partition,
 
   // Create BrowserContextKeyedServices now that we have an
   // ExtensionsBrowserClient that BrowserContextKeyedAPIServices can query.
-  BrowserContextDependencyManager::GetInstance()
-      ->CreateBrowserContextServices(this);
+  BrowserContextDependencyManager::GetInstance()->CreateBrowserContextServices(
+      this);
 
   raw_ptr<neva::NevaExtensionSystem> extension_system =
       static_cast<neva::NevaExtensionSystem*>(
@@ -349,8 +350,11 @@ AppRuntimeBrowserContext::AppRuntimeBrowserContext(const std::string& partition,
     neva::LoadExtensionsFromCommandLine(extension_system);
   }
 
-  // Register new browser context in extension service
-  neva::NevaExtensionsServiceFactory::GetService(this);
+  neva::NevaExtensionsServiceImpl* extension_service =
+      neva::NevaExtensionsServiceFactory::GetService(this);
+  if (extension_service) {
+    extension_service->SetTabHelper(std::make_unique<neva::TabHelperImpl>());
+  }
 #endif  // defined(USE_NEVA_CHROME_EXTENSIONS)
 }
 

@@ -163,6 +163,8 @@ source_set("renderer") {
     sources += [
       "chrome_extensions/chrome_extensions_injection.cc",
       "chrome_extensions/chrome_extensions_injection.h",
+      "chrome_extensions/chrome_extensions_manager_injection.cc",
+      "chrome_extensions/chrome_extensions_manager_injection.h",
     ]
 
     deps += [ "//neva/extensions:mojom" ]

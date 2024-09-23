@@ -98,6 +98,7 @@
 #include "extensions/common/constants.h"
 #include "extensions/common/switches.h"
 #include "neva/extensions/browser/neva_extensions_service_impl.h"
+#include "neva/extensions/browser/neva_extensions_services_manager_impl.h"
 #include "neva/extensions/browser/web_contents_map.h"
 #endif  // defined(USE_NEVA_CHROME_EXTENSIONS)
 
@@ -636,9 +637,10 @@ void AppRuntimeContentBrowserClient::ExposeInterfacesToRenderer(
     service_manager::BinderRegistry* registry,
     blink::AssociatedInterfaceRegistry* associated_registry,
     content::RenderProcessHost* render_process_host) {
-  registry->AddInterface<neva::mojom::NevaExtensionsService>(
-      base::BindRepeating(&neva::NevaExtensionsServiceImpl::BindForRenderer,
-                          render_process_host->GetID()),
+  registry->AddInterface<neva::mojom::NevaExtensionsServicesManager>(
+      base::BindRepeating(
+          &neva::NevaExtensionsServicesManagerImpl::BindForRenderer,
+          render_process_host->GetID()),
       content::GetUIThreadTaskRunner({}));
 
   associated_registry->AddInterface<extensions::mojom::EventRouter>(

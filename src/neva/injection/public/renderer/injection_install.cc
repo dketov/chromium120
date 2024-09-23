@@ -64,7 +64,7 @@
 #endif
 
 #if defined(USE_NEVA_CHROME_EXTENSIONS)
-#include "neva/injection/public/renderer/chrome_extensions_webapi.h"
+#include "neva/injection/public/renderer/chrome_extensions_manager_webapi.h"
 #endif  // defined(USE_NEVA_CHROME_EXTENSIONS)
 
 namespace injections {
@@ -174,8 +174,8 @@ bool GetInjectionInstallAPI(const std::string& name, InstallAPI* api) {
 #endif
 #if defined(USE_NEVA_CHROME_EXTENSIONS)
   if (name == webapi::kChromeExtensions) {
-    api->install_func = ChromeExtensionsWebAPI::Install;
-    api->uninstall_func = ChromeExtensionsWebAPI::Uninstall;
+    api->install_func = ChromeExtensionsManagerWebAPI::Install;
+    api->uninstall_func = ChromeExtensionsManagerWebAPI::Uninstall;
     return true;
   }
 #endif  // defined(USE_NEVA_CHROME_EXTENSIONS)

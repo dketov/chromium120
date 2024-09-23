@@ -52,6 +52,8 @@ source_set("extensions") {
     "browser/neva_extensions_service_factory.h",
     "browser/neva_extensions_service_impl.cc",
     "browser/neva_extensions_service_impl.h",
+    "browser/neva_extensions_services_manager_impl.cc",
+    "browser/neva_extensions_services_manager_impl.h",
     "browser/neva_extensions_util.cc",
     "browser/neva_extensions_util.h",
     "browser/neva_prefs.cc",
@@ -97,7 +99,10 @@ source_set("extensions") {
 }
 
 mojom("mojom") {
-  sources = [ "common/mojom/neva_extensions_service.mojom" ]
+  sources = [
+    "common/mojom/neva_extensions_service.mojom",
+    "common/mojom/neva_extensions_services_manager.mojom",
+  ]
 
   public_deps = [ "//mojo/public/mojom/base" ]
 }

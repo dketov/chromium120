@@ -38,10 +38,9 @@ class ChromeExtensionsInjection
  public:
   static gin::WrapperInfo kWrapperInfo;
 
-  static void Install(blink::WebLocalFrame* frame);
-  static void Uninstall(blink::WebLocalFrame* frame);
-
-  ChromeExtensionsInjection(v8::Isolate* isolate, v8::Local<v8::Object> global);
+  ChromeExtensionsInjection(
+      v8::Isolate* isolate,
+      mojo::Remote<neva::mojom::NevaExtensionsService> remote);
   ChromeExtensionsInjection(const ChromeExtensionsInjection&) = delete;
   ChromeExtensionsInjection& operator=(const ChromeExtensionsInjection&) =
       delete;

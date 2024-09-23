@@ -109,8 +109,8 @@ source_set("renderer") {
 
   if (use_neva_chrome_extensions) {
     sources += [
-      "chrome_extensions_webapi.cc",
-      "chrome_extensions_webapi.h",
+      "chrome_extensions_manager_webapi.cc",
+      "chrome_extensions_manager_webapi.h",
     ]
   }
 }
