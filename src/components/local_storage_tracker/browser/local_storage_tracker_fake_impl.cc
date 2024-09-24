@@ -26,7 +26,11 @@ void LocalStorageTrackerFakeImpl::OnAccessOrigin(
     base::OnceCallback<void()> callback) {
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
 
-  NOTREACHED() << "Should never have been reached here";
+  static bool has_logged = false;
+  if (!has_logged) {
+    LOG(INFO) << "Local storage tracker is not enabled.";
+    has_logged = true;
+  }
   std::move(callback).Run();
 }
 
