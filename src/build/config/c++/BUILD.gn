@@ -74,6 +74,18 @@ config("runtime_library") {
     # Make sure we don't link against the system libstdc++ or libc++.
     if (is_clang) {
       ldflags += [ "-nostdlib++" ]
+
+      # Work around a glib misconfiguration when buildtools is set against
+      # obsolete system toolchain (example: opensuse-15.4/opensuse-15.5
+      # docker yocto autobuilder). When linking a binary with a
+      # foo.so library, the linker will try to find any library that foo.so uses
+      # and check its symbols. This is wasteful (the check was done when foo.so
+      # was created) and can fail since it is not the dynamic linker and
+      # doesn't know how to handle search paths correctly. This option
+      # 'allow-shlib-undefined' disables this check.
+      if (current_toolchain == host_toolchain) {
+        ldflags += [ "-Wl,-allow-shlib-undefined" ]
+      }
     } else {
       # Gcc has a built-in abs() definition with default visibility.
       # If it was not disabled, it would conflict with libc++'s abs()
