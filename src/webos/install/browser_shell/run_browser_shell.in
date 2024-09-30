@@ -126,6 +126,7 @@ CHROME_FLAGS=" \
   --process-per-guest-webview\
   --disable-component-update\
   --disable-gpu-watchdog\
+  --disable-font-subpixel-positioning \
   --disable-in-process-stack-traces\
   --disable-infobars\
   --disable-new-video-renderer\
