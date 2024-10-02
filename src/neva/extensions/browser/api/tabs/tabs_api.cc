@@ -261,9 +261,41 @@ ExtensionFunction::ResponseAction TabsQueryFunction::Run() {
     tab_object.url = web_contents->GetLastCommittedURL().spec();
     tab_object.title = base::UTF16ToUTF8(web_contents->GetTitle());
     tab_object.group_id = -1;
+    tab_object.incognito = web_contents->GetBrowserContext()->IsOffTheRecord();
+    tab_object.highlighted = tab_object.active;
     result.Append(tab_object.ToValue());
   }
 
+  return RespondNow(WithArguments(std::move(result)));
+}
+
+ExtensionFunction::ResponseAction TabsGetFunction::Run() {
+  std::optional<tabs::Get::Params> params = tabs::Get::Params::Create(args());
+  EXTENSION_FUNCTION_VALIDATE(params);
+  int tab_id = params->tab_id;
+
+  content::WebContents* web_contents =
+      NevaExtensionsServiceFactory::GetService(browser_context())
+          ->GetTabHelper()
+          ->GetWebContentsFromId(tab_id);
+
+  if (!web_contents) {
+    return RespondNow(
+        Error(base::StringPrintf("No tab with id: %d.", tab_id)));
+  }
+
+  extensions::api::tabs::Tab tab_object;
+  tab_object.id = tab_id;
+  tab_object.window_id = tab_id;
+  tab_object.active =
+      (web_contents->GetVisibility() != content::Visibility::HIDDEN);
+  tab_object.selected = tab_object.active;
+  tab_object.url = web_contents->GetLastCommittedURL().spec();
+  tab_object.title = base::UTF16ToUTF8(web_contents->GetTitle());
+  tab_object.group_id = -1;
+  tab_object.incognito = web_contents->GetBrowserContext()->IsOffTheRecord();
+  tab_object.highlighted = tab_object.active;
+  base::Value::Dict result{tab_object.ToValue()};
   return RespondNow(WithArguments(std::move(result)));
 }
 

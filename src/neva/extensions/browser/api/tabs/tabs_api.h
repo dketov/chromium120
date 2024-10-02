@@ -55,6 +55,11 @@ class WindowsRemoveFunction : public ExtensionFunction {
 };
 
 // Tabs
+class TabsGetFunction : public ExtensionFunction {
+  ~TabsGetFunction() override {}
+  ResponseAction Run() override;
+  DECLARE_EXTENSION_FUNCTION("tabs.get", TABS_GET)
+};
 class TabsCreateFunction : public ExtensionFunction {
   ~TabsCreateFunction() override {}
   ResponseAction Run() override;
