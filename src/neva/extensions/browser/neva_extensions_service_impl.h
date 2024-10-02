@@ -85,6 +85,7 @@ class NevaExtensionsServiceImpl : public KeyedService,
   void OnExtensionTabCreatedWithRequestId(uint64_t request_id,
                                           uint64_t tab_id) override;
   void OnExtensionTabClosed(uint64_t tab_id) override;
+  void OnExtensionTabActivated(uint64_t tab_id) override;
   void OnExtensionPopupViewCreated(uint64_t popup_view_id,
                                    uint64_t tab_id) override;
 

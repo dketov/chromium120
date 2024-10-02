@@ -338,6 +338,31 @@
           ]
         }
       }
+    ],
+    "events": [
+      {
+        "name": "onActivated",
+        "type": "function",
+        "description": "Fires when the active tab in a window changes. Note that the tab's URL may not be set at the time this event fired, but you can listen to onUpdated events so as to be notified when a URL is set.",
+        "parameters": [
+          {
+            "type": "object",
+            "name": "activeInfo",
+            "properties": {
+              "tabId": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "The ID of the tab that has become active."
+              },
+              "windowId": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "The ID of the window the active tab changed inside of."
+              }
+            }
+          }
+        ]
+      }
     ]
   }
 ]

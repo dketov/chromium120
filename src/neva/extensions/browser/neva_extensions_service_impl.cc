@@ -27,6 +27,7 @@
 #include "neva/extensions/browser/extension_tab_util.h"
 #include "neva/extensions/browser/neva_extensions_service_factory.h"
 #include "neva/extensions/browser/tab_helper.h"
+#include "neva/extensions/common/api/tabs.h"
 #include "neva/logging.h"
 #include "third_party/blink/public/mojom/renderer_preferences.mojom.h"
 #include "ui/views/controls/webview/webview.h"
@@ -193,6 +194,32 @@ void NevaExtensionsServiceImpl::OnExtensionTabClosed(uint64_t tab_id) {
     if (extensions::EventRouter::Get(context)->HasEventListener(event_name)) {
       auto event = std::make_unique<extensions::Event>(
           extensions::events::WINDOWS_ON_REMOVED, event_name, std::move(args),
+          context);
+      extensions::EventRouter::Get(context)->BroadcastEvent(std::move(event));
+    }
+  }
+}
+
+void NevaExtensionsServiceImpl::OnExtensionTabActivated(uint64_t tab_id) {
+  auto it = tab_id_to_browser_context_.find(tab_id);
+  if (it == tab_id_to_browser_context_.end()) {
+    LOG(ERROR) << __func__ << ": tab_id(" << tab_id << ") not found.";
+    return;
+  }
+  content::BrowserContext* context = it->second;
+  VLOG(1) << __func__ << " tab_id: " << tab_id << " / context: " << context;
+
+  if (context) {
+    extensions::api::tabs::OnActivated::ActiveInfo details;
+    details.tab_id = tab_id;
+    details.window_id = tab_id;
+
+    const std::string event_name =
+        extensions::api::tabs::OnActivated::kEventName;
+    if (extensions::EventRouter::Get(context)->HasEventListener(event_name)) {
+      auto event = std::make_unique<extensions::Event>(
+          extensions::events::TABS_ON_ACTIVATED, event_name,
+          extensions::api::tabs::OnActivated::Create(details),
           context);
       extensions::EventRouter::Get(context)->BroadcastEvent(std::move(event));
     }
