@@ -123,6 +123,8 @@ class NevaExtensionsServiceImpl : public KeyedService,
   void HandleUpdateExtensionPopup(extensions::ExtensionHost* host,
                                   int width,
                                   int height);
+  void DispatchTabsOnRemoved(content::BrowserContext* context,
+                             uint64_t tab_id);
 };
 
 }  // namespace neva

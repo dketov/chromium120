@@ -223,6 +223,25 @@ void NevaExtensionsServiceImpl::OnExtensionTabActivated(uint64_t tab_id) {
           context);
       extensions::EventRouter::Get(context)->BroadcastEvent(std::move(event));
     }
+
+    DispatchTabsOnRemoved(context, tab_id);
+  }
+}
+
+void NevaExtensionsServiceImpl::DispatchTabsOnRemoved(
+    content::BrowserContext* context,
+    uint64_t tab_id) {
+  extensions::api::tabs::OnRemoved::RemoveInfo details;
+  details.window_id = tab_id;
+  details.is_window_closing = false;
+
+  const std::string event_name =
+      extensions::api::tabs::OnRemoved::kEventName;
+  if (extensions::EventRouter::Get(context)->HasEventListener(event_name)) {
+    auto event = std::make_unique<extensions::Event>(
+        extensions::events::TABS_ON_REMOVED, event_name,
+        extensions::api::tabs::OnRemoved::Create(tab_id, details), context);
+    extensions::EventRouter::Get(context)->BroadcastEvent(std::move(event));
   }
 }
 
