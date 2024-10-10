@@ -19,6 +19,7 @@
 #include "base/functional/bind.h"
 #include "gin/arguments.h"
 #include "gin/handle.h"
+#include "neva/app_runtime/browser/permissions/permission_prompt.h"
 #include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/public/web/blink.h"
@@ -138,10 +139,34 @@ void UserPermissionInjection::ShowPrompt(const std::string& host,
   v8::Local<v8::Function> local_callback =
       v8::Local<v8::Function>::Cast(func_value);
 
+  std::vector<std::string> string_types;
+  for (const int& raw_type : types) {
+    permissions::RequestType type =
+        static_cast<permissions::RequestType>(raw_type);
+    std::string string_type;
+    switch (type) {
+      case permissions::RequestType::kCameraPanTiltZoom:
+      case permissions::RequestType::kCameraStream:
+        string_type = "camera";
+        break;
+      case permissions::RequestType::kMicStream:
+        string_type = "mic";
+        break;
+      case permissions::RequestType::kGeolocation:
+        string_type = "geolocation";
+        break;
+      default:
+        break;
+    }
+    if (!string_type.empty()) {
+      string_types.push_back(string_type);
+    }
+  }
+
   const int argc = 2;
   v8::Local<v8::Value> argv[] = {
       gin::StringToV8(isolate, host),
-      gin::Converter<std::vector<int32_t>>::ToV8(isolate, types)};
+      gin::Converter<std::vector<std::string>>::ToV8(isolate, string_types)};
   std::ignore = local_callback->Call(context, wrapper, argc, argv);
 }
 
