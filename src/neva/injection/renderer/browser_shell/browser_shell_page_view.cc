@@ -297,12 +297,48 @@ void BrowserShellPageView::GetBounds(gin::Arguments* args) const {
     args->Return(result);
 }
 
-void BrowserShellPageView::BringToFront() {
-  remote_->BringToFront();
+void BrowserShellPageView::BringToFront(gin::Arguments* args) {
+  if (args->Length() == 0) {
+    remote_->BringToFront();
+    return;
+  }
+
+  v8::Local<v8::Object> child;
+  if (!args->GetNext(&child))
+    return;
+
+  BrowserShellPageView* page_view = nullptr;
+  gin::Converter<BrowserShellPageView*>::FromV8(
+      args->isolate(), child, &page_view);
+
+  if (!page_view)
+    return;
+
+  const uint64_t id = page_view->GetID();
+  if (id && child_view_objects_.contains(id))
+    remote_->BringToFrontByID(id);
 }
 
-void BrowserShellPageView::SendToBack() {
-  remote_->SendToBack();
+void BrowserShellPageView::SendToBack(gin::Arguments* args) {
+  if (args->Length() == 0) {
+    remote_->SendToBack();
+    return;
+  }
+
+  v8::Local<v8::Object> child;
+  if (!args->GetNext(&child))
+    return;
+
+  BrowserShellPageView* page_view = nullptr;
+  gin::Converter<BrowserShellPageView*>::FromV8(
+      args->isolate(), child, &page_view);
+
+  if (!page_view)
+    return;
+
+  const uint64_t id = page_view->GetID();
+  if (id && child_view_objects_.contains(id))
+    remote_->SendToBackByID(id);
 }
 
 gin::ObjectTemplateBuilder

@@ -126,8 +126,8 @@ class BrowserShellPageView
   bool IsVisible() const;
   void SetBounds(int x, int y, int w, int h);
   void GetBounds(gin::Arguments* args) const;
-  void BringToFront();
-  void SendToBack();
+  void BringToFront(gin::Arguments* args);
+  void SendToBack(gin::Arguments* args);
 
   gin::ObjectTemplateBuilder GetObjectTemplateBuilder(
       v8::Isolate* isolate) override;

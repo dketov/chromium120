@@ -205,9 +205,27 @@ void PageView::BringToFront() {
     parent_page_view_->GetView()->ReorderChildView(web_view_.get(), -1);
 }
 
+void PageView::BringToFront(PageView* child_page_view) {
+  NEVA_DCHECK(child_page_view != nullptr);
+
+  if (child_page_views_.count(child_page_view) > 0) {
+    auto* child_view = child_page_view->GetView();
+    web_view_->ReorderChildView(child_view, -1);
+  }
+}
+
 void PageView::SendToBack() {
   if (parent_page_view_)
     parent_page_view_->GetView()->ReorderChildView(web_view_.get(), 1);
+}
+
+void PageView::SendToBack(PageView* child_page_view) {
+  NEVA_DCHECK(child_page_view != nullptr);
+
+  if (child_page_views_.count(child_page_view) > 0) {
+    auto* child_view = child_page_view->GetView();
+    web_view_->ReorderChildView(child_view, 1);
+  }
 }
 
 views::View* PageView::GetView() const {

@@ -32,7 +32,9 @@ interface PageView {
   SetBounds(int32 x, int32 y, int32 w, int32 h);
   SetVisible(bool visible);
   BringToFront();
+  BringToFrontByID(uint64 id);
   SendToBack();
+  SendToBackByID(uint64 id);
 
   AddChildView(uint64 id);
   RemoveChildView(uint64 id);

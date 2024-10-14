@@ -68,7 +68,9 @@ class PageView {
       VisibilityChangeReason reason = VisibilityChangeReason::kUnknown);
   bool IsVisible() const;
   void BringToFront();
+  void BringToFront(PageView* child_page_view);
   void SendToBack();
+  void SendToBack(PageView* child_page_view);
 
   views::View* GetView() const;
   void CloseIfMain();

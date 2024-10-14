@@ -52,7 +52,9 @@ class PageViewImpl : public mojom::PageView,
   void SetBounds(int32_t x, int32_t y, int32_t w, int32_t h) override;
   void SetVisible(bool visible) override;
   void BringToFront() override;
+  void BringToFrontByID(uint64_t id) override;
   void SendToBack() override;
+  void SendToBackByID(uint64_t id) override;
   void AddChildView(uint64_t id) override;
   void RemoveChildView(uint64_t id) override;
   void SetPageContents(uint64_t id) override;

@@ -86,8 +86,22 @@ void PageViewImpl::BringToFront() {
   page_view_->BringToFront();
 }
 
+void PageViewImpl::BringToFrontByID(uint64_t id) {
+  auto* child_page_view =
+      neva_app_runtime::ShellEnvironment::GetInstance()->GetViewPtr(id);
+  if (child_page_view)
+    page_view_->BringToFront(child_page_view);
+}
+
 void PageViewImpl::SendToBack() {
   page_view_->SendToBack();
+}
+
+void PageViewImpl::SendToBackByID(uint64_t id) {
+  auto* child_page_view =
+      neva_app_runtime::ShellEnvironment::GetInstance()->GetViewPtr(id);
+  if (child_page_view)
+    page_view_->SendToBack(child_page_view);
 }
 
 void PageViewImpl::AddChildView(uint64_t id) {
