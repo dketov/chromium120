@@ -17,7 +17,9 @@
 #ifndef NEVA_EXTENSIONS_BROWSER_API_TABS_TABS_API_H_
 #define NEVA_EXTENSIONS_BROWSER_API_TABS_TABS_API_H_
 
+#include "extensions/browser/api/execute_code_function.h"
 #include "extensions/browser/extension_function.h"
+#include "extensions/browser/script_executor.h"
 
 namespace neva {
 
@@ -70,6 +72,39 @@ class TabsQueryFunction : public ExtensionFunction {
   ~TabsQueryFunction() override {}
   ResponseAction Run() override;
   DECLARE_EXTENSION_FUNCTION("tabs.query", TABS_QUERY)
+};
+
+// Implement API calls tabs.insertCSS.
+class ExecuteCodeInTabFunction : public extensions::ExecuteCodeFunction {
+ public:
+  ExecuteCodeInTabFunction();
+
+ protected:
+  ~ExecuteCodeInTabFunction() override;
+
+  // Initializes |execute_tab_id_| and |details_|.
+  extensions::ExecuteCodeFunction::InitResult Init() override;
+  bool ShouldInsertCSS() const override;
+  bool ShouldRemoveCSS() const override;
+  bool CanExecuteScriptOnPage(std::string* error) override;
+  extensions::ScriptExecutor* GetScriptExecutor(std::string* error) override;
+  bool IsWebView() const override;
+  const GURL& GetWebViewSrc() const override;
+
+ private:
+  std::unique_ptr<extensions::ScriptExecutor> script_executor_;
+
+  // Id of tab which executes code.
+  int execute_tab_id_;
+};
+
+class TabsInsertCSSFunction : public ExecuteCodeInTabFunction {
+ private:
+  ~TabsInsertCSSFunction() override {}
+
+  bool ShouldInsertCSS() const override;
+
+  DECLARE_EXTENSION_FUNCTION("tabs.insertCSS", TABS_INSERTCSS)
 };
 
 }  // namespace neva

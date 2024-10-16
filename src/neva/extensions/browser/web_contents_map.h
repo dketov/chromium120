@@ -19,10 +19,12 @@
 
 #include "content/public/browser/web_contents.h"
 
+#include <memory>
 #include <set>
 
 #include "base/memory/singleton.h"
 #include "extensions/browser/extension_web_contents_observer.h"
+#include "extensions/browser/script_executor.h"
 #include "url/gurl.h"
 
 namespace neva {
@@ -69,12 +71,17 @@ class WebContentsMap {
     return items_.cend();
   }
 
+  extensions::ScriptExecutor* GetScriptExecutor(
+      content::WebContents* web_contents);
+
  private:
   friend struct base::DefaultSingletonTraits<WebContentsMap>;
   WebContentsMap();
   ~WebContentsMap();
 
   std::map<WebContentsItem*, content::WebContents*> items_;
+  std::map<content::WebContents*, std::unique_ptr<extensions::ScriptExecutor>>
+      script_executors_;
 };
 
 }  // namespace neva

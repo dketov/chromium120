@@ -18,6 +18,10 @@
 
 #include "base/strings/pattern.h"
 #include "extensions/common/extension.h"
+#include "extensions/common/manifest_constants.h"
+#include "extensions/common/permissions/api_permission.h"
+#include "extensions/common/permissions/permissions_data.h"
+#include "neva/extensions/browser/api/tabs/tabs_constants.h"
 #include "neva/extensions/browser/extension_tab_util.h"
 #include "neva/extensions/browser/neva_extensions_service_factory.h"
 #include "neva/extensions/browser/neva_extensions_service_impl.h"
@@ -30,6 +34,8 @@ namespace neva {
 
 namespace windows = extensions::api::windows;
 namespace tabs = extensions::api::tabs;
+
+using extensions::api::extension_types::InjectDetails;
 
 // Returns true if either |boolean| is disengaged, or if |boolean| and
 // |value| are equal. This function is used to check if a tab's parameters match
@@ -297,6 +303,162 @@ ExtensionFunction::ResponseAction TabsGetFunction::Run() {
   tab_object.highlighted = tab_object.active;
   base::Value::Dict result{tab_object.ToValue()};
   return RespondNow(WithArguments(std::move(result)));
+}
+
+ExecuteCodeInTabFunction::ExecuteCodeInTabFunction() : execute_tab_id_(0) {}
+
+ExecuteCodeInTabFunction::~ExecuteCodeInTabFunction() {}
+
+extensions::ExecuteCodeFunction::InitResult ExecuteCodeInTabFunction::Init() {
+  if (init_result_) {
+    return init_result_.value();
+  }
+
+  if (args().size() < 2) {
+    return set_init_result(VALIDATION_FAILURE);
+  }
+
+  const auto& tab_id_value = args()[0];
+  // |tab_id| is optional so it's ok if it's not there.
+  int tab_id = 0;
+  if (tab_id_value.is_int()) {
+    // But if it is present, it needs to be positive.
+    tab_id = tab_id_value.GetInt();
+    if (tab_id < 1) {
+      return set_init_result(VALIDATION_FAILURE);
+    }
+  }
+
+  // |details| are not optional.
+  const base::Value& details_value = args()[1];
+  if (!details_value.is_dict()) {
+    return set_init_result(VALIDATION_FAILURE);
+  }
+  auto details = InjectDetails::FromValue(details_value.GetDict());
+  if (!details) {
+    return set_init_result(VALIDATION_FAILURE);
+  }
+
+  // If the tab ID wasn't given then it needs to be converted to the
+  // currently active tab's ID.
+  if (tab_id == 0) {
+    WebContentsMap* web_contents_map = WebContentsMap::GetInstance();
+    for (auto& it : *web_contents_map) {
+      content::WebContents* web_contents = it.second;
+      uint64_t contents_tab_id =
+          NevaExtensionsServiceFactory::GetService(browser_context())
+              ->GetTabHelper()
+              ->GetTabIdFromWebContents(web_contents);
+      if (contents_tab_id == 0) {
+        continue;
+      }
+      if (web_contents->GetVisibility() != content::Visibility::HIDDEN) {
+        tab_id = contents_tab_id;
+      }
+    }
+    CHECK_GE(tab_id, 0);
+  }
+
+  execute_tab_id_ = tab_id;
+  details_ = std::make_unique<InjectDetails>(std::move(*details));
+  set_host_id(extensions::mojom::HostID(
+      extensions::mojom::HostID::HostType::kExtensions, extension()->id()));
+  return set_init_result(SUCCESS);
+}
+
+bool ExecuteCodeInTabFunction::ShouldInsertCSS() const {
+  return false;
+}
+
+bool ExecuteCodeInTabFunction::ShouldRemoveCSS() const {
+  return false;
+}
+
+bool ExecuteCodeInTabFunction::CanExecuteScriptOnPage(std::string* error) {
+  content::WebContents* contents = nullptr;
+
+  // If |tab_id| is specified, look for the tab. Otherwise default to selected
+  // tab in the current window.
+  CHECK_GE(execute_tab_id_, 1);
+  contents = NevaExtensionsServiceFactory::GetService(browser_context())
+                 ->GetTabHelper()
+                 ->GetWebContentsFromId(execute_tab_id_);
+  if (!contents) {
+    return false;
+  }
+
+  int frame_id = details_->frame_id
+                     ? *details_->frame_id
+                     : extensions::ExtensionApiFrameIdMap::kTopFrameId;
+  content::RenderFrameHost* render_frame_host =
+      extensions::ExtensionApiFrameIdMap::GetRenderFrameHostById(contents,
+                                                                 frame_id);
+  if (!render_frame_host) {
+    *error = extensions::ErrorUtils::FormatErrorMessage(
+        tabs_constants::kFrameNotFoundError, base::NumberToString(frame_id),
+        base::NumberToString(execute_tab_id_));
+    return false;
+  }
+
+  // Content scripts declared in manifest.json can access frames at about:-URLs
+  // if the extension has permission to access the frame's origin, so also allow
+  // programmatic content scripts at about:-URLs for allowed origins.
+  GURL effective_document_url(render_frame_host->GetLastCommittedURL());
+  bool is_about_url = effective_document_url.SchemeIs(url::kAboutScheme);
+  if (is_about_url && details_->match_about_blank &&
+      *details_->match_about_blank) {
+    effective_document_url =
+        GURL(render_frame_host->GetLastCommittedOrigin().Serialize());
+  }
+
+  if (!effective_document_url.is_valid()) {
+    // Unknown URL, e.g. because no load was committed yet. Allow for now, the
+    // renderer will check again and fail the injection if needed.
+    return true;
+  }
+
+  // NOTE: This can give the wrong answer due to race conditions, but it is OK,
+  // we check again in the renderer.
+  if (!extension()->permissions_data()->CanAccessPage(effective_document_url,
+                                                      execute_tab_id_, error)) {
+    if (is_about_url &&
+        extension()->permissions_data()->active_permissions().HasAPIPermission(
+            extensions::mojom::APIPermissionID::kTab)) {
+      *error = extensions::ErrorUtils::FormatErrorMessage(
+          extensions::manifest_errors::kCannotAccessAboutUrl,
+          render_frame_host->GetLastCommittedURL().spec(),
+          render_frame_host->GetLastCommittedOrigin().Serialize());
+    }
+    return false;
+  }
+
+  return true;
+}
+
+extensions::ScriptExecutor* ExecuteCodeInTabFunction::GetScriptExecutor(
+    std::string* error) {
+  content::WebContents* contents =
+      NevaExtensionsServiceFactory::GetService(browser_context())
+          ->GetTabHelper()
+          ->GetWebContentsFromId(execute_tab_id_);
+
+  if (!contents) {
+    return nullptr;
+  }
+
+  return WebContentsMap::GetInstance()->GetScriptExecutor(contents);
+}
+
+bool ExecuteCodeInTabFunction::IsWebView() const {
+  return false;
+}
+
+const GURL& ExecuteCodeInTabFunction::GetWebViewSrc() const {
+  return GURL::EmptyGURL();
+}
+
+bool TabsInsertCSSFunction::ShouldInsertCSS() const {
+  return true;
 }
 
 }  // namespace neva

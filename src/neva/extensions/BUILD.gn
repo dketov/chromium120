@@ -26,6 +26,8 @@ source_set("extensions") {
     "browser/api/scripting/scripting_api.h",
     "browser/api/tabs/tabs_api.cc",
     "browser/api/tabs/tabs_api.h",
+    "browser/api/tabs/tabs_constants.cc",
+    "browser/api/tabs/tabs_constants.h",
     "browser/browser_context_keyed_service_factories.cc",
     "browser/browser_context_keyed_service_factories.h",
     "browser/extension_tab_util.cc",

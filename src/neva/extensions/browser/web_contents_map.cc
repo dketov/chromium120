@@ -67,6 +67,7 @@ void WebContentsMap::OnWebContentsCreated(content::WebContents* web_contents) {
 }
 
 void WebContentsMap::OnWebContentsWillDestroyed(WebContentsItem* item) {
+  script_executors_.erase(items_[item]);
   items_.erase(item);
 }
 
@@ -135,6 +136,18 @@ void WebContentsMap::ForEachExtensionWebContents(
       }
     }
   }
+}
+
+extensions::ScriptExecutor* WebContentsMap::GetScriptExecutor(
+    content::WebContents* web_contents) {
+  auto it = script_executors_.find(web_contents);
+  if (it != script_executors_.end()) {
+    return it->second.get();
+  }
+
+  script_executors_.emplace(
+      web_contents, std::make_unique<extensions::ScriptExecutor>(web_contents));
+  return script_executors_[web_contents].get();
 }
 
 }  // namespace neva
