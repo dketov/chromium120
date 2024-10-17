@@ -32,6 +32,7 @@ const char kSelectExtensionMethodName[] = "selectExtension";
 const char kOnExtensionTabCreatedMethodName[] = "extensionTabCreated";
 const char kOnExtensionTabClosedMethodName[] = "extensionTabClosed";
 const char kOnExtensionTabActivatedMethodName[] = "extensionTabActivated";
+const char kOnExtensionTabUpdatedMethodName[] = "extensionTabUpdated";
 const char kOnExtensionPopupViewCreatedMethodName[] =
     "extensionPopupViewCreated";
 
@@ -171,6 +172,12 @@ void ChromeExtensionsInjection::OnExtensionTabActivated(uint64_t tab_id) {
   remote_->OnExtensionTabActivated(tab_id);
 }
 
+void ChromeExtensionsInjection::OnExtensionTabUpdated(
+    uint64_t tab_id,
+    const std::string& change_info) {
+  remote_->OnExtensionTabUpdated(tab_id, change_info);
+}
+
 void ChromeExtensionsInjection::OnExtensionPopupViewCreated(
     uint64_t popup_view_id,
     uint64_t tab_id) {
@@ -213,6 +220,8 @@ gin::ObjectTemplateBuilder ChromeExtensionsInjection::GetObjectTemplateBuilder(
                  &ChromeExtensionsInjection::OnExtensionTabClosed)
       .SetMethod(kOnExtensionTabActivatedMethodName,
                  &ChromeExtensionsInjection::OnExtensionTabActivated)
+      .SetMethod(kOnExtensionTabUpdatedMethodName,
+                 &ChromeExtensionsInjection::OnExtensionTabUpdated)
       .SetMethod(kOnExtensionPopupViewCreatedMethodName,
                  &ChromeExtensionsInjection::OnExtensionPopupViewCreated);
 }

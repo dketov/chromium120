@@ -86,6 +86,8 @@ class NevaExtensionsServiceImpl : public KeyedService,
                                           uint64_t tab_id) override;
   void OnExtensionTabClosed(uint64_t tab_id) override;
   void OnExtensionTabActivated(uint64_t tab_id) override;
+  void OnExtensionTabUpdated(uint64_t tab_id,
+                             const std::string& change_info) override;
   void OnExtensionPopupViewCreated(uint64_t popup_view_id,
                                    uint64_t tab_id) override;
 
@@ -123,8 +125,6 @@ class NevaExtensionsServiceImpl : public KeyedService,
   void HandleUpdateExtensionPopup(extensions::ExtensionHost* host,
                                   int width,
                                   int height);
-  void DispatchTabsOnRemoved(content::BrowserContext* context,
-                             uint64_t tab_id);
 };
 
 }  // namespace neva

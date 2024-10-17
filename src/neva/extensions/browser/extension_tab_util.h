@@ -20,6 +20,10 @@
 #include "base/values.h"
 #include "neva/extensions/common/api/windows.h"
 
+namespace content {
+class BrowserContext;
+}
+
 namespace neva {
 
 class ExtensionTabUtil {
@@ -31,6 +35,13 @@ class ExtensionTabUtil {
           extensions::api::windows::WINDOW_TYPE_POPUP,
       bool always_on_top = false,
       bool incognito = false);
+  static void DispatchTabsOnActivated(content::BrowserContext* context,
+                                      uint64_t tab_id);
+  static void DispatchTabsOnUpdated(content::BrowserContext* context,
+                                    uint64_t tab_id,
+                                    const std::string& change_info);
+  static void DispatchTabsOnRemoved(content::BrowserContext* context,
+                                    uint64_t tab_id);
 };
 
 }  // namespace neva

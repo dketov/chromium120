@@ -19,6 +19,9 @@
 namespace neva {
 namespace tabs_constants {
 
+const char kStatusKey[] = "status";
+const char kStatusLoading[] = "loading";
+
 const char kFrameNotFoundError[] = "No frame with id * in tab *.";
 
 }  // namespace tabs_constants

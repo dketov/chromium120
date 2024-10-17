@@ -35,5 +35,6 @@ interface NevaExtensionsService {
   OnExtensionTabCreatedWithRequestId(uint64 request_id, uint64 tab_id);
   OnExtensionTabClosed(uint64 tab_id);
   OnExtensionTabActivated(uint64 tab_id);
+  OnExtensionTabUpdated(uint64 tab_id, string change_info);
   OnExtensionPopupViewCreated(uint64 popup_view_id, uint64 tab_id);
 };

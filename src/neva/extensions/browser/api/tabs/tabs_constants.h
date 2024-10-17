@@ -22,6 +22,9 @@
 namespace neva {
 namespace tabs_constants {
 
+extern const char kStatusKey[];
+extern const char kStatusLoading[];
+
 // Error messages.
 extern const char kFrameNotFoundError[];
 

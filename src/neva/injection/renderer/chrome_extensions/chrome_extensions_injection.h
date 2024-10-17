@@ -54,6 +54,7 @@ class ChromeExtensionsInjection
   void OnExtensionTabCreated(gin::Arguments* args);
   void OnExtensionTabClosed(uint64_t tab_id);
   void OnExtensionTabActivated(uint64_t tab_id);
+  void OnExtensionTabUpdated(uint64_t tab_id, const std::string& change_info);
   void OnExtensionPopupViewCreated(uint64_t popup_view_id, uint64_t tab_id);
 
   // mojom::NevaExtensionsServiceClient
