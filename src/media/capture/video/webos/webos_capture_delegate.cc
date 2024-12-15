@@ -97,13 +97,11 @@ WebOSCaptureDelegate::~WebOSCaptureDelegate() {
 }
 
 void WebOSCaptureDelegate::AllocateAndStart(
-    base::PlatformThreadId pid,
     gfx::Size frame_size,
     float frame_rate,
     std::unique_ptr<VideoCaptureDevice::Client> client) {
   VLOG(1) << __func__ << " width=" << frame_size.width()
-          << ", height=" << frame_size.height() << ", frame_rate=" << frame_rate
-          << ", pid=" << pid;
+          << ", height=" << frame_size.height() << ", frame_rate=" << frame_rate;
 
   DCHECK(capture_task_runner_->BelongsToCurrentThread());
   DCHECK(client);
@@ -111,7 +109,7 @@ void WebOSCaptureDelegate::AllocateAndStart(
   client_ = std::move(client);
 
   const auto& device_id = device_descriptor_.device_id;
-  camera_handle_ = camera_service_->Open(pid, device_id, "primary");
+  camera_handle_ = camera_service_->Open(device_id, "primary");
   if (!camera_handle_) {
     std::string reason = std::string(" Failed opening device:") + device_id;
     SetErrorState(VideoCaptureError::kV4L2FailedToOpenV4L2DeviceDriverFile,
@@ -149,14 +147,13 @@ void WebOSCaptureDelegate::AllocateAndStart(
     return;
   }
 
-  shmem_key_ = camera_service_->StartCamera(*camera_handle_);
-  if (!shmem_key_) {
+  if (!camera_service_->StartCamera(*camera_handle_)) {
     SetErrorState(VideoCaptureError::kV4L2ThisIsNotAV4L2VideoCaptureDevice,
                   FROM_HERE, "Failed to start camera preview");
     return;
   }
 
-  if (!camera_service_->OpenCameraBuffer(*shmem_key_)) {
+  if (!camera_service_->OpenCameraBuffer(*camera_handle_)) {
     SetErrorState(VideoCaptureError::kV4L2ThisIsNotAV4L2VideoCaptureDevice,
                   FROM_HERE, "Failed to open camera buffer capture");
     return;
@@ -174,7 +171,7 @@ void WebOSCaptureDelegate::AllocateAndStart(
       FROM_HERE, base::BindOnce(&WebOSCaptureDelegate::DoCapture, weak_this_));
 }
 
-void WebOSCaptureDelegate::StopAndDeAllocate(base::PlatformThreadId pid) {
+void WebOSCaptureDelegate::StopAndDeAllocate() {
   VLOG(1) << __func__;
   DCHECK(capture_task_runner_->BelongsToCurrentThread());
 
@@ -183,7 +180,7 @@ void WebOSCaptureDelegate::StopAndDeAllocate(base::PlatformThreadId pid) {
   is_capturing_ = false;
   if (camera_handle_) {
     camera_service_->StopCamera(*camera_handle_);
-    camera_service_->Close(pid, *camera_handle_);
+    camera_service_->Close(*camera_handle_);
     camera_handle_.reset();
   }
 }
@@ -327,11 +324,6 @@ void WebOSCaptureDelegate::DoCapture() {
 
   if (!is_capturing_)
     return;
-
-  if (!shmem_key_) {
-    LOG(ERROR) << __func__ << ", return, fail to get shmem_key_";
-    return;
-  }
 
   base::span<uint8_t> cameraBuffer = camera_service_->ReadCameraBuffer();
   if (cameraBuffer.empty()) {

@@ -49,10 +49,9 @@ class CAPTURE_EXPORT WebOSCameraService
   explicit WebOSCameraService();
   virtual ~WebOSCameraService();
 
-  absl::optional<int> Open(base::PlatformThreadId pid,
-                           const WebOSCameraDeviceId& device_id,
+  absl::optional<int> Open(const WebOSCameraDeviceId& device_id,
                            const std::string& mode);
-  void Close(base::PlatformThreadId pid, int handle);
+  void Close(int handle);
 
   bool GetDeviceIds(WebOSCameraDeviceIdList& device_ids);
   bool GetDeviceInfo(const WebOSCameraDeviceId& device_id, base::Value* info);
@@ -64,13 +63,13 @@ class CAPTURE_EXPORT WebOSCameraService
                  int height,
                  const std::string& format,
                  int fps);
-  absl::optional<int> StartCamera(int handle);
+  bool StartCamera(int handle);
   void StopCamera(int handle);
 
   void SubscribeCameraChange(ResponseCB cb);
   void SubscribeFaultEvent(ResponseCB cb);
 
-  bool OpenCameraBuffer(int shmem_key);
+  bool OpenCameraBuffer(int handle);
   base::span<uint8_t> ReadCameraBuffer();
   bool CloseCameraBuffer();
 

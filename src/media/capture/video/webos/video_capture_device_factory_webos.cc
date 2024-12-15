@@ -137,9 +137,8 @@ VideoCaptureDeviceFactoryWebOS::GetSupportedControl(
     return control_it->second;
   }
 
-  base::PlatformThreadId pid = base::PlatformThread::CurrentId();
   absl::optional<int> camera_handle =
-      camera_service_->Open(pid, device_id, "secondary");
+      camera_service_->Open(device_id, "secondary");
   if (!camera_handle) {
     LOG(ERROR) << __func__ << " Failed opening device: " << device_id;
     return absl::nullopt;
@@ -162,7 +161,7 @@ VideoCaptureDeviceFactoryWebOS::GetSupportedControl(
       IsControlSupported(properties_dict.FindDictByDottedPath(kZoom));
   controls_cache_.emplace(device_id, control_support);
 
-  camera_service_->Close(pid, *camera_handle);
+  camera_service_->Close(*camera_handle);
 
   VLOG(1) << __func__ << " pan=" << control_support.pan
           << ", tilt=" << control_support.tilt

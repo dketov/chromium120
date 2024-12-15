@@ -32,10 +32,6 @@ namespace {
 
 const char kWebOSChromiumCamera[] = "com.webos.chromium.camera";
 
-void SigHandlerForCameraService(int signum) {
-  VLOG(1) << __func__ << ", signal handler : signum(" << signum << ")";
-}
-
 }  // namespace
 
 #define BIND_TO_LUNA_THREAD(function, data)                           \
@@ -54,8 +50,7 @@ WebOSCameraService::WebOSCameraService()
 
   weak_this_ = weak_factory_.GetWeakPtr();
 
-  camera_buffer_.reset(
-      new camera::CameraBuffer(camera::CameraBuffer::SHMEM_SYSTEMV));
+  camera_buffer_.reset(new camera::CameraBuffer(kWebOSChromiumCamera));
 
   luna_call_thread_.task_runner()->PostTask(
       FROM_HERE, base::BindOnce(&WebOSCameraService::EnsureLunaServiceCreated,
@@ -76,16 +71,12 @@ WebOSCameraService::~WebOSCameraService() {
 }
 
 absl::optional<int> WebOSCameraService::Open(
-    base::PlatformThreadId pid,
     const WebOSCameraDeviceId& device_id,
     const std::string& mode) {
-  VLOG(1) << __func__ << " pid=" << pid << ", device_id=" << device_id
+  VLOG(1) << __func__ << " device_id=" << device_id
           << ", mode=" << mode;
 
-  signal(SIGUSR1, SigHandlerForCameraService);
-
   base::Value::Dict register_root;
-  register_root.Set(kPid, pid);
   register_root.Set(kId, device_id);
   register_root.Set(kMode, mode);
 
@@ -115,11 +106,10 @@ absl::optional<int> WebOSCameraService::Open(
   return device_handle;
 }
 
-void WebOSCameraService::Close(base::PlatformThreadId pid, int handle) {
-  VLOG(1) << __func__ << " pid=" << pid << ", handle=" << handle;
+void WebOSCameraService::Close(int handle) {
+  VLOG(1) << __func__ << " handle=" << handle;
 
   base::Value::Dict register_root;
-  register_root.Set(kPid, pid);
   register_root.Set(kHandle, handle);
 
   std::string close_payload;
@@ -329,26 +319,21 @@ bool WebOSCameraService::SetFormat(int handle,
   return GetRootDictionary(response).has_value();
 }
 
-absl::optional<int> WebOSCameraService::StartCamera(int handle) {
+bool WebOSCameraService::StartCamera(int handle) {
   VLOG(1) << __func__ << " handle=" << handle;
 
   if (handle < 0) {
     LOG(ERROR) << __func__ << " Invalid camera handle";
-    return absl::nullopt;
+    return false;
   }
-
-  base::Value::Dict param_value;
-  param_value.Set(kType, kSharedMemory);
-  param_value.Set(kSource, "0");
 
   base::Value::Dict preview_root;
   preview_root.Set(kHandle, handle);
-  preview_root.Set(kParams, param_value.Clone());
 
   std::string camera_payload;
   if (!base::JSONWriter::Write(preview_root, &camera_payload)) {
     LOG(ERROR) << __func__ << " Failed to write startCamera payload";
-    return absl::nullopt;
+    return false;
   }
 
   std::string response;
@@ -357,20 +342,10 @@ absl::optional<int> WebOSCameraService::StartCamera(int handle) {
               base::LunaServiceClient::URIType::CAMERA, kStartCamera),
           camera_payload, &response)) {
     LOG(ERROR) << __func__ << " Failed luna service call";
-    return absl::nullopt;
+    return false;
   }
 
-  absl::optional<base::Value::Dict> root_value = GetRootDictionary(response);
-  if (!root_value)
-    return absl::nullopt;
-
-  absl::optional<int> shmem_key = root_value->FindIntByDottedPath(kKey);
-  if (!shmem_key) {
-    LOG(ERROR) << __func__ << " Did not receive key value: " << response;
-  }
-
-  VLOG(1) << __func__ << " shmem_key=" << *shmem_key;
-  return shmem_key;
+  return GetRootDictionary(response).has_value();
 }
 
 void WebOSCameraService::StopCamera(int handle) {
@@ -432,19 +407,19 @@ void WebOSCameraService::SubscribeFaultEvent(ResponseCB event_cb) {
       get_event_payload, &fault_event_subscribe_key_, event_cb);
 }
 
-bool WebOSCameraService::OpenCameraBuffer(int shmem_key) {
+bool WebOSCameraService::OpenCameraBuffer(int handle) {
   base::AutoLock auto_lock(camera_service_lock_);
   if (camera_buffer_)
-    return camera_buffer_->Open(shmem_key);
+    return camera_buffer_->Open(handle);
   return false;
 }
 
 base::span<uint8_t> WebOSCameraService::ReadCameraBuffer() {
   base::AutoLock auto_lock(camera_service_lock_);
   uint8_t* buffer = nullptr;
-  int size;
+  size_t size;
   if (camera_buffer_ && camera_buffer_->ReadData(&buffer, &size))
-    return base::make_span(buffer, static_cast<size_t>(size));
+    return base::make_span(buffer, size);
   return {};
 }
 

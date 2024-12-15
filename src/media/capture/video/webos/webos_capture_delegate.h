@@ -45,11 +45,10 @@ class CAPTURE_EXPORT WebOSCaptureDelegate final {
   ~WebOSCaptureDelegate();
 
   // Forward-to versions of VideoCaptureDevice virtual methods.
-  void AllocateAndStart(base::PlatformThreadId pid,
-                        gfx::Size frame_size,
+  void AllocateAndStart(gfx::Size frame_size,
                         float frame_rate,
                         std::unique_ptr<VideoCaptureDevice::Client> client);
-  void StopAndDeAllocate(base::PlatformThreadId pid);
+  void StopAndDeAllocate();
 
   void TakePhoto(VideoCaptureDevice::TakePhotoCallback callback);
 
@@ -85,7 +84,6 @@ class CAPTURE_EXPORT WebOSCaptureDelegate final {
   VideoCaptureFormat capture_format_;
   base::queue<VideoCaptureDevice::TakePhotoCallback> take_photo_callbacks_;
 
-  absl::optional<int> shmem_key_;
   absl::optional<int> camera_handle_;
 
   int rotation_ = 0;

@@ -81,7 +81,7 @@ void VideoCaptureDeviceWebOS::AllocateAndStart(
       FROM_HERE,
       base::BindOnce(
         &WebOSCaptureDelegate::AllocateAndStart, capture_impl_->GetWeakPtr(),
-        capture_thread_.GetThreadId(), params.requested_format.frame_size,
+        params.requested_format.frame_size,
         params.requested_format.frame_rate, std::move(client)));
 
   for (auto& request : photo_requests_queue_)
@@ -98,8 +98,7 @@ void VideoCaptureDeviceWebOS::StopAndDeAllocate() {
 
   capture_thread_.task_runner()->PostTask(
       FROM_HERE, base::BindOnce(&WebOSCaptureDelegate::StopAndDeAllocate,
-                                capture_impl_->GetWeakPtr(),
-                                capture_thread_.GetThreadId()));
+                                capture_impl_->GetWeakPtr()));
 
   capture_thread_.task_runner()->DeleteSoon(FROM_HERE, capture_impl_.release());
   capture_impl_ = nullptr;
